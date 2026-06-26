@@ -34,7 +34,6 @@ runs:
       uses: cypress-io/github-action@v6
       with:
         working-directory: ui
-        start: npm run start
+        start: npx serve -p 3000 out
         wait-on: "http://localhost:3000"
         browser: chrome
-        headless: true
