@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  detect:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.check.outputs.python }}
+      ui: ${{ steps.check.outputs.ui }}
+      docker: ${{ steps.check.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Diff and set outputs
+        id: check
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            BASE="$(git rev-list --max-parents=0 HEAD)"
+          else
+            BASE="${{ github.event.before }}"
+          fi
+          CHANGED=$(git diff --name-only "$BASE" "$GITHUB_SHA")
+          echo "$CHANGED"
+
+          python=false; ui=false; docker=false
+
+          while IFS= read -r f; do
+            case "$f" in
+              shelterpulse/*|tests/*|pyproject.toml|tox.ini|uv.lock|.github/actions/ci-python/*)
+                python=true; docker=true ;;
+              ui/*|.github/actions/ci-ui/*)
+                ui=true; docker=true ;;
+              Dockerfile|docker-compose.yml|.github/actions/ci-docker/*)
+                docker=true ;;
+            esac
+          done <<< "$CHANGED"
+
+          echo "python=$python" >> "$GITHUB_OUTPUT"
+          echo "ui=$ui"        >> "$GITHUB_OUTPUT"
+          echo "docker=$docker" >> "$GITHUB_OUTPUT"
+
+  python:
+    name: Python CI
+    needs: detect
+    if: needs.detect.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-python
+
+  ui:
+    name: UI CI
+    needs: detect
+    if: needs.detect.outputs.ui == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-ui
+
+  docker:
+    name: Docker CI
+    needs: [detect, python, ui]
+    if: |
+      always() &&
+      needs.detect.result == 'success' &&
+      needs.detect.outputs.docker == 'true' &&
+      needs.python.result != 'failure' &&
+      needs.ui.result != 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-docker
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ github.sha }}

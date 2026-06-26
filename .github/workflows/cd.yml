@@ -4,14 +4,40 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "shelterpulse/**"
+      - "ui/**"
+      - "pyproject.toml"
+      - "uv.lock"
 
 jobs:
   deploy:
-    name: Deploy to cloud
+    name: Build, push latest, deploy
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push latest
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/ricardogr07/shelter-pulse:latest
+            ghcr.io/ricardogr07/shelter-pulse:sha-${{ github.sha }}
 
       # Phase 3: wire in actual deployment steps here.
       # Candidates: Render, Railway, Fly.io — chosen at deployment time.

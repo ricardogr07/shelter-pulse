@@ -1,0 +1,25 @@
+name: CI — Python
+description: uv + tox lint/security/test
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies
+      shell: bash
+      run: uv sync --all-groups
+
+    - name: Lint (pyrefly)
+      shell: bash
+      run: uv run tox -e lint
+
+    - name: Security scan (bandit)
+      shell: bash
+      run: uv run tox -e security
+
+    - name: Unit tests
+      shell: bash
+      run: uv run tox -e test

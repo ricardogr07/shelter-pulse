@@ -1,0 +1,39 @@
+name: CI — UI
+description: Node type-check/lint/build/cypress
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+        cache: "npm"
+        cache-dependency-path: ui/package-lock.json
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ui
+      run: npm ci
+
+    - name: Type check
+      shell: bash
+      working-directory: ui
+      run: npm run type-check
+
+    - name: Lint
+      shell: bash
+      working-directory: ui
+      run: npm run lint
+
+    - name: Build
+      shell: bash
+      working-directory: ui
+      run: npm run build
+
+    - name: Cypress smoke test
+      uses: cypress-io/github-action@v6
+      with:
+        working-directory: ui
+        start: npx serve -p 3000 out
+        wait-on: "http://localhost:3000"
+        browser: chrome
