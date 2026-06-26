@@ -1,0 +1,36 @@
+# --- API target ---
+FROM python:3.12-slim AS api
+
+WORKDIR /app
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copy dependency files first for layer caching
+COPY pyproject.toml uv.lock ./
+RUN uv sync --no-dev --no-install-project
+
+# Copy source
+COPY shelterpulse/ shelterpulse/
+COPY scenarios/ scenarios/
+RUN uv sync --no-dev
+
+EXPOSE 8000
+CMD ["uv", "run", "uvicorn", "shelterpulse.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+
+# --- UI build stage ---
+FROM node:20-alpine AS ui-build
+
+WORKDIR /app
+COPY ui/package.json ui/package-lock.json ./
+RUN npm ci
+COPY ui/ .
+RUN npm run build
+
+
+# --- UI target (static export via nginx) ---
+FROM nginx:alpine AS ui
+
+COPY --from=ui-build /app/out /usr/share/nginx/html
+EXPOSE 3000

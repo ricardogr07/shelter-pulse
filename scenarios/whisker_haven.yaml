@@ -1,0 +1,115 @@
+# Whisker Haven — demo scenario for ShelterPulse
+# A mid-size cat-only shelter with a foster network, modelled during kitten season.
+# All values are synthetic and representative, not from a real organization.
+
+name: "Whisker Haven"
+version: "0.1"
+description: >
+  Mid-size cat-only rescue shelter in its spring/summer kitten season.
+  Models intake surge, isolation bottleneck, foster network strain,
+  and the impact of a $5,000 intervention budget across four strategies.
+
+# ── Simulation parameters ───────────────────────────────────────────────────
+duration_days: 90          # three-month window covering kitten season
+seed: 42
+n_replications: 64
+
+# ── Intake model ─────────────────────────────────────────────────────────────
+# Baseline: ~3.2 cats/day; kitten season multiplier applied via seasonal_events
+intake_rate_per_day: 3.2
+
+# Population mix at intake (weights must sum to 1.0)
+# Based on 2025 shelter data: kittens ≈ 59% of cat intakes
+intake_profiles:
+  - age_class: neonatal          # bottle-feeders <4 weeks
+    health_status: medical_hold
+    weight: 0.20
+  - age_class: weaned_kitten     # 4–12 weeks
+    health_status: healthy
+    weight: 0.25
+  - age_class: weaned_kitten
+    health_status: medical_hold
+    weight: 0.14
+  - age_class: juvenile          # 3–6 months
+    health_status: healthy
+    weight: 0.18
+  - age_class: adult
+    health_status: healthy
+    weight: 0.15
+  - age_class: adult
+    health_status: isolation_required
+    weight: 0.08
+
+# ── Housing capacity ──────────────────────────────────────────────────────────
+housing_capacity: 80       # total cages + community rooms
+isolation_capacity: 12     # dedicated isolation slots (the known bottleneck)
+
+# ── Workforce ────────────────────────────────────────────────────────────────
+workforce:
+  - role: vet_tech
+    fte: 1.5
+    hours_per_day: 8.0
+    skills: [medical_assessment, vaccination, treatment]
+
+  - role: animal_care
+    fte: 3.0
+    hours_per_day: 8.0
+    skills: [feeding, cleaning, socialization, neonatal_care]
+
+  - role: foster_coordinator
+    fte: 0.5
+    hours_per_day: 4.0
+    skills: [foster_placement, foster_support, adoption_counseling]
+
+# ── Foster network ────────────────────────────────────────────────────────────
+foster_network:
+  capacity: 40                       # max simultaneous placements
+  coordinator_hours_per_week: 20.0   # coordinator time for placements + support
+  supply_cost_per_cat_day: 2.50      # food/supplies paid by shelter per foster cat
+
+# ── Cost model ────────────────────────────────────────────────────────────────
+cost_model:
+  fixed_per_day: 350.00              # rent, utilities, admin
+  variable_per_cat_day: 8.50         # food, litter, routine supplies
+  medical_event_cost: 85.00          # average vet/med cost per medical event
+  adoption_event_cost: 250.00        # marketing + staffing per adoption event
+
+# ── Seasonal events ───────────────────────────────────────────────────────────
+seasonal_events:
+  - name: "Kitten Season Peak"
+    start_day: 14                    # begins week 3
+    duration_days: 42                # six-week peak (weeks 3–8)
+    intake_multiplier: 2.2           # intake rate × 2.2 = ~7 cats/day
+
+  - name: "Vet Tech Absence"
+    start_day: 55                    # mid-season workforce shock
+    duration_days: 5
+    intake_multiplier: 1.0           # no intake change; workforce impact modelled in engine
+
+# ── Interventions (budget allocation to be optimized) ────────────────────────
+# budget_share values here are the *baseline equal allocation* starting point.
+# The optimizer will vary these; they must sum to ≤ 1.0.
+interventions:
+  - type: foster_support
+    budget_share: 0.25
+    effect_params:
+      capacity_increase_per_dollar: 0.002    # additional foster slots per $ spent
+      coordinator_hours_per_dollar: 0.001
+
+  - type: extra_clinic_hours
+    budget_share: 0.25
+    effect_params:
+      vet_hours_per_dollar: 0.005            # additional vet-tech hours per $ spent
+      clearance_speed_multiplier: 1.0        # applied proportionally to budget share
+
+  - type: temporary_isolation
+    budget_share: 0.25
+    effect_params:
+      slots_per_dollar: 0.0008              # temporary isolation slots per $ spent
+
+  - type: adoption_events
+    budget_share: 0.25
+    effect_params:
+      adoption_rate_multiplier_per_dollar: 0.0001  # increased adoption probability
+
+total_intervention_budget: 5000.00   # USD, monthly

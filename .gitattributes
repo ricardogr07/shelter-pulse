@@ -1,0 +1,9 @@
+# Normalize line endings to LF in the repository
+* text=auto eol=lf
+
+# Force binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
+uv.lock text eol=lf

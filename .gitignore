@@ -1,0 +1,66 @@
+# Internal docs — never commit
+\#hackthekitty/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.env
+.python-version.local
+
+# uv
+.uv/
+
+# tox
+.tox/
+
+# pytest
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# pyrefly
+.pyrefly/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cypress
+ui/cypress/videos/
+ui/cypress/screenshots/
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Secrets
+.env.local
+.env.*.local
+*.pem

@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "shelterpulse"
+version = "0.1.0"
+description = "Simulation and optimization laboratory for cat-shelter resource allocation"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.12"
+dependencies = [
+    "simpy>=4",
+    "pydantic>=2",
+    "pyyaml>=6",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "typer>=0.12",
+    "numpy>=2",
+]
+
+[project.optional-dependencies]
+optimize = ["jax", "jaxlib"]
+temporal = ["temporalio>=1.7"]
+
+[project.scripts]
+shelterpulse = "shelterpulse.cli.main:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov",
+    "pytest-asyncio",
+    "httpx",
+    "pyrefly>=0.15",
+    "bandit[toml]>=1.8",
+    "tox>=4",
+    "tox-uv>=1",
+    "hatchling",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["shelterpulse"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["shelterpulse"]
+omit = ["tests/*"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "ui"]
+skips = []
+
+[tool.pyrefly]
+project_includes = ["shelterpulse"]
+python_version = "3.12"
