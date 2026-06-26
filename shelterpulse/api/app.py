@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import dataclasses
+import io
+import tempfile
+import zipfile
 from pathlib import Path
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, model_validator
 
 from shelterpulse.core.montecarlo import make_seed_set
@@ -113,3 +117,31 @@ def baselines() -> dict:
         name: AllocationIn(**dataclasses.asdict(alloc))
         for name, alloc in ALL_BASELINES.items()
     }
+
+
+@app.post("/export")
+def export(req: SweepRequest) -> StreamingResponse:
+    from shelterpulse.core.export import export_results
+
+    scenario = _get_scenario()
+    seeds = make_seed_set(scenario.seed, req.n_replications)
+    results = run_optimization_sweep(
+        scenario,
+        budget=scenario.total_intervention_budget,
+        n_candidates=req.n_candidates,
+        seed_set=seeds,
+        use_bo=req.use_bo,
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        out_dir = Path(tmp)
+        paths = export_results(scenario, results, seeds, out_dir)
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for p in paths:
+                zf.write(p, p.name)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/zip",
+            headers={"Content-Disposition": "attachment; filename=shelterpulse-results.zip"},
+        )

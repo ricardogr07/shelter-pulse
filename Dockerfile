@@ -26,6 +26,8 @@ WORKDIR /app
 COPY ui/package.json ui/package-lock.json ./
 RUN npm ci
 COPY ui/ .
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 
@@ -33,4 +35,4 @@ RUN npm run build
 FROM nginx:alpine AS ui
 
 COPY --from=ui-build /app/out /usr/share/nginx/html
-EXPOSE 3000
+EXPOSE 80
