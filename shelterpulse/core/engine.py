@@ -8,7 +8,7 @@ Cat flow:
 from __future__ import annotations
 
 import dataclasses
-from typing import Generator
+from typing import TYPE_CHECKING, Generator
 
 import numpy as np
 import simpy
@@ -20,6 +20,9 @@ from shelterpulse.core.schema import (
     Scenario,
     SeasonalEvent,
 )
+
+if TYPE_CHECKING:
+    from shelterpulse.core.interventions import InterventionParams
 
 
 # ── Result dataclasses ────────────────────────────────────────────────────────
@@ -102,14 +105,15 @@ def _isolation_days(profile: CatIntakeProfile, rng: np.random.Generator) -> floa
     return float(rng.gamma(2.0, 7.0))  # mean ~14 days
 
 
-def _adoption_wait_days(profile: CatIntakeProfile, rng: np.random.Generator) -> float:
+def _adoption_wait_days(profile: CatIntakeProfile, rng: np.random.Generator, multiplier: float = 1.0) -> float:
     """Days from adoption-ready to adoption/transfer event."""
-    # Neonatals take longer; adults have higher transfer probability
     if profile.age_class == CatAgeClass.neonatal:
-        return float(rng.gamma(3.0, 10.0))
-    if profile.age_class == CatAgeClass.adult:
-        return float(rng.exponential(12.0))
-    return float(rng.gamma(2.0, 5.0))
+        raw = float(rng.gamma(3.0, 10.0))
+    elif profile.age_class == CatAgeClass.adult:
+        raw = float(rng.exponential(12.0))
+    else:
+        raw = float(rng.gamma(2.0, 5.0))
+    return raw * multiplier
 
 
 def _current_intake_rate(scenario: Scenario, day: float) -> float:
@@ -131,6 +135,7 @@ def _cat_process(
     scenario: Scenario,
     counters: _Counters,
     rng: np.random.Generator,
+    adoption_wait_multiplier: float = 1.0,
 ) -> Generator:
     """SimPy process representing one cat's journey through the shelter."""
 
@@ -178,7 +183,7 @@ def _cat_process(
             counters.total_cost += scenario.foster_network.supply_cost_per_cat_day
 
         # 6. Wait until adoption-ready (animal care maintains the cat)
-        wait_d = _adoption_wait_days(profile, rng)
+        wait_d = _adoption_wait_days(profile, rng, adoption_wait_multiplier)
         care_h_per_day = 0.5 if profile.age_class == CatAgeClass.neonatal else 0.25
         counters.animal_care_busy_hours += wait_d * care_h_per_day
         counters.total_cost += scenario.cost_model.variable_per_cat_day * wait_d
@@ -206,6 +211,7 @@ def _intake_generator(
     resources: dict[str, simpy.Resource],
     counters: _Counters,
     rng: np.random.Generator,
+    adoption_wait_multiplier: float = 1.0,
 ) -> Generator:
     """Generate cat arrivals using a non-homogeneous Poisson process."""
     weights = np.array([p.weight for p in scenario.intake_profiles])
@@ -222,7 +228,7 @@ def _intake_generator(
 
         profile = profiles[rng.choice(len(profiles), p=weights)]
         env.process(
-            _cat_process(env, counters.total_intake, profile, resources, scenario, counters, rng)
+            _cat_process(env, counters.total_intake, profile, resources, scenario, counters, rng, adoption_wait_multiplier)
         )
 
 
@@ -257,12 +263,13 @@ def _metrics_sampler(
 
 # ── Public entry point ─────────────────────────────────────────────────────────
 
-def run_simulation(scenario: Scenario, seed: int) -> SimulationResult:
+def run_simulation(scenario: Scenario, seed: int, intervention: "InterventionParams | None" = None) -> SimulationResult:
     """Run one replication of the shelter simulation and return aggregated results.
 
     Args:
         scenario: Validated scenario configuration.
         seed: Random seed for this replication (use different seeds per replication).
+        intervention: Optional resource deltas from budget allocation.
 
     Returns:
         SimulationResult with flow counts, utilization, and financial metrics.
@@ -282,16 +289,26 @@ def run_simulation(scenario: Scenario, seed: int) -> SimulationResult:
         sum(w.fte for w in scenario.workforce if w.role.value == "foster_coordinator")
     ))
 
+    # Apply intervention deltas
+    extra_isolation = 0
+    extra_foster = 0
+    adoption_wait_multiplier = 1.0
+    if intervention is not None:
+        extra_isolation = intervention.extra_isolation_slots
+        extra_foster = intervention.extra_foster_slots
+        vet_tech_capacity += max(1, round(intervention.extra_vet_tech_fte)) if intervention.extra_vet_tech_fte > 0 else 0
+        adoption_wait_multiplier = intervention.adoption_wait_multiplier
+
     resources: dict[str, simpy.Resource] = {
         "vet_tech": simpy.Resource(env, capacity=vet_tech_capacity),
         "animal_care": simpy.Resource(env, capacity=animal_care_capacity),
         "foster_coordinator": simpy.Resource(env, capacity=foster_coord_capacity),
         "housing": simpy.Resource(env, capacity=scenario.housing_capacity),
-        "isolation": simpy.Resource(env, capacity=scenario.isolation_capacity),
-        "foster": simpy.Resource(env, capacity=scenario.foster_network.capacity),
+        "isolation": simpy.Resource(env, capacity=scenario.isolation_capacity + extra_isolation),
+        "foster": simpy.Resource(env, capacity=scenario.foster_network.capacity + extra_foster),
     }
 
-    env.process(_intake_generator(env, scenario, resources, counters, rng))
+    env.process(_intake_generator(env, scenario, resources, counters, rng, adoption_wait_multiplier))
     env.process(_metrics_sampler(env, resources, counters, scenario))
     env.run(until=scenario.duration_days * 24.0)
 

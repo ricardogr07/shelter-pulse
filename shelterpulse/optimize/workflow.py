@@ -48,15 +48,32 @@ def _inprocess_sweep(
     n_candidates: int,
     seed_set: Sequence[int],
 ) -> list[EvaluationResult]:
-    """Run the optimization sweep in-process (no Temporal)."""
-    # Import here to avoid circular imports at module level
-    from shelterpulse.optimize.interface import evaluate_candidate
-    from shelterpulse.optimize.baselines import equal_allocation
+    """Evaluate all baselines + n_candidates random allocations, return ranked results."""
+    import numpy as np
 
-    # Placeholder: equal allocation for all candidates until optimizer is wired
-    allocation = equal_allocation()
-    result = evaluate_candidate(allocation, scenario, seed_set)
-    return [result]
+    from shelterpulse.optimize.baselines import ALL_BASELINES
+    from shelterpulse.optimize.interface import evaluate_candidate
+
+    seed_list = list(seed_set)
+    results: list[EvaluationResult] = []
+
+    for _name, alloc in ALL_BASELINES.items():
+        results.append(evaluate_candidate(alloc, scenario, seed_list))
+
+    # Random candidates (uniform Dirichlet — guaranteed to sum to 1)
+    rng = np.random.default_rng(scenario.seed)
+    for _ in range(n_candidates):
+        shares = rng.dirichlet([1.0, 1.0, 1.0, 1.0])
+        alloc = CandidateAllocation(
+            foster_support=float(shares[0]),
+            clinic_hours=float(shares[1]),
+            temporary_isolation=float(shares[2]),
+            adoption_events=float(shares[3]),
+        )
+        results.append(evaluate_candidate(alloc, scenario, seed_list))
+
+    results.sort(key=lambda r: (not r.is_feasible, r.mean_overflow_cat_days))
+    return results
 
 
 def _temporal_sweep(
@@ -82,6 +99,7 @@ def run_optimization_sweep(
     budget: float,
     n_candidates: int = 30,
     seed_set: Sequence[int] | None = None,
+    use_bo: bool = True,
 ) -> list[EvaluationResult]:
     """Entry point for the optimization sweep.
 
@@ -90,6 +108,7 @@ def run_optimization_sweep(
         budget: Total intervention budget in USD.
         n_candidates: Number of candidate allocations to evaluate.
         seed_set: Replication seeds. Defaults to 64 seeds starting from scenario.seed.
+        use_bo: If True, run JAX-BO optimizer (or scipy fallback) merged with baselines.
 
     Returns:
         List of EvaluationResult, one per candidate evaluated.
@@ -99,4 +118,12 @@ def run_optimization_sweep(
 
     if TEMPORAL_ENABLED:
         return _temporal_sweep(scenario, budget, n_candidates, seed_set)
+    if use_bo:
+        from shelterpulse.optimize.jaxbo_optimizer import optimize_jaxbo
+
+        bo_results = optimize_jaxbo(scenario, seed_set, n_candidates)
+        baseline_results = _inprocess_sweep(scenario, budget, 0, seed_set)
+        combined = baseline_results + bo_results
+        combined.sort(key=lambda r: (not r.is_feasible, r.mean_overflow_cat_days))
+        return combined
     return _inprocess_sweep(scenario, budget, n_candidates, seed_set)
