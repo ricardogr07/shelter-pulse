@@ -10,6 +10,7 @@ on:
       - "shelterpulse/**"
       - "ui/**"
       - "pyproject.toml"
+      - "uv.lock"
 
 jobs:
   deploy:
