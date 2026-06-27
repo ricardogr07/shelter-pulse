@@ -17,8 +17,8 @@ All work flows through pull requests. No direct pushes to `develop` or `main`.
 |------|---------|---------|
 | `ci.yml` | PR → `develop` | Lint, test, build (quality gate) |
 | `promote.yml` | PR → `main` / push to `main` | Full suite + GHCR image push |
-| `deploy.yml` | Tag `v*` | Push to ECR → App Runner blue/green |
-| `publish-pypi.yml` | PR merge to `develop` touching `shelterpulse/core/` | Build + publish `shelterpulse-core` to PyPI |
+| `release.yml` | Manual (`workflow_dispatch`) on `main` | Create version tag + GitHub Release with changelog |
+| `deploy.yml` | Tag `v*` pushed (by release workflow) | Build image → push to ECR → App Runner auto-deploys |
 
 ## Promotion Flow
 
@@ -28,7 +28,7 @@ sequenceDiagram
     participant F as feat/* branch
     participant D as develop
     participant M as main
-    participant GHCR as GHCR
+    participant R as Release workflow
     participant ECR as ECR
     participant AR as App Runner
 
@@ -36,13 +36,25 @@ sequenceDiagram
     F->>D: PR (ci.yml runs)
     Note over D: Python checks + UI checks + Docker build
     D->>M: PR (promote.yml runs)
-    Note over M: Full test suite + e2e
-    M->>GHCR: On merge: push image
-    Dev->>M: Create tag v*
+    Note over M: Full test suite + e2e + GHCR push
+    Dev->>R: Manual trigger: "Create Release v0.1.0"
+    R->>M: Creates tag v0.1.0 + GitHub Release
+    Note over R: Generates changelog from merged PRs
     M->>ECR: deploy.yml pushes image
     ECR->>AR: Auto-deploy (blue/green)
     Note over AR: Health check → swap or rollback
 ```
+
+## Release Process
+
+Tags can only be created via the Release workflow (protected by tag ruleset).
+No manual `git tag` + `git push` is allowed.
+
+1. Ensure all work is merged to `main` via develop
+2. Go to Actions → Release → Run workflow
+3. Input version (semver, e.g., `0.1.0`)
+4. Optionally check "dry run" to preview changelog
+5. Workflow creates tag, GitHub Release with auto-changelog, triggers deploy
 
 ## CI on develop (`ci.yml`)
 
@@ -94,11 +106,11 @@ graph TD
 
 ## Deploy (`deploy.yml`)
 
-Triggered by pushing a version tag (`v*`).
+Triggered automatically when the Release workflow pushes a `v*` tag.
 
 ```mermaid
 graph TD
-    A[Tag v1.2.3 pushed] --> B[Authenticate AWS via OIDC]
+    A[Tag v1.2.3 pushed by Release workflow] --> B[Authenticate AWS via OIDC]
     B --> C[Login to ECR]
     C --> D[Build + push image to ECR]
     D --> E[App Runner detects new image]
