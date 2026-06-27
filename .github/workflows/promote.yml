@@ -34,11 +34,6 @@ jobs:
       - name: Install Python deps
         run: uv sync --all-groups
 
-      - name: Start API
-        run: |
-          uv run uvicorn shelterpulse.api.app:app --host 0.0.0.0 --port 8000 &
-          sleep 3
-
       - name: Run e2e tests
         run: uv run pytest tests/e2e/ -v
 

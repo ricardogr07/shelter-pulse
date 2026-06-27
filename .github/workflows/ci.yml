@@ -29,11 +29,11 @@ jobs:
 
           while IFS= read -r f; do
             case "$f" in
-              shelterpulse/*|tests/*|pyproject.toml|tox.ini|uv.lock)
+              shelterpulse/*|tests/*|pyproject.toml|tox.ini|uv.lock|.github/actions/ci-python/*)
                 python=true; docker=true ;;
-              ui/*)
+              ui/*|.github/actions/ci-ui/*)
                 ui=true; docker=true ;;
-              Dockerfile|docker-compose.yml)
+              Dockerfile|docker-compose.yml|.github/actions/ci-docker/*)
                 docker=true ;;
             esac
           done <<< "$CHANGED"
