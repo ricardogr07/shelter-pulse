@@ -63,6 +63,12 @@ desktop.ini
 # Precomputed caches (regenerate with scripts/precompute_demo.py)
 scenarios/*.pkl
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+
 # Secrets
 .env.local
 .env.*.local
