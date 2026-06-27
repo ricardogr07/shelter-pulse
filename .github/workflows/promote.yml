@@ -1,0 +1,78 @@
+name: Promote to main
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  python:
+    name: Python checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-python
+
+  ui:
+    name: UI checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-ui
+
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps
+        run: uv sync --all-groups
+
+      - name: Start API
+        run: |
+          uv run uvicorn shelterpulse.api.app:app --host 0.0.0.0 --port 8000 &
+          sleep 3
+
+      - name: Run e2e tests
+        run: uv run pytest tests/e2e/ -v
+
+  ghcr:
+    name: Push to GHCR
+    needs: [python, ui, e2e]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/ricardogr07/shelter-pulse
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
