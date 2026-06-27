@@ -1,0 +1,46 @@
+name: Deploy
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_call:
+
+jobs:
+  deploy:
+    name: Build and push to ECR
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Extract version from tag
+        id: version
+        run: echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/shelterpulse:v${{ steps.version.outputs.tag }}
+            ${{ steps.ecr-login.outputs.registry }}/shelterpulse:latest
+
+      - name: Summary
+        run: |
+          echo "### Deployed v${{ steps.version.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Image: \`${{ steps.ecr-login.outputs.registry }}/shelterpulse:v${{ steps.version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "App Runner will auto-deploy from ECR once the service is created." >> "$GITHUB_STEP_SUMMARY"

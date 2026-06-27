@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., 0.1.0)"
+        required: true
+        type: string
+      dry_run:
+        description: "Preview without creating tag/release"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Create release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version format
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Version must be semver (e.g., 0.1.0)"
+            exit 1
+          fi
+
+      - name: Check tag doesn't already exist
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if git tag -l "v$VERSION" | grep -q .; then
+            echo "::error::Tag v$VERSION already exists"
+            exit 1
+          fi
+
+      - name: Preview changelog
+        if: inputs.dry_run
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            echo "## First release — all commits included"
+            git log --oneline
+          else
+            echo "## Changes since $LAST_TAG"
+            git log --oneline "$LAST_TAG"..HEAD
+          fi
+
+      - name: Create tag and release
+        if: "!inputs.dry_run"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --generate-notes \
+            --latest
+
+  deploy:
+    name: Deploy to ECR
+    needs: release
+    if: "!inputs.dry_run"
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
