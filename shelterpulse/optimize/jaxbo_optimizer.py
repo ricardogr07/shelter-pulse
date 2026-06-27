@@ -17,7 +17,7 @@ from shelterpulse.core.schema import Scenario
 from shelterpulse.optimize.workflow import CandidateAllocation, EvaluationResult
 
 try:
-    import jax  # noqa: F401
+    import jax  # noqa: F401  # pyrefly: ignore[missing-import]
     _HAS_JAX = True
 except ImportError:
     _HAS_JAX = False
