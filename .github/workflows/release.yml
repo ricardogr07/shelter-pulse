@@ -26,16 +26,20 @@ jobs:
           fetch-depth: 0
 
       - name: Validate version format
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
-          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::Version must be semver (e.g., 0.1.0)"
             exit 1
           fi
 
       - name: Check tag doesn't already exist
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
-          if git tag -l "v${{ inputs.version }}" | grep -q .; then
-            echo "::error::Tag v${{ inputs.version }} already exists"
+          if git tag -l "v$VERSION" | grep -q .; then
+            echo "::error::Tag v$VERSION already exists"
             exit 1
           fi
 
@@ -55,10 +59,18 @@ jobs:
         if: "!inputs.dry_run"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
         run: |
-          git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
-          git push origin "v${{ inputs.version }}"
-          gh release create "v${{ inputs.version }}" \
-            --title "v${{ inputs.version }}" \
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
             --generate-notes \
             --latest
+
+  deploy:
+    name: Deploy to ECR
+    needs: release
+    if: "!inputs.dry_run"
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
