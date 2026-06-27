@@ -13,10 +13,12 @@ RUN uv sync --no-dev --no-install-project
 # Copy source
 COPY shelterpulse/ shelterpulse/
 COPY scenarios/ scenarios/
-RUN uv sync --no-dev
+
+# Add project root to Python path (avoids hatchling build-wheel step in image)
+ENV PYTHONPATH=/app
 
 EXPOSE 8000
-CMD ["uv", "run", "uvicorn", "shelterpulse.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD [".venv/bin/uvicorn", "shelterpulse.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
 
 
 # --- UI build stage ---

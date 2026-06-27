@@ -54,7 +54,22 @@ security/       Aikido scan reports
 
 ## Live demo
 
-_URL added after Phase 3 deployment._
+| Service | URL |
+|---------|-----|
+| UI | _URL added after cloud deployment (Jul 4-5)_ |
+| API docs | _URL added after cloud deployment (Jul 4-5)_ |
+
+To deploy: push to GitHub → connect repo on [Render](https://render.com) → two Web Services (API uses root `Dockerfile` target `api`, UI uses root `Dockerfile` target `ui` with `NEXT_PUBLIC_API_URL` build arg set to the API service URL).
+
+## Design decisions
+
+**Simulation:** Discrete-event simulation (SimPy) with non-homogeneous Poisson intake, realistic cat lifecycle (assessment → isolation → medical → housing → foster → adoption), and common random numbers across optimizer candidates for fair comparison.
+
+**Optimization:** Bayesian Optimization via jaxbo with numpy fallback (jax is optional). Random Dirichlet candidates + all named baselines evaluated per sweep.
+
+**Temporal:** Architecture is Temporal-ready — each `evaluate_candidate()` call maps to a Temporal activity. In-process path chosen for hackathon timeline; `TEMPORAL_ENABLED = False` flag can flip it on without touching the optimizer interface.
+
+**No new npm packages:** Chart bars use Tailwind width-percentage `<div>` rather than a chart library — zero build-time dependency risk.
 
 ## Scope & future work
 
