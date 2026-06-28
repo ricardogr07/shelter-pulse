@@ -12,12 +12,14 @@
     "cy:open": "cypress open"
   },
   "dependencies": {
+    "katex": "0.17.0",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/katex": "0.16.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
