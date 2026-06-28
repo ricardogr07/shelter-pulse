@@ -1,0 +1,24 @@
+# Node — npm ci runs inside the container, don't send local node_modules
+ui/node_modules
+ui/.next
+
+# Python venv
+.venv
+__pycache__
+*.pyc
+
+# Git & IDE
+.git
+.github
+.kiro
+.localagent
+.claude
+.mypy_cache
+.pytest_cache
+
+# Misc
+*.md
+docs/
+security/
+tests/
+#hackthekitty/
