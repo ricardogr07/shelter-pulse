@@ -25,6 +25,8 @@ variable "github_repo" {
   default = "ricardogr07/shelter-pulse"
 }
 
+data "aws_caller_identity" "current" {}
+
 # OIDC provider — GitHub's token issuer
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
@@ -56,7 +58,7 @@ resource "aws_iam_role" "github_actions" {
   })
 }
 
-# Policy: ECR push/pull + App Runner management
+# Policy: ECR push/pull + ECS Express Mode management
 resource "aws_iam_role_policy" "deploy" {
   name = "shelterpulse-deploy"
   role = aws_iam_role.github_actions.id
@@ -82,28 +84,29 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = "*"
       },
       {
-        Sid    = "AppRunner"
+        Sid    = "ECSExpress"
         Effect = "Allow"
         Action = [
-          "apprunner:CreateService",
-          "apprunner:UpdateService",
-          "apprunner:DescribeService",
-          "apprunner:ListServices",
-          "apprunner:StartDeployment",
-          "apprunner:ListOperations",
-          "apprunner:TagResource",
-          "apprunner:CreateAutoScalingConfiguration",
-          "apprunner:DescribeAutoScalingConfiguration"
+          "ecs:*ExpressGatewayService",
+          "ecs:ListServices",
+          "ecs:DescribeServices",
+          "ecs:TagResource"
         ]
         Resource = "*"
       },
       {
-        Sid    = "AppRunnerECRAccess"
+        Sid    = "PassExpressRoles"
         Effect = "Allow"
-        Action = [
-          "iam:PassRole",
-          "iam:CreateServiceLinkedRole"
+        Action = ["iam:PassRole"]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecsTaskExecutionRole",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecsInfrastructureRoleForExpressServices"
         ]
+      },
+      {
+        Sid      = "ServiceLinkedRoles"
+        Effect   = "Allow"
+        Action   = ["iam:CreateServiceLinkedRole"]
         Resource = "*"
       }
     ]
