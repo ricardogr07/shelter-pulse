@@ -94,3 +94,44 @@ output "apprunner_ecr_role_arn" {
   value       = aws_iam_role.apprunner_ecr.arn
   description = "Role ARN for App Runner to pull from ECR"
 }
+
+# App Runner service — blue/green is built-in (new image → new revision → health check → swap)
+resource "aws_apprunner_service" "app" {
+  service_name = "shelterpulse"
+
+  source_configuration {
+    authentication_configuration {
+      access_role_arn = aws_iam_role.apprunner_ecr.arn
+    }
+
+    image_repository {
+      image_identifier      = "${aws_ecr_repository.app.repository_url}:latest"
+      image_repository_type = "ECR"
+
+      image_configuration {
+        port = "8000"
+      }
+    }
+
+    auto_deployments_enabled = true
+  }
+
+  instance_configuration {
+    cpu    = "0.25 vCPU"
+    memory = "0.5 GB"
+  }
+
+  health_check_configuration {
+    protocol            = "HTTP"
+    path                = "/health"
+    interval            = 10
+    timeout             = 5
+    healthy_threshold   = 1
+    unhealthy_threshold = 3
+  }
+}
+
+output "app_url" {
+  value       = "https://${aws_apprunner_service.app.service_url}"
+  description = "App Runner service URL"
+}
