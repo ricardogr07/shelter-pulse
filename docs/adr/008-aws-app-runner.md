@@ -1,6 +1,6 @@
 # ADR-008: Switch Cloud Deployment from Render to AWS App Runner
 
-**Status:** Accepted (supersedes ADR-007) | **Date:** 2026-06-26
+**Status:** Superseded by [ADR-011](011-ecs-express-mode.md) — App Runner closed to new customers as of 2026-04-30 | **Date:** 2026-06-26
 
 ## Context
 

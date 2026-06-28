@@ -46,3 +46,23 @@ FROM nginx:alpine AS ui
 COPY --from=ui-build /app/out /usr/share/nginx/html
 COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
+
+
+# --- Consolidated target (uvicorn + nginx in one image) for ECS Express Mode ---
+# Reuses the `api` stage (venv + uvicorn), adds nginx to serve the static UI and
+# reverse-proxy /api/* to uvicorn. Build the UI with NEXT_PUBLIC_API_URL=/api so the
+# browser calls a same-origin relative path (no CORS, no build-time API URL coupling).
+FROM api AS app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nginx \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /etc/nginx/sites-enabled/default
+
+COPY --from=ui-build /app/out /usr/share/nginx/html
+COPY deploy/nginx-app.conf /etc/nginx/conf.d/default.conf
+COPY deploy/start.sh /start.sh
+RUN chmod +x /start.sh
+
+EXPOSE 80
+CMD ["/start.sh"]
