@@ -68,7 +68,8 @@ jobs:
           aws ecs update-express-gateway-service \
             --service-arn "$SERVICE_ARN" \
             --primary-container "{\"image\":\"$IMAGE\",\"containerPort\":80}" \
-            --monitor-resources
+            --monitor-resources DEPLOYMENT \
+            --monitor-mode TEXT-ONLY
 
       - name: Summary
         run: |

@@ -74,14 +74,12 @@ export async function getSensitivity(s: CustomScenarioParams): Promise<Sensitivi
   }));
 }
 
-/** POST /simulate/timeline — daily housing usage for one sim run */
+/** POST /simulate/timeline/builder — daily housing usage for the user's custom scenario */
 export async function getTimeline(s: CustomScenarioParams): Promise<DailySnapshot[]> {
-  // Use the whisker-haven timeline endpoint with default allocation
-  // (custom builder doesn't have a /timeline/builder yet — use base scenario as proxy)
-  const r = await fetch(`${API}/simulate/timeline`, {
+  const r = await fetch(`${API}/simulate/timeline/builder`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ n_replications: 1 }),
+    body: JSON.stringify({ ...s, n_replications: 1 }),
   });
   if (!r.ok) return [];
   return r.json();
