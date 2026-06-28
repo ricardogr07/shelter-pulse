@@ -76,7 +76,7 @@ workforce: [{ role: vet_tech, fte: 1.5 }]
 foster_network: { capacity: 8 }
 total_intervention_budget: 5000`}</pre>
           </div>
-          <p>The <strong>what-if scenario</strong> system lets you change any parameter and re-run: <em>"What if intake increases 20%? What if we add 5 isolation slots?"</em></p>
+          <p>The <strong>what-if scenario</strong> system lets you change any parameter and re-run: <em>&ldquo;What if intake increases 20%? What if we add 5 isolation slots?&rdquo;</em></p>
           <p>Multiple seasonal events can stack — e.g., kitten season (day 1–45) + holiday surrender spike (day 60–70, 1.5× multiplier).</p>
         </div>
       )
@@ -140,7 +140,7 @@ total_intervention_budget: 5000`}</pre>
       title: "7. Sensitivity Analysis",
       content: (
         <div className="space-y-3">
-          <p>Sensitivity analysis answers: <em>"Which parameter matters most?"</em></p>
+          <p>Sensitivity analysis answers: <em>&ldquo;Which parameter matters most?&rdquo;</em></p>
           <p>We vary each input parameter <Tex>{String.raw`\pm 20\%`}</Tex> independently and measure the change in overflow:</p>
           <MathBlock>{String.raw`\Delta\text{Overflow}(p) = \text{Overflow}(p + 20\%) - \text{Overflow}(p - 20\%)`}</MathBlock>
           <p>Parameters with large <Tex>{String.raw`\Delta\text{Overflow}`}</Tex> are the ones worth investing in. The tornado chart ranks them — typically <strong>intake rate</strong> and <strong>housing capacity</strong> dominate.</p>

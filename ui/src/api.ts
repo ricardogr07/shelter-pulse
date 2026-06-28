@@ -51,5 +51,7 @@ export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, 
 }
 
 // ponytail: stubs return empty until /sensitivity and /timeline endpoints land
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getSensitivity(_s: CustomScenarioParams): Promise<SensitivityResult[]> { return []; }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getTimeline(_s: CustomScenarioParams): Promise<DailySnapshot[]> { return []; }
