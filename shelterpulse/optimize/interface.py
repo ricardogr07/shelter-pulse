@@ -53,10 +53,22 @@ def evaluate_candidate(
     # Budget is always respected by construction (CandidateAllocation shares ≤ 1)
     is_feasible = True
 
+    # 95% CI via t-distribution (scipy.stats.t.ppf)
+    n = len(overflow_samples)
+    from scipy.stats import t as t_dist
+    t_crit = float(t_dist.ppf(0.975, df=max(n - 1, 1)))
+    se_overflow = std_overflow / np.sqrt(n)
+    std_cost = float(np.std(cost_samples))
+    se_cost = std_cost / np.sqrt(n)
+
     return EvaluationResult(
         allocation=allocation,
         mean_overflow_cat_days=mean_overflow,
         std_overflow_cat_days=std_overflow,
         mean_total_cost=mean_cost,
         is_feasible=is_feasible,
+        ci95_overflow_low=max(0.0, mean_overflow - t_crit * se_overflow),
+        ci95_overflow_high=mean_overflow + t_crit * se_overflow,
+        ci95_cost_low=max(0.0, mean_cost - t_crit * se_cost),
+        ci95_cost_high=mean_cost + t_crit * se_cost,
     )
