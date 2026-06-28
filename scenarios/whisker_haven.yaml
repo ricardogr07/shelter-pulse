@@ -6,8 +6,9 @@ name: "Whisker Haven"
 version: "0.1"
 description: >
   Mid-size cat-only rescue shelter in its spring/summer kitten season.
-  Models intake surge, isolation bottleneck, foster network strain,
-  and the impact of a $5,000 intervention budget across four strategies.
+  Tight housing (35 slots) and small foster network (8 placements) ensure
+  the intake surge (~2.5×) causes measurable overflow without intervention.
+  The $5,000 budget across four strategies can reduce overflow to near zero.
 
 # ── Simulation parameters ───────────────────────────────────────────────────
 duration_days: 90          # three-month window covering kitten season
@@ -15,8 +16,8 @@ seed: 42
 n_replications: 64
 
 # ── Intake model ─────────────────────────────────────────────────────────────
-# Baseline: ~3.2 cats/day; kitten season multiplier applied via seasonal_events
-intake_rate_per_day: 3.2
+# Baseline: ~3.8 cats/day; kitten season multiplier applied via seasonal_events
+intake_rate_per_day: 3.8
 
 # Population mix at intake (weights must sum to 1.0)
 # Based on 2025 shelter data: kittens ≈ 59% of cat intakes
@@ -41,8 +42,8 @@ intake_profiles:
     weight: 0.08
 
 # ── Housing capacity ──────────────────────────────────────────────────────────
-housing_capacity: 80       # total cages + community rooms
-isolation_capacity: 12     # dedicated isolation slots (the known bottleneck)
+housing_capacity: 35       # total cages + community rooms (tight — produces overflow)
+isolation_capacity: 5      # dedicated isolation slots (the known bottleneck)
 
 # ── Workforce ────────────────────────────────────────────────────────────────
 workforce:
@@ -63,7 +64,7 @@ workforce:
 
 # ── Foster network ────────────────────────────────────────────────────────────
 foster_network:
-  capacity: 40                       # max simultaneous placements
+  capacity: 8                        # max simultaneous placements (small network)
   coordinator_hours_per_week: 20.0   # coordinator time for placements + support
   supply_cost_per_cat_day: 2.50      # food/supplies paid by shelter per foster cat
 
@@ -79,7 +80,7 @@ seasonal_events:
   - name: "Kitten Season Peak"
     start_day: 14                    # begins week 3
     duration_days: 42                # six-week peak (weeks 3–8)
-    intake_multiplier: 2.2           # intake rate × 2.2 = ~7 cats/day
+    intake_multiplier: 2.5           # intake rate × 2.5 = ~9.5 cats/day
 
   - name: "Vet Tech Absence"
     start_day: 55                    # mid-season workforce shock
