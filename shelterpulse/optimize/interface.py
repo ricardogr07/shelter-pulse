@@ -53,10 +53,13 @@ def evaluate_candidate(
     # Budget is always respected by construction (CandidateAllocation shares ≤ 1)
     is_feasible = True
 
-    # 95% CI via t-distribution (scipy.stats.t.ppf)
+    # 95% CI — use scipy t-distribution when available, else 1.96 normal approximation
     n = len(overflow_samples)
-    from scipy.stats import t as t_dist  # type: ignore[import-untyped]
-    t_crit = float(t_dist.ppf(0.975, df=max(n - 1, 1)))
+    try:
+        from scipy.stats import t as t_dist  # type: ignore[import-untyped]
+        t_crit = float(t_dist.ppf(0.975, df=max(n - 1, 1)))
+    except ImportError:
+        t_crit = 1.96  # normal approximation; accurate for n >= 30
     se_overflow = std_overflow / np.sqrt(n)
     std_cost = float(np.std(cost_samples))
     se_cost = std_cost / np.sqrt(n)
