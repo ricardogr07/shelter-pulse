@@ -156,10 +156,10 @@ def _builder_to_scenario(req: BuilderRequest) -> Scenario:
         {"age_class": "adult", "health_status": "isolation_required", "weight": round(af * 0.3, 4)},
     ]
     # Normalise weights to sum exactly to 1.0
-    weights = [p["weight"] for p in base_raw["intake_profiles"]]
+    weights: list[float] = [float(p["weight"]) for p in base_raw["intake_profiles"]]
     total = sum(weights)
     for p in base_raw["intake_profiles"]:
-        p["weight"] = round(p["weight"] / total, 6)
+        p["weight"] = round(float(p["weight"]) / total, 6)
 
     return Scenario.model_validate(base_raw)
 

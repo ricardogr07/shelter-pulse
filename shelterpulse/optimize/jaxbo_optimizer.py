@@ -16,10 +16,10 @@ from shelterpulse.core.schema import Scenario
 from shelterpulse.optimize.workflow import CandidateAllocation, EvaluationResult
 
 try:
-    import jax
-    import jax.numpy as jnp
-    from jaxbo import acquisitions, input_priors
-    from jaxbo.models import GP
+    import jax  # type: ignore[import-untyped]
+    import jax.numpy as jnp  # type: ignore[import-untyped]
+    from jaxbo import acquisitions, input_priors  # type: ignore[import-untyped]
+    from jaxbo.models import GP  # type: ignore[import-untyped]
     _HAS_JAX = True
 except ImportError:
     _HAS_JAX = False
@@ -101,7 +101,7 @@ def _jaxbo_gp_ei(
     # --- Sequential GP+EI iterations ---
     lb = np.zeros(3)
     ub = np.ones(3)
-    prior = input_priors.uniform_prior(lb=lb, ub=ub)
+    prior = input_priors.uniform_prior(lb=lb, ub=ub)  # type: ignore[arg-type]
     gp_options = {"kernel": "Matern52", "input_prior": prior}
 
     for _ in range(n_bo):

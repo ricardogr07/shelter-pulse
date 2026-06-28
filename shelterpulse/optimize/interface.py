@@ -55,7 +55,7 @@ def evaluate_candidate(
 
     # 95% CI via t-distribution (scipy.stats.t.ppf)
     n = len(overflow_samples)
-    from scipy.stats import t as t_dist
+    from scipy.stats import t as t_dist  # type: ignore[import-untyped]
     t_crit = float(t_dist.ppf(0.975, df=max(n - 1, 1)))
     se_overflow = std_overflow / np.sqrt(n)
     std_cost = float(np.std(cost_samples))
