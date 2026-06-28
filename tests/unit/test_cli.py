@@ -8,8 +8,6 @@ from shelterpulse.cli.main import app
 runner = CliRunner()
 SCENARIO = Path(__file__).parent.parent.parent / "scenarios" / "whisker_haven.yaml"
 
-pytestmark = pytest.mark.skip(reason="pending: CLI --json/--scenario/--quiet flags not implemented yet")
-
 def test_simulate_json_output():
     result = runner.invoke(app, ["simulate", "--json", "--reps", "8"])
     assert result.exit_code == 0
