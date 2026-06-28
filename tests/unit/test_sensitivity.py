@@ -6,8 +6,6 @@ from shelterpulse.core.schema import load_scenario
 from shelterpulse.optimize.interface import evaluate_candidate
 from shelterpulse.optimize.workflow import CandidateAllocation
 
-pytestmark = pytest.mark.skip(reason="pending: requires scenario tuning (current scenario doesn't overflow)")
-
 _SCENARIO = load_scenario(Path(__file__).parent.parent.parent / "scenarios" / "whisker_haven.yaml")
 
 

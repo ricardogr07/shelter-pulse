@@ -8,7 +8,14 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy dependency files first for layer caching
 COPY pyproject.toml uv.lock ./
-RUN uv sync --no-dev --no-install-project
+RUN uv sync --no-dev --no-install-project --extra optimize
+
+# pyDOE shim: jaxbo imports `pyDOE` (old name); installed package is `pydoe` (new name)
+RUN python -c "import site; sp=[p for p in site.getsitepackages() if 'site-packages' in p][0]; open(sp+'/pyDOE.py','w').write('from pydoe import *\nfrom pydoe import lhs\n')"
+
+# Fix jaxbo compat with JAX 0.10+: jnp.clip(x, a_min=0) -> jnp.clip(x, 0, None)
+RUN find /app/.venv -path '*/jaxbo/*.py' \
+    -exec sed -i 's/np\.clip(\([^,]*\),\s*a_min=\([^,)]*\))/np.clip(\1, \2, None)/g' {} \;
 
 # Copy source
 COPY shelterpulse/ shelterpulse/
@@ -37,4 +44,5 @@ RUN npm run build
 FROM nginx:alpine AS ui
 
 COPY --from=ui-build /app/out /usr/share/nginx/html
+COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
