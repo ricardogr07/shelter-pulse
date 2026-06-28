@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import dataclasses
 import io
+import pickle
 import tempfile
 import zipfile
 from pathlib import Path
 
 import fastapi
+import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, model_validator
@@ -22,6 +24,7 @@ app = fastapi.FastAPI(title="ShelterPulse API", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 _SCENARIO_PATH = Path(__file__).parent.parent.parent / "scenarios" / "whisker_haven.yaml"
+_CACHE_PATH = Path(__file__).parent.parent.parent / "scenarios" / "whisker_haven_cache.pkl"
 _scenario: Scenario | None = None
 
 
@@ -31,6 +34,15 @@ def _get_scenario() -> Scenario:
         _scenario = load_scenario(_SCENARIO_PATH)
     return _scenario
 
+
+def _load_demo_cache() -> list | None:
+    if _CACHE_PATH.exists():
+        with open(_CACHE_PATH, "rb") as f:
+            return pickle.load(f)
+    return None
+
+
+# ── Request / Response models ─────────────────────────────────────────────────
 
 class AllocationIn(BaseModel):
     foster_support: float = 0.25
@@ -66,7 +78,93 @@ class EvaluationOut(BaseModel):
     std_overflow_cat_days: float
     mean_total_cost: float
     is_feasible: bool
+    ci95_overflow_low: float = 0.0
+    ci95_overflow_high: float = 0.0
+    ci95_cost_low: float = 0.0
+    ci95_cost_high: float = 0.0
 
+
+class BuilderRequest(BaseModel):
+    """Simplified 9-field form from the UI custom builder."""
+    duration_days: int = 90
+    housing_capacity: int = 35
+    isolation_slots: int = 5
+    vet_tech_fte: float = 1.5
+    intervention_budget: float = 5000.0
+    mean_intake_per_day: float = 3.8
+    kitten_fraction: float = 0.59
+    base_adoption_rate: float = 0.08
+    n_replications: int = 32
+
+
+class SensitivityPoint(BaseModel):
+    param: str
+    direction: str   # "high" or "low"
+    delta: float     # ±20%
+    mean_overflow_cat_days: float
+
+
+class TimelinePoint(BaseModel):
+    day: int
+    housing_used: int
+    overflow: int
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _er_to_out(r) -> EvaluationOut:
+    return EvaluationOut(
+        **dataclasses.asdict(r.allocation),
+        mean_overflow_cat_days=r.mean_overflow_cat_days,
+        std_overflow_cat_days=r.std_overflow_cat_days,
+        mean_total_cost=r.mean_total_cost,
+        is_feasible=r.is_feasible,
+        ci95_overflow_low=r.ci95_overflow_low,
+        ci95_overflow_high=r.ci95_overflow_high,
+        ci95_cost_low=r.ci95_cost_low,
+        ci95_cost_high=r.ci95_cost_high,
+    )
+
+
+def _builder_to_scenario(req: BuilderRequest) -> Scenario:
+    """Build a minimal Scenario from builder form fields."""
+    import yaml
+    base_raw = yaml.safe_load(_SCENARIO_PATH.read_text(encoding="utf-8"))
+
+    # Patch the relevant fields
+    base_raw["duration_days"] = req.duration_days
+    base_raw["housing_capacity"] = req.housing_capacity
+    base_raw["isolation_capacity"] = req.isolation_slots
+    base_raw["total_intervention_budget"] = req.intervention_budget
+    base_raw["intake_rate_per_day"] = req.mean_intake_per_day
+
+    # Adjust foster network to a sane fraction of housing
+    base_raw["foster_network"]["capacity"] = max(1, req.housing_capacity // 4)
+
+    # Scale workforce vet_tech fte
+    for w in base_raw["workforce"]:
+        if w["role"] == "vet_tech":
+            w["fte"] = req.vet_tech_fte
+
+    # Rebuild intake profiles from kitten_fraction
+    kf = max(0.01, min(0.99, req.kitten_fraction))
+    af = 1.0 - kf
+    base_raw["intake_profiles"] = [
+        {"age_class": "weaned_kitten", "health_status": "healthy", "weight": round(kf * 0.6, 4)},
+        {"age_class": "neonatal", "health_status": "medical_hold", "weight": round(kf * 0.4, 4)},
+        {"age_class": "adult", "health_status": "healthy", "weight": round(af * 0.7, 4)},
+        {"age_class": "adult", "health_status": "isolation_required", "weight": round(af * 0.3, 4)},
+    ]
+    # Normalise weights to sum exactly to 1.0
+    weights = [p["weight"] for p in base_raw["intake_profiles"]]
+    total = sum(weights)
+    for p in base_raw["intake_profiles"]:
+        p["weight"] = round(p["weight"] / total, 6)
+
+    return Scenario.model_validate(base_raw)
+
+
+# ── Core endpoints ────────────────────────────────────────────────────────────
 
 @app.get("/health")
 def health() -> dict:
@@ -78,46 +176,161 @@ def simulate(req: SimulateRequest) -> EvaluationOut:
     scenario = _get_scenario()
     alloc = CandidateAllocation(**req.allocation.model_dump())
     seeds = make_seed_set(scenario.seed, req.n_replications)
-    er = evaluate_candidate(alloc, scenario, seeds)
-    return EvaluationOut(
-        **dataclasses.asdict(er.allocation),
-        mean_overflow_cat_days=er.mean_overflow_cat_days,
-        std_overflow_cat_days=er.std_overflow_cat_days,
-        mean_total_cost=er.mean_total_cost,
-        is_feasible=er.is_feasible,
-    )
+    return _er_to_out(evaluate_candidate(alloc, scenario, seeds))
 
 
 @app.post("/optimize", response_model=list[EvaluationOut])
 def optimize(req: SweepRequest) -> list[EvaluationOut]:
+    # Cache hit for demo params
+    if req.n_candidates == 30 and req.n_replications == 64 and req.use_bo:
+        cached = _load_demo_cache()
+        if cached:
+            return [_er_to_out(r) for r in cached]
+
     scenario = _get_scenario()
     seeds = make_seed_set(scenario.seed, req.n_replications)
     results = run_optimization_sweep(
-        scenario,
-        budget=scenario.total_intervention_budget,
-        n_candidates=req.n_candidates,
-        seed_set=seeds,
-        use_bo=req.use_bo,
+        scenario, budget=scenario.total_intervention_budget,
+        n_candidates=req.n_candidates, seed_set=seeds, use_bo=req.use_bo,
     )
-    return [
-        EvaluationOut(
-            **dataclasses.asdict(r.allocation),
-            mean_overflow_cat_days=r.mean_overflow_cat_days,
-            std_overflow_cat_days=r.std_overflow_cat_days,
-            mean_total_cost=r.mean_total_cost,
-            is_feasible=r.is_feasible,
-        )
-        for r in results
-    ]
+    return [_er_to_out(r) for r in results]
 
 
 @app.get("/baselines", response_model=dict[str, AllocationIn])
 def baselines() -> dict:
-    return {
-        name: AllocationIn(**dataclasses.asdict(alloc))
-        for name, alloc in ALL_BASELINES.items()
+    return {name: AllocationIn(**dataclasses.asdict(alloc)) for name, alloc in ALL_BASELINES.items()}
+
+
+# ── Builder endpoints ─────────────────────────────────────────────────────────
+
+@app.post("/simulate/builder", response_model=EvaluationOut)
+def simulate_builder(req: BuilderRequest) -> EvaluationOut:
+    scenario = _builder_to_scenario(req)
+    alloc = CandidateAllocation(0.25, 0.25, 0.25, 0.25)
+    seeds = make_seed_set(scenario.seed, req.n_replications)
+    return _er_to_out(evaluate_candidate(alloc, scenario, seeds))
+
+
+@app.post("/optimize/builder", response_model=list[EvaluationOut])
+def optimize_builder(req: BuilderRequest) -> list[EvaluationOut]:
+    scenario = _builder_to_scenario(req)
+    seeds = make_seed_set(scenario.seed, req.n_replications)
+    results = run_optimization_sweep(
+        scenario, budget=req.intervention_budget,
+        n_candidates=15, seed_set=seeds, use_bo=True,
+    )
+    return [_er_to_out(r) for r in results]
+
+
+# ── Sensitivity endpoint ──────────────────────────────────────────────────────
+
+def _sensitivity_points(alloc: CandidateAllocation, seeds: list[int], raw: dict) -> list[SensitivityPoint]:
+    """Vary intake_rate, housing_capacity, isolation_capacity ±20%; return 6 SensitivityPoints."""
+    import yaml
+    from shelterpulse.core.schema import Scenario as Sc
+    params = {
+        "intake_rate_per_day": raw["intake_rate_per_day"],
+        "housing_capacity": raw["housing_capacity"],
+        "isolation_capacity": raw["isolation_capacity"],
+    }
+    points: list[SensitivityPoint] = []
+    for param, base_val in params.items():
+        for direction, delta in [("high", 1.2), ("low", 0.8)]:
+            patched = dict(raw)
+            patched[param] = max(1, int(base_val * delta)) if isinstance(base_val, int) else base_val * delta
+            overflow = evaluate_candidate(alloc, Sc.model_validate(patched), seeds).mean_overflow_cat_days
+            points.append(SensitivityPoint(param=param, direction=direction, delta=delta, mean_overflow_cat_days=overflow))
+    return points
+
+
+@app.post("/sensitivity", response_model=list[SensitivityPoint])
+def sensitivity(req: SimulateRequest) -> list[SensitivityPoint]:
+    """Tornado chart data for Whisker Haven demo scenario."""
+    import yaml
+    alloc = CandidateAllocation(**req.allocation.model_dump())
+    seeds = make_seed_set(_get_scenario().seed, req.n_replications)
+    raw = yaml.safe_load(_SCENARIO_PATH.read_text(encoding="utf-8"))
+    return _sensitivity_points(alloc, seeds, raw)
+
+
+@app.post("/sensitivity/builder", response_model=list[SensitivityPoint])
+def sensitivity_builder(req: BuilderRequest) -> list[SensitivityPoint]:
+    """Tornado chart data for a custom builder scenario."""
+    import yaml
+    scenario = _builder_to_scenario(req)
+    alloc = CandidateAllocation(0.25, 0.25, 0.25, 0.25)
+    seeds = make_seed_set(scenario.seed, req.n_replications)
+    # Build raw dict from builder params for patching
+    raw = yaml.safe_load(_SCENARIO_PATH.read_text(encoding="utf-8"))
+    raw["intake_rate_per_day"] = req.mean_intake_per_day
+    raw["housing_capacity"] = req.housing_capacity
+    raw["isolation_capacity"] = req.isolation_slots
+    return _sensitivity_points(alloc, seeds, raw)
+
+
+# ── Timeline endpoints ────────────────────────────────────────────────────────
+
+@app.post("/simulate/timeline", response_model=list[TimelinePoint])
+def simulate_timeline(req: SimulateRequest) -> list[TimelinePoint]:
+    """Daily housing_used + overflow for one simulation run (seed=scenario.seed)."""
+    from shelterpulse.core.engine import run_simulation
+    from shelterpulse.core.interventions import resolve_intervention
+
+    scenario = _get_scenario()
+    alloc = CandidateAllocation(**req.allocation.model_dump())
+    intervention = resolve_intervention(
+        alloc.foster_support, alloc.clinic_hours,
+        alloc.temporary_isolation, alloc.adoption_events, scenario,
+    )
+
+    # Re-run with hourly sampler data exposed via a thin wrapper
+    import simpy
+
+    rng = np.random.default_rng(scenario.seed)
+    env = simpy.Environment()
+    housing_cap = scenario.housing_capacity
+    isolation_cap = scenario.isolation_capacity
+
+    extra_isolation = intervention.extra_isolation_slots
+    extra_foster = intervention.extra_foster_slots
+    vet_cap = max(1, int(sum(w.fte for w in scenario.workforce if w.role.value == "vet_tech")))
+    if intervention.extra_vet_tech_fte > 0:
+        vet_cap += max(1, round(intervention.extra_vet_tech_fte))
+
+    resources = {
+        "vet_tech": simpy.Resource(env, capacity=vet_cap),
+        "animal_care": simpy.Resource(env, capacity=max(1, int(
+            sum(w.fte for w in scenario.workforce if w.role.value == "animal_care")))),
+        "foster_coordinator": simpy.Resource(env, capacity=max(1, int(
+            sum(w.fte for w in scenario.workforce if w.role.value == "foster_coordinator")))),
+        "housing": simpy.Resource(env, capacity=housing_cap),
+        "isolation": simpy.Resource(env, capacity=isolation_cap + extra_isolation),
+        "foster": simpy.Resource(env, capacity=scenario.foster_network.capacity + extra_foster),
     }
 
+    from shelterpulse.core.engine import _Counters, _intake_generator
+
+    counters = _Counters()
+    daily_snapshots: list[dict] = []
+
+    def _daily_sampler():
+        for day in range(scenario.duration_days):
+            yield env.timeout(24.0)
+            daily_snapshots.append({
+                "day": day + 1,
+                "housing_used": resources["housing"].count,
+                "overflow": max(0, resources["housing"].count - housing_cap),
+            })
+
+    env.process(_intake_generator(env, scenario, resources, counters, rng,
+                                  intervention.adoption_wait_multiplier))
+    env.process(_daily_sampler())
+    env.run(until=scenario.duration_days * 24.0)
+
+    return [TimelinePoint(**s) for s in daily_snapshots]
+
+
+# ── Export endpoint ───────────────────────────────────────────────────────────
 
 @app.post("/export")
 def export(req: SweepRequest) -> StreamingResponse:
@@ -126,11 +339,8 @@ def export(req: SweepRequest) -> StreamingResponse:
     scenario = _get_scenario()
     seeds = make_seed_set(scenario.seed, req.n_replications)
     results = run_optimization_sweep(
-        scenario,
-        budget=scenario.total_intervention_budget,
-        n_candidates=req.n_candidates,
-        seed_set=seeds,
-        use_bo=req.use_bo,
+        scenario, budget=scenario.total_intervention_budget,
+        n_candidates=req.n_candidates, seed_set=seeds, use_bo=req.use_bo,
     )
     with tempfile.TemporaryDirectory() as tmp:
         out_dir = Path(tmp)
