@@ -1,4 +1,7 @@
-# Internal docs — never commit
+# Internal agent working memory — never commit
+.localagent/
+
+# Hackathon reference docs
 \#hackthekitty/
 
 # Python
@@ -46,9 +49,6 @@ yarn-error.log*
 ui/cypress/videos/
 ui/cypress/screenshots/
 
-# Docker
-.dockerignore
-
 # OS
 .DS_Store
 Thumbs.db
@@ -59,6 +59,15 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Precomputed caches (regenerate with scripts/precompute_demo.py)
+scenarios/*.pkl
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
 
 # Secrets
 .env.local

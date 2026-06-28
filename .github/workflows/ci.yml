@@ -1,8 +1,8 @@
 name: CI
 
 on:
-  push:
   pull_request:
+    branches: [develop]
 
 jobs:
   detect:
@@ -21,13 +21,7 @@ jobs:
         id: check
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE="${{ github.event.pull_request.base.sha }}"
-          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            BASE="$(git rev-list --max-parents=0 HEAD)"
-          else
-            BASE="${{ github.event.before }}"
-          fi
+          BASE="${{ github.event.pull_request.base.sha }}"
           CHANGED=$(git diff --name-only "$BASE" "$GITHUB_SHA")
           echo "$CHANGED"
 
@@ -49,7 +43,7 @@ jobs:
           echo "docker=$docker" >> "$GITHUB_OUTPUT"
 
   python:
-    name: Python CI
+    name: Python checks
     needs: detect
     if: needs.detect.outputs.python == 'true'
     runs-on: ubuntu-latest
@@ -58,7 +52,7 @@ jobs:
       - uses: ./.github/actions/ci-python
 
   ui:
-    name: UI CI
+    name: UI checks
     needs: detect
     if: needs.detect.outputs.ui == 'true'
     runs-on: ubuntu-latest
@@ -67,7 +61,7 @@ jobs:
       - uses: ./.github/actions/ci-ui
 
   docker:
-    name: Docker CI
+    name: Docker build (no push)
     needs: [detect, python, ui]
     if: |
       always() &&
@@ -76,12 +70,10 @@ jobs:
       needs.python.result != 'failure' &&
       needs.ui.result != 'failure'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/ci-docker
+      - name: Build image (smoke test)
+        uses: docker/build-push-action@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          sha: ${{ github.sha }}
+          context: .
+          push: false
