@@ -59,10 +59,18 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /etc/nginx/sites-enabled/default
 
+# Non-root: nginx listens on 8080; ECS Express maps containerPort 8080 → ALB 80/443
+RUN useradd -r -s /bin/false appuser \
+    && mkdir -p /var/log/nginx /var/lib/nginx/body /run \
+    && chown -R appuser:appuser /var/log/nginx /var/lib/nginx /run \
+    && sed -i 's|/var/run/nginx.pid|/run/nginx.pid|' /etc/nginx/nginx.conf
+
 COPY --from=ui-build /app/out /usr/share/nginx/html
 COPY deploy/nginx-app.conf /etc/nginx/conf.d/default.conf
 COPY deploy/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN chmod +x /start.sh && chown -R appuser:appuser /usr/share/nginx/html
 
-EXPOSE 80
+USER appuser
+
+EXPOSE 8080
 CMD ["/start.sh"]

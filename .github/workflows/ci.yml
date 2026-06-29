@@ -13,9 +13,10 @@ jobs:
       ui: ${{ steps.check.outputs.ui }}
       docker: ${{ steps.check.outputs.docker }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Diff and set outputs
         id: check
@@ -48,7 +49,9 @@ jobs:
     if: needs.detect.outputs.python == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/ci-python
 
   ui:
@@ -57,7 +60,9 @@ jobs:
     if: needs.detect.outputs.ui == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/ci-ui
 
   docker:
@@ -71,9 +76,11 @@ jobs:
       needs.ui.result != 'failure'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
       - name: Build image (smoke test)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
           context: .
           push: false

@@ -1,5 +1,44 @@
 # Playbook: PR Flows and CI/CD Implications
 
+## Pre-Push Local Gate
+
+Run these before pushing. If you touched workflows, Docker, or nginx, steps 3-6 are mandatory.
+
+### Always (every PR)
+
+```bash
+uv run pytest tests/unit/ -v                    # 1. Python tests
+cd ui && npm run build                          # 2. UI build (TypeScript + static export)
+```
+
+### When Docker/nginx/workflows changed
+
+```bash
+# 3. Build consolidated image (simulates what CI + ECS will run)
+docker build --target app -t shelterpulse:local --build-arg NEXT_PUBLIC_API_URL=/api .
+
+# 4. Run it locally
+docker run --rm -d -p 8080:8080 --name sp-gate shelterpulse:local
+
+# 5. Smoke test against it
+uv run python scripts/smoke_test.py
+
+# 6. Cleanup
+docker stop sp-gate
+```
+
+### When UI changed
+
+```bash
+cd ui && npx cypress run                        # 7. Cypress e2e against docker compose or static serve
+```
+
+### All green? Push and create PR.
+
+If any step fails, fix locally before pushing. Do not rely on CI to catch what you can verify in 2 minutes.
+
+---
+
 ## Branch Target Table
 
 | Branch type | Target | CI workflow |
@@ -120,3 +159,110 @@ curl -I "$LIVE/en"         # expect: HTTP/2 200
 git commit --no-verify
 gh pr merge --admin
 ```
+
+---
+
+## Versioning Convention
+
+**Scheme:** Semantic Versioning (`MAJOR.MINOR.PATCH`)
+
+| Bump | When | Examples |
+|------|------|----------|
+| PATCH (0.1.1 → 0.1.2) | Bug fixes, security patches, infra changes, no new user-facing behavior | Security scan fixes, action pinning, nginx port change |
+| MINOR (0.1.x → 0.2.0) | New features, new endpoints, new UI pages, breaking infra requiring config change | New optimizer, new page, new CLI command |
+| MAJOR (0.x → 1.0.0) | Public API contract break, schema change that breaks existing clients | Post-hackathon production release |
+
+**Decision rule:** When in doubt, it's a PATCH unless you added something a user would notice.
+
+**How to tag:**
+
+```bash
+git checkout main && git pull
+git tag v<MAJOR>.<MINOR>.<PATCH>
+git push origin v<MAJOR>.<MINOR>.<PATCH>
+```
+
+Or use `release.yml` workflow dispatch (validates semver, creates GitHub Release, triggers deploy).
+
+
+---
+
+## Promotion Example: feat/issue-29-aikido-security-scan → v0.1.2
+
+### Step 1: Push and PR to develop
+
+```bash
+git add -A
+git commit -m "security: fix all Aikido scan findings
+
+- Fix XSS: replace dangerouslySetInnerHTML with katex.render() DOM API
+- Fix IaC: enable DynamoDB PITR, ECR encryption at rest
+- Fix supply chain: pin all 3rd-party GH Actions to SHA
+- Fix Docker: non-root user (appuser), nginx on port 8080
+- Fix integrity: SHA256 verify AWS CLI download
+- Fix credentials: persist-credentials: false on checkout
+- Fix license: add Apache-2.0 LICENSE file
+- Add smoke test script, Cypress specs, local dev playbook
+
+Closes #26, closes #27, closes #28, closes #29"
+
+git push -u origin feat/issue-29-aikido-security-scan
+
+gh pr create --base develop \
+  --title "security: fix all Aikido scan findings" \
+  --body "Closes #26, #27, #28, #29. See commit message for full list."
+```
+
+### Step 2: Wait for CI (ci.yml)
+
+CI validates:
+- Python tests pass (pinned SHA actions still checkout correctly)
+- UI builds (HowItWorksClient.tsx compiles without dangerouslySetInnerHTML)
+- Docker `app` target builds (non-root user, nginx on 8080)
+
+### Step 3: Merge to develop
+
+```bash
+gh pr merge --squash --delete-branch
+```
+
+### Step 4: PR develop → main
+
+```bash
+git checkout develop && git pull
+gh pr create --base main --head develop \
+  --title "chore: promote develop to main -- Phase 6 complete" \
+  --body "Phase 6 gate: Aikido scan report committed, all findings fixed."
+```
+
+promote.yml runs: full tests + Docker build + GHCR push.
+
+### Step 5: Merge to main
+
+```bash
+gh pr merge --squash
+```
+
+### Step 6: Tag and deploy
+
+```bash
+git checkout main && git pull
+git tag v0.1.2
+git push origin v0.1.2
+```
+
+deploy.yml: OIDC auth → ECR push → ECS update (containerPort: 8080).
+
+### Step 7: Verify live
+
+```bash
+LIVE="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws"
+curl "$LIVE/api/health"    # expect: {"status":"ok"}
+curl -I "$LIVE/en"         # expect: HTTP/2 200
+```
+
+### Known risk: ECS containerPort change
+
+The ECS Express service was created with containerPort 80. This deploy changes it to 8080.
+The deploy.yml passes `containerPort: 8080` in the update command. If ECS rejects the
+port change on update, we will need to recreate the Express service with the new port.
