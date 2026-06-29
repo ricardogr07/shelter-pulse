@@ -1,8 +1,8 @@
----
+﻿---
 inclusion: always
 ---
 
-# ShelterPulse — Technology Stack
+# ShelterPulse: Technology Stack
 
 ## Python backend (locked)
 
@@ -22,7 +22,7 @@ inclusion: always
 
 | Layer | Choice |
 |-------|--------|
-| Framework | Next.js (app router) — **read `ui/AGENTS.md` before writing any Next.js code** |
+| Framework | Next.js (app router): **read `ui/AGENTS.md` before writing any Next.js code** |
 | Language | TypeScript (strict mode on, no `any` without justification) |
 | Styling | Tailwind CSS |
 | Testing | Cypress (e2e) |
@@ -32,15 +32,24 @@ inclusion: always
 | Layer | Choice |
 |-------|--------|
 | Container | Docker + docker compose |
-| Cloud | AWS App Runner + ECR (Free Plan, $200 credits) — see ADR-008 |
-| CI | GitHub Actions (`.github/workflows/ci.yml`) |
-| CD | Push to GHCR via `.github/workflows/cd.yml` |
-| Durable workflow | Temporal (conditional — `TEMPORAL_ENABLED = False` until Jun 28 gate passes) |
+| Cloud | **AWS ECS Express Mode + ECR** -- single consolidated container (nginx + uvicorn), one ALB, one HTTPS URL. See ADR-011. |
+| CI | GitHub Actions (`.github/workflows/ci.yml`, `promote.yml`, `release.yml`, `deploy.yml`) |
+| CD | Tag `v*` triggers `deploy.yml`: build + push `app` target to ECR, ECS auto-deploys |
+| Durable workflow | Temporal gate **closed** (ADR-010). `TEMPORAL_ENABLED = False`. In-process sweep chosen. Architecture remains Temporal-ready. |
+
+**Phase status (Jun 28 2026):** Phases 1-11 complete. Submission target Jul 6-7.
+
+**Non-negotiables before submission:**
+1. Demo video (< 5 min, Whisker Haven narrative)
+2. Aikido scan report in `/security/`
+3. `.kiro/` committed (present)
+4. README stranger-runnable (done)
+5. Honest baselines in optimizer (5 baselines in `baselines.py`)
 
 ## Dependency rules
 
 - **No new pip packages** without orchestrator (Claude) approval. Every new dep = more attack surface + build time.
-- `jax` / `jaxlib` stay in `[project.optional-dependencies].optimize` — never move to main deps.
+- `jax` / `jaxlib` stay in `[project.optional-dependencies].optimize`: never move to main deps.
 - `temporalio` stays in `[project.optional-dependencies].temporal`.
 - **No new npm packages** without approval. Check `package.json` before reaching for a library.
 

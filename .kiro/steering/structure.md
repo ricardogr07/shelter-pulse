@@ -1,8 +1,8 @@
----
+﻿---
 inclusion: always
 ---
 
-# ShelterPulse — Project Structure & Module Boundaries
+# ShelterPulse: Project Structure & Module Boundaries
 
 ## Package layout
 
@@ -16,7 +16,7 @@ c:/git/shelter-pulse/
 │   │   ├── montecarlo.py      ← Paired CRN Monte Carlo (run_paired, make_seed_set)
 │   │   └── export.py          ← YAML + CSV export (export_results)
 │   ├── optimize/
-│   │   ├── interface.py       ← evaluate_candidate() — THE seam all optimizers call
+│   │   ├── interface.py       ← evaluate_candidate(): THE seam all optimizers call
 │   │   ├── baselines.py       ← Named baselines (ALL_BASELINES dict)
 │   │   ├── jaxbo_optimizer.py ← BO plugin (jaxbo primary, scipy fallback)
 │   │   └── workflow.py        ← run_optimization_sweep() + TEMPORAL_ENABLED flag
@@ -38,7 +38,7 @@ c:/git/shelter-pulse/
 │   ├── unit/                  ← pytest unit tests
 │   └── e2e/                   ← pytest e2e (API) + Cypress (UI)
 ├── .kiro/
-│   ├── steering/              ← This directory — always-loaded agent context
+│   ├── steering/              ← This directory: always-loaded agent context
 │   └── README.md              ← Kiro Track submission marker
 └── .localagent/
     ├── docs/                  ← Implementation specs + STATUS.md
@@ -67,9 +67,9 @@ api/app.py  ←── ui/ (HTTP/JSON, not Python imports)
 
 - `core/engine.py` must NEVER import from `optimize/`
 - `core/*.py` must NEVER import from `api/` or `cli/`
-- `api/app.py` must NEVER contain simulation logic — call core functions
-- `cli/main.py` must NEVER contain simulation logic — call core functions
-- `ui/` communicates with backend via HTTP only — no Python imports
+- `api/app.py` must NEVER contain simulation logic: call core functions
+- `cli/main.py` must NEVER contain simulation logic: call core functions
+- `ui/` communicates with backend via HTTP only: no Python imports
 
 ## File ownership per worker
 

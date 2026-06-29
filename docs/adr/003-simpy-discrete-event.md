@@ -1,4 +1,4 @@
-# ADR-003: Use SimPy for Discrete-Event Simulation
+﻿# ADR-003: Use SimPy for Discrete-Event Simulation
 
 **Status:** Accepted | **Date:** 2026-06-26
 
@@ -18,7 +18,7 @@ It runs in-process, which keeps the core library pure and testable.
 ## Consequences
 
 - Well-understood API; queue-sanity tests can compare SimPy output to M/M/1 analytical results.
-- Pure Python — no native extensions required in CI or Docker.
+- Pure Python: no native extensions required in CI or Docker.
 - Single-threaded by design: parallelism for Monte Carlo is achieved by running multiple
   independent SimPy environments (one per replication), not by threading within one simulation.
 - Not a general agent-based framework; adequate for the locked cat-shelter flow.

@@ -3,27 +3,34 @@
 ShelterPulse system context: who uses it and how the major pieces connect.
 
 ```mermaid
-C4Context
-  title ShelterPulse — System Context
+graph TB
+    SM["Shelter Manager\n(browser)"] -->|HTTPS| UI["Next.js UI\nui/ -- static export"]
+    Judge["Hackathon Judge"] -->|live URL or docker compose up| UI
+    SM -->|terminal| CLI["Typer CLI\nshelterpulse/cli/main.py"]
 
-  Person(manager, "Shelter Manager", "Configures scenarios, reviews optimization results")
-  Person(judge, "Hackathon Judge", "Accesses live URL or runs docker compose up")
+    UI -->|HTTP /api/*| API["FastAPI\nshelterpulse/api/app.py"]
+    API --> OPT["optimize/workflow.py\nsweep orchestrator"]
+    API --> CORE["shelterpulse/core/\nengine - schema - interventions\nmontecarlo - export"]
+    CLI --> OPT
+    CLI --> CORE
+    OPT --> IF["optimize/interface.py\nevaluate_candidate()"]
+    IF --> CORE
 
-  System_Boundary(sp, "ShelterPulse") {
-    System(ui, "Next.js UI", "Single-flow web interface: configure → baseline → optimize → compare → export")
-    System(api, "FastAPI REST API", "HTTP surface: /scenario /simulate /compare /optimize /export")
-    System(core, "Python Core Library", "Pure simulation + optimization engine — no I/O")
-  }
+    YAML["scenarios/whisker_haven.yaml\n(demo scenario)"] -->|load_scenario| CORE
+    CORE --> SIMPY["SimPy DES\nnon-homogeneous Poisson\ncat lifecycle model"]
 
-  System_Ext(temporal, "Temporal", "Durable workflow orchestration (conditional — Jun 28 gate)")
-  System_Ext(cloud, "Cloud Host", "Render / Railway / Fly.io — judge-accessible URL")
+    API -. "TEMPORAL_ENABLED=False\n(flag-gated, arch-ready)" .-> TMP["Temporal\n(future)"]
 
-  Rel(manager, ui, "Uses browser")
-  Rel(judge, ui, "Accesses via live URL or localhost:3000")
-  Rel(judge, api, "Calls /docs for API exploration")
-  Rel(ui, api, "HTTP/JSON")
-  Rel(api, core, "Direct function calls")
-  Rel(core, temporal, "Delegates optimization sweep (if TEMPORAL_ENABLED)")
-  Rel(ui, cloud, "Deployed to")
-  Rel(api, cloud, "Deployed to")
+    subgraph ECS ["AWS ECS Express Mode -- one ALB, one HTTPS URL"]
+        NGINX["nginx :80\nserves Next.js static export\nproxies /api/* to :8000"]
+        UV["uvicorn :8000\nFastAPI"]
+        NGINX --> UV
+    end
+
+    UI -.->|"deployed as static export"| NGINX
+    API -.->|"deployed"| UV
 ```
+
+## Deployment note
+
+The `app` Docker target (Dockerfile multi-stage) bundles the Next.js static export and the FastAPI server into one image. nginx serves static files at `:80` and reverse-proxies `/api/*` to uvicorn at `:8000` -- one container, one ALB, one HTTPS URL, no CORS. See [ADR-011](../adr/011-ecs-express-mode.md).

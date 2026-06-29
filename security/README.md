@@ -1,9 +1,9 @@
-# Security Scan Reports
+﻿# Security Scan Reports
 
 **Date:** 2026-06-27  
 **Tools:** pip-audit 2.10.1 (Python deps), npm audit (JS deps)
 
-## pip-audit — Python dependencies
+## pip-audit: Python dependencies
 
 **Result: No known vulnerabilities found.**
 
@@ -11,15 +11,15 @@ All 80+ Python dependencies scanned against OSV database. Zero CVEs.
 
 See: `pip-audit.json`
 
-## npm audit — JavaScript dependencies
+## npm audit: JavaScript dependencies
 
 **Result: 2 moderate severity vulnerabilities** (both in Next.js bundled PostCSS)
 
 | Advisory | Package | Severity | Fix |
 |---|---|---|---|
-| GHSA-qx2v-qp2m-jg93 | postcss < 8.5.10 (bundled in next@16.2.9) | Moderate | Would require downgrading to next@9 — not viable |
+| GHSA-qx2v-qp2m-jg93 | postcss < 8.5.10 (bundled in next@16.2.9) | Moderate | Would require downgrading to next@9: not viable |
 
-**Accepted risk:** The PostCSS XSS advisory applies to CSS stringify output in server-rendered contexts. This project uses `output: "export"` (static site generation) — no server-side CSS stringification occurs at runtime. The attack surface does not apply.
+**Accepted risk:** The PostCSS XSS advisory applies to CSS stringify output in server-rendered contexts. This project uses `output: "export"` (static site generation): no server-side CSS stringification occurs at runtime. The attack surface does not apply.
 
 `npm audit fix --force` would downgrade Next.js to 9.3.3, breaking the app. Risk accepted.
 

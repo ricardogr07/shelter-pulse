@@ -1,4 +1,6 @@
-# ADR-007: Deploy API and UI as Separate Render Web Services
+﻿# ADR-007: Deploy API and UI as Separate Render Web Services
+
+> **SUPERSEDED by [ADR-011](011-ecs-express-mode.md)** (via ADR-008). Kept for decision trail.
 
 **Status:** Superseded by [ADR-008](008-aws-app-runner.md) | **Date:** 2026-06-26
 
@@ -24,6 +26,6 @@ has no server-side runtime, so runtime env vars are unavailable).
 ## Consequences
 
 - Cold-start latency on free tier (~30s). Acceptable for demo; note in README.
-- Build arg is baked at image build time — changing the API URL requires rebuilding the UI.
+- Build arg is baked at image build time: changing the API URL requires rebuilding the UI.
 - No ingress/reverse-proxy layer needed: Render handles TLS termination.
 - CORS wildcard in API remains appropriate (UI and API are on different origins).

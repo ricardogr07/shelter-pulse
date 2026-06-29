@@ -1,4 +1,4 @@
-# Worker: Core-D — Reproducible Export
+﻿# Worker: Core-D: Reproducible Export
 
 **Model:** Claude Haiku 4.5 | **Effort:** medium  
 **Parallel with:** Core-A, Core-B, Core-C (can be done simultaneously)
@@ -31,7 +31,7 @@ Implement `core/export.py` which writes optimization results to YAML + CSV with 
 
 ## Done criteria
 
-- [ ] `uv run pytest tests/unit/test_export.py -v` — all tests pass
+- [ ] `uv run pytest tests/unit/test_export.py -v`: all tests pass
 - [ ] `export_results(scenario, results, seeds, tmp_path)` writes both `results.yaml` and `results.csv`
 - [ ] Calling it twice on the same `out_dir` does not error (overwrite, not append)
 - [ ] YAML includes `scenario`, `seed_set`, and `results` keys

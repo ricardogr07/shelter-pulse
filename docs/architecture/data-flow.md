@@ -1,61 +1,80 @@
 # Data Flow
 
-End-to-end request flow for the primary user journey: load scenario → optimize → compare.
+End-to-end request flow for the primary user journey: configure, simulate, optimize.
+
+## Optimization sweep (primary path)
 
 ```mermaid
 sequenceDiagram
-  actor Manager as Shelter Manager
-  participant UI as Next.js UI<br/>(localhost:3000)
-  participant API as FastAPI<br/>(localhost:8000)
-  participant Core as shelterpulse.core
-  participant Opt as optimize/
+    participant U as UI / CLI
+    participant API as FastAPI (api/app.py)
+    participant W as workflow.py
+    participant I as interface.py
+    participant E as engine.py
 
-  Manager->>UI: Open app (Whisker Haven pre-loaded)
-  UI->>API: GET /scenario/whisker-haven
-  API->>Core: load_scenario(whisker_haven.yaml)
-  Core-->>API: Scenario (validated Pydantic model)
-  API-->>UI: ScenarioResponse (JSON)
-  UI-->>Manager: Show scenario summary + cat flow diagram
+    U->>API: POST /optimize {n_candidates, n_reps, use_bo}
+    API->>W: run_optimization_sweep(scenario, budget, n_candidates, seed_set, use_bo)
 
-  Manager->>UI: "Run baseline"
-  UI->>API: POST /simulate {scenario_id, seed=42}
-  API->>Core: run_simulation(scenario, seed=42)
-  Core-->>API: SimulationResult (flow counts, queue depths, utilization, cost)
-  API-->>UI: SimulationResponse (JSON)
-  UI-->>Manager: Show bottleneck chart (isolation · medical clearance queue)
+    Note over W: seed_set fixed here -- same seeds used for every candidate (CRN)
 
-  Manager->>UI: "Optimize $5,000 budget"
-  UI->>API: POST /optimize {scenario_id, budget=5000}
-  API->>Opt: run_optimization_sweep(scenario, budget)
-  loop per candidate allocation (~25–40 evaluations)
-    Opt->>Core: evaluate_candidate(allocation, scenario, seed_set)
-    Core-->>Opt: EvaluationResult (overflow cat-days, feasibility, cost)
-  end
-  Opt-->>API: OptimizationResult (best allocation + uncertainty)
-  API-->>UI: OptimizationResponse (JSON)
-  UI-->>Manager: Show winning allocation + uncertainty bands
+    W->>I: evaluate_candidate(baseline_alloc, scenario, seed_set)  [x5 baselines]
+    loop same seed_set every time
+        I->>E: run_simulation(scenario, seed, intervention)
+        E-->>I: SimulationResult
+    end
+    I-->>W: EvaluationResult (mean/std overflow, cost, 95% CI)
 
-  Manager->>UI: "Compare vs baselines"
-  UI->>API: POST /compare {scenario_id, allocations: [best, equal, all-in, heuristic]}
-  API->>Core: run_simulation() × N replications × 4 allocations
-  Core-->>API: ComparisonResult (metrics per allocation)
-  API-->>UI: ComparisonResponse (JSON)
-  UI-->>Manager: Side-by-side comparison table + chart
+    W->>I: evaluate_candidate(bo_alloc, scenario, seed_set)  [xn_candidates]
+    loop same seed_set every time
+        I->>E: run_simulation(scenario, seed, intervention)
+        E-->>I: SimulationResult
+    end
+    I-->>W: EvaluationResult
 
-  Manager->>UI: "Export"
-  UI->>API: GET /export/{run_id}
-  API->>Core: export_run(run_id)
-  Core-->>API: ExportBundle (scenario YAML + seeds + metrics CSV)
-  API-->>UI: ZIP download
+    W->>W: rank: feasible first (cost <= budget), then overflow ascending
+    W-->>API: list[EvaluationResult]
+    API-->>U: ranked JSON
+```
+
+## Single simulation (timeline / sensitivity)
+
+```mermaid
+sequenceDiagram
+    participant U as UI
+    participant API as FastAPI
+    participant E as engine.py
+
+    U->>API: POST /simulate/timeline {allocation, n_reps}
+    API->>E: run_simulation(scenario, seed=scenario.seed, intervention)
+    E-->>API: SimulationResult (daily housing_used + overflow_queue snapshots)
+    API-->>U: list[TimelinePoint] (day, housing_used, overflow)
+```
+
+## Sensitivity analysis (tornado chart)
+
+```mermaid
+sequenceDiagram
+    participant U as UI
+    participant API as FastAPI
+    participant I as interface.py
+
+    U->>API: POST /sensitivity {allocation, n_reps}
+    loop for each of 3 params x {high, low} = 6 perturbations
+        API->>I: evaluate_candidate(allocation, perturbed_scenario, seed_set)
+        I-->>API: EvaluationResult
+    end
+    API-->>U: list[SensitivityPoint] (param, direction, overflow_mean)
 ```
 
 ## Schema flow
 
 ```mermaid
 graph LR
-  yaml["whisker_haven.yaml"] -->|yaml.safe_load| raw["dict"]
-  raw -->|Scenario.model_validate| model["Scenario\n(frozen Pydantic model)"]
-  model -->|run_simulation| result["SimulationResult\n(frozen dataclass)"]
-  result -->|JSON serialization| api_resp["API response\n(Pydantic response model)"]
-  api_resp -->|fetch| ui_state["React state\n(TypeScript types)"]
+    yaml["scenarios/whisker_haven.yaml"] -->|yaml.safe_load| raw["dict"]
+    raw -->|Scenario.model_validate| model["Scenario\n(frozen Pydantic model)"]
+    model -->|resolve_intervention| ip["InterventionParams\n(resource deltas)"]
+    ip -->|run_simulation| result["SimulationResult\n(one replication)"]
+    result -->|run_paired| mc["MonteCarloSummary\n(mean/std/95% CI)"]
+    mc -->|JSON serialization| resp["API response\n(Pydantic response model)"]
+    resp -->|fetch| ui["React state\n(TypeScript types)"]
 ```

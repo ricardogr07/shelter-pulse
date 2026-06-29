@@ -1,8 +1,8 @@
----
+﻿---
 inclusion: always
 ---
 
-# ShelterPulse — Agent Rules (Non-Negotiable)
+# ShelterPulse: Agent Rules (Non-Negotiable)
 
 These rules apply to ALL agents working on this project. Violating any of them may break the submission.
 

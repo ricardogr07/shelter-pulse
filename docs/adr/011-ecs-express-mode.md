@@ -1,4 +1,4 @@
-# ADR-011: Switch Cloud Deployment from App Runner to ECS Express Mode (Single Consolidated Service)
+﻿# ADR-011: Switch Cloud Deployment from App Runner to ECS Express Mode (Single Consolidated Service)
 
 **Status:** Accepted (supersedes [ADR-008](008-aws-app-runner.md)) | **Date:** 2026-06-28
 
@@ -9,7 +9,7 @@ ADR-008 chose AWS App Runner. While wiring up the deployment we hit a hard wall:
 - `apprunner CreateService` returns `SubscriptionRequiredException: The AWS Access Key Id
   needs a subscription for the service` on our account (612962922955).
 - This is not an account-activation delay. Per AWS docs, **App Runner is no longer open to
-  new customers as of April 30, 2026** — existing customers keep it, new accounts can never
+  new customers as of April 30, 2026**: existing customers keep it, new accounts can never
   subscribe. Our account is new, so App Runner is permanently unavailable.
 
 We want to stay on AWS (single-cloud lock-in is a deliberate goal). AWS's officially
@@ -22,7 +22,7 @@ Deploy ShelterPulse to **Amazon ECS Express Mode** as a **single consolidated co
 
 Express Mode takes one container image plus two IAM roles and auto-provisions an
 internet-facing ALB, Fargate tasks, auto-scaling, CloudWatch logging, canary deploys, and
-a public HTTPS URL (`https://<service>.ecs.<region>.on.aws`) with automatic TLS — the same
+a public HTTPS URL (`https://<service>.ecs.<region>.on.aws`) with automatic TLS: the same
 "push image → get URL" simplicity App Runner offered.
 
 **Single consolidated service (not two).** Instead of separate API and UI services (two
@@ -39,7 +39,7 @@ relative path. No CORS, one ALB, one URL, half the cost.
 |------|--------|
 | Compute | ECS Express Mode (Fargate), 0.25 vCPU / 0.5 GB, min 1 task |
 | Image | Single `app` Dockerfile target (python + nginx) in ECR repo `shelterpulse` |
-| Health check | `/api/health` (proxied to uvicorn — also guards uvicorn liveness) |
+| Health check | `/api/health` (proxied to uvicorn: also guards uvicorn liveness) |
 | IaC | Terraform for ECR + the two IAM roles (provider v5); service created/updated via AWS CLI |
 | CD | `deploy.yml` builds/pushes the consolidated image to ECR, then `aws ecs update-express-gateway-service` |
 

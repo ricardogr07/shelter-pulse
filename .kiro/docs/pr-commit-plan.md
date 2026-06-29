@@ -1,10 +1,10 @@
-# PR & Commit Plan — Ship What's On Disk
+﻿# PR & Commit Plan: Ship What's On Disk
 
 ## Context
 
 Phase 0 (DevOps infrastructure) is complete on `develop`. There are ~25 untracked files + 1 modified tracked file (`infra/app-runner/main.tf`) from Phase 1-3 feature work that need to land as sequential PRs to `develop`.
 
-**Important:** This plan ships ONLY what currently exists on disk. Several files referenced in the original plan still need implementation work — those are tracked in `docs/post-merge-backlog.md` for a follow-up worker.
+**Important:** This plan ships ONLY what currently exists on disk. Several files referenced in the original plan still need implementation work: those are tracked in `docs/post-merge-backlog.md` for a follow-up worker.
 
 ## Workflow
 
@@ -23,14 +23,14 @@ Phase 0 (DevOps infrastructure) is complete on `develop`. There are ~25 untracke
 
 ## Rules
 
-- **Never push directly to develop or main** — rulesets enforce PRs
-- **Never paste secrets/ARNs in PR descriptions** — use placeholders
-- **Each PR must have CI green before merge** — Python checks, UI checks, Docker build
-- **Delete .pr-body.md after creating PR** — temp file only
-- **shelterpulse/core/ must NOT be modified** — it's already correct on main
-- **No new npm or pip packages** — project rule
-- **Sequential order matters** — each PR may depend on the previous one being merged
-- **i18n: en + es only** — French and Portuguese were dropped from scope
+- **Never push directly to develop or main**: rulesets enforce PRs
+- **Never paste secrets/ARNs in PR descriptions**: use placeholders
+- **Each PR must have CI green before merge**: Python checks, UI checks, Docker build
+- **Delete .pr-body.md after creating PR**: temp file only
+- **shelterpulse/core/ must NOT be modified**: it's already correct on main
+- **No new npm or pip packages**: project rule
+- **Sequential order matters**: each PR may depend on the previous one being merged
+- **i18n: en + es only**: French and Portuguese were dropped from scope
 
 ## PR Sequence
 
@@ -66,7 +66,7 @@ Phase 0 (DevOps infrastructure) is complete on `develop`. There are ~25 untracke
 2. `chore: add .kiro/ agent configs (orchestrator, director, workers)`
 3. `docs: add .kiro/docs/ with next-steps and PR plan`
 
-**CI impact:** None — no python/ui/docker paths touched.
+**CI impact:** None: no python/ui/docker paths touched.
 
 ---
 
@@ -84,13 +84,13 @@ scripts/precompute_demo.py
 1. `test: add GP+EI optimizer unit tests`
 2. `feat: add precompute_demo.py script for cache regeneration`
 
-**CI impact:** Python checks will run. Tests may fail until the optimizer is actually rewritten — see backlog. If CI blocks, mark tests as `@pytest.mark.skip(reason="pending optimizer rewrite")` before committing.
+**CI impact:** Python checks will run. Tests may fail until the optimizer is actually rewritten: see backlog. If CI blocks, mark tests as `@pytest.mark.skip(reason="pending optimizer rewrite")` before committing.
 
 ---
 
 ### PR 3: `feat/ui-components`
 
-**Title:** `feat: UI components — NavBar, charts, i18n, [lang] pages`
+**Title:** `feat: UI components: NavBar, charts, i18n, [lang] pages`
 
 **Files to stage (all untracked/new):**
 ```
@@ -117,7 +117,7 @@ ui/src/app/[lang]/simulate/SimulateClient.tsx
 **CI impact:** UI checks will run. Build will likely **fail** because:
 - `SimulateClient.tsx` imports `simulateCustom`, `optimizeCustom`, `getSensitivity`, `getTimeline` from `@/api` (don't exist yet)
 - `SimulateClient.tsx` imports `CustomScenario` from `@/types` (doesn't exist yet)
-- `[lang]/layout.tsx` uses `NavBar` which references `@/i18n/dictionaries` (OK — included in this PR)
+- `[lang]/layout.tsx` uses `NavBar` which references `@/i18n/dictionaries` (OK: included in this PR)
 
 **Pre-commit fix needed:** Add stub exports to `ui/src/api.ts` and `ui/src/types.ts` so the build passes. These are minimal type-safe stubs:
 
@@ -140,7 +140,7 @@ These stubs keep the build green while real endpoints are implemented in backlog
 
 ### PR 4: `feat/docker-infra`
 
-**Title:** `feat: Docker — .dockerignore + nginx.conf for static export`
+**Title:** `feat: Docker: .dockerignore + nginx.conf for static export`
 
 **Files to stage (all untracked/new):**
 ```
@@ -151,7 +151,7 @@ ui/nginx.conf
 **Commits:**
 1. `feat: add .dockerignore (450MB → 8KB build context) + nginx.conf for locale routing`
 
-**CI impact:** Docker build job triggers. Should pass — these are additive files. The Dockerfile needs the `COPY ui/nginx.conf` line added to use it, but that's a backlog item (the Dockerfile isn't modified yet).
+**CI impact:** Docker build job triggers. Should pass: these are additive files. The Dockerfile needs the `COPY ui/nginx.conf` line added to use it, but that's a backlog item (the Dockerfile isn't modified yet).
 
 ---
 
@@ -180,7 +180,7 @@ security/npm-audit.json
 2. `docs: add architecture docs + demo script`
 3. `docs: add security audit reports + post-merge backlog`
 
-**CI impact:** None — docs-only paths.
+**CI impact:** None: docs-only paths.
 
 ---
 
@@ -196,7 +196,7 @@ infra/app-runner/main.tf              (modified)
 **Commits:**
 1. `infra: add App Runner service (auto-deploy from ECR)`
 
-**CI impact:** None — infra paths not in CI detection.
+**CI impact:** None: infra paths not in CI detection.
 
 ---
 
@@ -234,8 +234,8 @@ git log --oneline -3      # Verify merge commit
 
 ## Files NOT to commit (already gitignored)
 
-- `.localagent/` — internal agent memory
-- `scenarios/*.pkl` — precomputed cache (regenerate via `scripts/precompute_demo.py`)
-- `.terraform/` — provider binaries
-- `*.tfstate` — remote state in S3
-- `node_modules/`, `.next/`, `out/` — build artifacts
+- `.localagent/`: internal agent memory
+- `scenarios/*.pkl`: precomputed cache (regenerate via `scripts/precompute_demo.py`)
+- `.terraform/`: provider binaries
+- `*.tfstate`: remote state in S3
+- `node_modules/`, `.next/`, `out/`: build artifacts

@@ -1,4 +1,4 @@
-# Shared Context — All Workers
+﻿# Shared Context: All Workers
 
 Read this before starting any task. It applies to every worker (kiro, Codex, or any other agent).
 
@@ -14,12 +14,12 @@ Read this before starting any task. It applies to every worker (kiro, Codex, or 
 
 1. Read your worker file (`.localagent/agents/worker-*.md`) for scope, ownership, and done criteria
 2. Read your spec file (`.localagent/docs/<number>-<name>.md`) for exact contracts
-3. Read the relevant existing source files — understand what's already there before adding anything
-4. Check `.localagent/docs/STATUS.md` — if your dependency tracks aren't DONE yet, stop
+3. Read the relevant existing source files: understand what's already there before adding anything
+4. Check `.localagent/docs/STATUS.md`: if your dependency tracks aren't DONE yet, stop
 
 ## Module boundary (critical)
 
-`shelterpulse/core/` is a **pure Python library** — no I/O, no network, no imports from `shelterpulse.api`, `shelterpulse.cli`, or `shelterpulse.optimize`.
+`shelterpulse/core/` is a **pure Python library**: no I/O, no network, no imports from `shelterpulse.api`, `shelterpulse.cli`, or `shelterpulse.optimize`.
 
 This is enforced by `tests/unit/test_no_cross_imports.py`. Violating it breaks CI.
 
@@ -55,7 +55,7 @@ Format:
 ## Coding style
 
 - Minimum code that satisfies the spec (ponytail constraint)
-- No comments that explain what the code does — only comments for non-obvious WHY
+- No comments that explain what the code does: only comments for non-obvious WHY
 - Type annotations everywhere in Python (pyrefly checks this)
 - `model_config = ConfigDict(frozen=True, extra="forbid")` on all new Pydantic models
 
