@@ -1,4 +1,6 @@
-﻿# Worker: Core-C: JAX-BO Optimizer Plugin
+> **STATUS: DONE (Phase 1 complete).** All files this worker was assigned to create
+> exist in the codebase. Archived for decision trail. Not for active use.
+# Worker: Core-C: JAX-BO Optimizer Plugin
 
 **Model:** Claude Opus 4.6 | **Effort:** high  
 **Depends on:** Core-A + Core-B must be DONE first
@@ -45,3 +47,4 @@ Wire the JAX-BO optimizer (Ricardo's `jaxbo` fork) as a plugin behind `evaluate_
 - jax path: attempt `import jax`; if `ImportError`, fall back silently
 - `jax`/`jaxlib` stay in `[project.optional-dependencies].optimize`: never add to main deps
 - Results sorted: feasible first, then ascending overflow
+
