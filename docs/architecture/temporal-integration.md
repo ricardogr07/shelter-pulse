@@ -1,4 +1,4 @@
-# Temporal Integration Architecture (Phase 5)
+﻿# Temporal Integration Architecture (Phase 5)
 
 How to activate durable optimization sweeps using the Temporal workflow engine.
 The `TEMPORAL_ENABLED = False` flag has been in `optimize/workflow.py` since Phase 1.
@@ -137,8 +137,8 @@ activity. UI shows a progress bar from 0 → N candidates.
 ## When to activate
 
 Gate criteria (from Phase 5 index):
-- Phase 3 (multi-scenario) complete — sweeps now run against multiple scenarios
-- Phase 4 Pareto endpoint needs N > 10 sweep points — in-process is too slow
+- Phase 3 (multi-scenario) complete: sweeps now run against multiple scenarios
+- Phase 4 Pareto endpoint needs N > 10 sweep points: in-process is too slow
 - `uv sync --extra temporal` works in the Docker image
 - `temporalio/auto-setup` image is available in the deployment environment
 

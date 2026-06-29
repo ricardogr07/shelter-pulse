@@ -1,4 +1,4 @@
-# ADR 010: Temporal Gate Result
+﻿# ADR 010: Temporal Gate Result
 
 ## Status
 
@@ -23,13 +23,13 @@ Before enabling Temporal, we needed to verify the gate criterion:
 run_optimization_sweep(whisker_haven, budget=5000, n_candidates=4, use_bo=False)
 ```
 
-Result: Overflow range across candidates = ~1755 cat-days (PASS — threshold was >1.0).
+Result: Overflow range across candidates = ~1755 cat-days (PASS: threshold was >1.0).
 
 ## Decision
 
 **Temporal deferred.** The in-process sweep completes in <30s for 20 candidates × 32
 replications, which is fast enough for the hackathon demo. The architecture remains
-Temporal-ready — `TEMPORAL_ENABLED = False` flag in `workflow.py` can be flipped
+Temporal-ready: `TEMPORAL_ENABLED = False` flag in `workflow.py` can be flipped
 without touching the optimizer interface.
 
 ## Consequences

@@ -1,4 +1,4 @@
-# Deployment Architecture
+﻿# Deployment Architecture
 
 ## Local development (docker compose up)
 
@@ -8,7 +8,7 @@ graph TB
     subgraph compose["docker compose"]
       nextjs["nextjs\n:3000\nNext.js production build"]
       fastapi["fastapi\n:8000\nUvicorn + FastAPI"]
-      temporal_svc["temporal\n:7233\nTemporal dev server\n(profile: temporal — disabled by default)"]
+      temporal_svc["temporal\n:7233\nTemporal dev server\n(profile: temporal: disabled by default)"]
       temporal_ui["temporal-ui\n:8080\nTemporal Web UI\n(profile: temporal)"]
     end
     browser["Browser"] -->|http://localhost:3000| nextjs
@@ -46,7 +46,7 @@ graph LR
 - Next.js either: (a) built as static export served from FastAPI's static files, or
   (b) deployed as a separate service on the same host
 - Choice made at deployment time (Phase 3) based on host friction
-- No secrets beyond a deploy token — synthetic data only, no auth
+- No secrets beyond a deploy token: synthetic data only, no auth
 
 ## Dockerfile targets
 
