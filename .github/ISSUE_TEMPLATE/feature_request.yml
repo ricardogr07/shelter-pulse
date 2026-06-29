@@ -1,0 +1,29 @@
+name: Feature Request
+description: Propose an improvement or new capability
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What gap does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: rubric
+    attributes:
+      label: Rubric category
+      options:
+        - Technical (25%)
+        - Innovation (20%)
+        - Security (15%)
+        - UX (15%)
+        - Theme (15%)
+        - Docs (10%)
+        - N/A

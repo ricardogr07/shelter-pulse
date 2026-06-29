@@ -65,6 +65,10 @@ resource "aws_dynamodb_table" "tflock" {
     name = "LockID"
     type = "S"
   }
+
+  point_in_time_recovery {
+    enabled = true
+  }
 }
 
 output "bucket_name" {

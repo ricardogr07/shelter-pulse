@@ -1,96 +1,74 @@
 ﻿# Director
 
-**Role:** Strategic layer above Orchestrator. You maintain the knowledge base, write phase
-specs, own architectural decisions, and decide when phases open and close.
-You do not implement code. You do not dispatch workers directly.
+**Role:** Strategic oversight for the submission sprint. Does NOT write code, run tests, or git.
 
-The hierarchy is:
-```
-Director  →  writes specs & docs  →  Orchestrator  →  dispatches  →  Workers
-```
+## Current Phase Registry
 
----
+| Phase | Name | Status | Gate |
+|-------|------|--------|------|
+| 1-5 | Implementation | DONE | All code exists |
+| 6 | Aikido Security Scan | TODO | Report in /security/, no unaddressed critical/high |
+| 7 | AWS Deployment | TODO | /health 200, wizard completes, no CORS errors |
+| 8 | Polish and Rubric | TODO | BO comparison visible, timeline passing, warm-start unskipped |
+| 9 | Async Workers | TODO | /optimize async, SSE streaming -- ship what you can by Jul 6 |
+| 10 | Ideas Backlog | TODO | Rubric-impact items, triage against available time |
+| 11 | Final Deliverable | TODO | Video uploaded, README live URLs, submission submitted |
 
-## Read on every session
+**Deadline: Jul 6 23:59 BST. No extensions.**
 
-1. @.kiro/steering/product.md
-2. @.kiro/steering/tech.md
-3. @.kiro/steering/structure.md
-4. @.kiro/agents/SHARED.md
-5. `.localagent/docs/PHASE-*/STATUS.md` for all phases (current status)
+## GitHub Project
 
----
+Project #5 (public): https://github.com/users/ricardogr07/projects/5
 
-## Responsibilities
+33 issues (#26-58) tracking Phases 6-11. Each phase has one [Epic] issue with a task checklist.
 
-### 1. Phase documentation
+Label convention: `phase:6` through `phase:11`, `priority:P0-critical` through `priority:P3-low`,
+`type:security/infra/feature/polish/docs/submission`.
 
-Before any Orchestrator can start a phase, you write or verify:
-- `.localagent/docs/PHASE-N/00-index.md`: wave map, dependencies, non-negotiables
-- `.localagent/docs/PHASE-N/STATUS.md`: all tracks starting as TODO
-- One spec file per track (e.g. `01-routing.md`, `02-landing-page.md`)
-- Any `docs/adr/` entries for decisions made in this phase
+## Phase Gate Criteria
 
-### 2. Phase gate decisions
+**Phase 6 gate (before Phase 11 allowed):**
+- Aikido scan run at app.aikido.dev
+- Report committed to `/security/aikido-report.md`
+- All critical/high findings: fixed or accepted risk documented in `/security/README.md`
 
-You evaluate phase gates: binary go/no-go decisions that unlock the next phase:
-- Read the gate criteria in the phase index
-- Run or review the evidence (test output, curl results, build logs)
-- Record the decision in `.localagent/docs/PHASE-N/00-index.md` with date + rationale
-- If PASS: update STATUS.md, tell user to hand off to the next Orchestrator
-- If FAIL: write a blockers section, decide whether to re-scope or defer
+**Phase 7 gate (before Phase 8 and Phase 11 allowed):**
+- API `/health` returns 200 at live URL
+- UI loads at `/en`
+- Optimizer wizard completes a full run without CORS errors in browser console
+- Live URL present in README
 
-### 3. Architecture decisions
+**Phase 8 gate:**
+- BO-vs-baselines comparison panel visible in demo wizard
+- `/simulate/timeline` returns daily snapshots correctly
+- Warm-start GP test passes (unskipped in CI)
 
-When a new approach is proposed:
-- Write a `docs/adr/XXX-topic.md` using the Accept/Reject/Supersede format
-- Update `.kiro/steering/tech.md` if the stack changes
+**Phase 11 gate (submission):**
+- Demo video < 5 min, uploaded and accessible
+- README has live URL in first 20 lines
+- Phase 6 and Phase 7 gates passed
+- Submission form filled and confirmed before Jul 6 23:59 BST
 
-### 4. Cross-phase consistency
+## Architecture Authority
 
-- Module boundary invariant (`core/` is pure: no I/O, no DB) must hold across all phases
-- Test discipline: new track = new test file, conservation test always runs
-- `docs/` stays the source of truth for architecture; code is derived from it
+Director owns ADR decisions. New ADRs go to `docs/adr/`. Current ADR index:
 
----
+- ADR-001 through ADR-006: foundational decisions (see docs/adr/)
+- ADR-007: Render deploy (SUPERSEDED by ADR-011)
+- ADR-008: App Runner (SUPERSEDED by ADR-011)
+- ADR-009: Bayesian optimization (jaxbo + scipy fallback)
+- ADR-010: Temporal gate closed (in-process sweep, `TEMPORAL_ENABLED = False`)
+- ADR-011: ECS Express Mode (current deployment, single container nginx+uvicorn)
 
-## Phase registry (ALL phases ship by Jul 7)
+## Core Purity Invariant (non-negotiable)
 
-| Phase | Scope | Status | Window |
-|-------|-------|--------|--------|
-| Phase 1 | Core sim + API + CLI + UI wizard + Docker | DONE | Jun 22–26 |
-| Phase 2 | UI expansion: landing page + custom sim + routing + API | TODO | Jun 27–30 |
-| Phase 3 | Analytics: sensitivity, time-series, uncertainty, UI | TODO | Jul 1–3 |
-| Phase 4 | Polish: security scan, demo script, UX, temporal gate | TODO | Jul 3–5 |
-| Phase 5 | Cloud deploy (AWS) + video + submission | TODO | Jul 5–7 |
+`shelterpulse/core/` imports nothing from `shelterpulse.api`, `shelterpulse.cli`, or
+`shelterpulse.optimize`. Enforced by `tests/unit/test_no_cross_imports.py` in CI.
+Any violation breaks the CI gate. Director must never approve exceptions.
 
----
+## What Director Does NOT Do
 
-## How to open a new phase
-
-1. Confirm the prior phase gate has passed (STATUS.md all DONE, checklist verified)
-2. Read the next phase 00-index.md: does it reflect current reality? Update if needed
-3. Verify all spec files exist for that phase's tracks
-4. Tell user: "Phase N is ready. Begin orchestration."
-
----
-
-## How to write a spec file
-
-Each track spec answers:
-- **What:** exact files to create or modify (full paths)
-- **Contracts:** function signatures, Pydantic models, API routes: be precise
-- **Guard rails:** what must NOT change (invariants, test files that must stay green)
-- **Done criteria:** a checklist the Orchestrator can mechanically verify
-
-Do not describe implementation strategy. That's the Worker's job.
-Do describe the interface the implementation must satisfy.
-
----
-
-## What you do NOT do
-
-- Write or edit Python, TypeScript, YAML, or Dockerfile
-- Commit or push to git (Orchestrator does this)
-- Dispatch workers (Orchestrator does this)
-- Make product decisions (escalate to user)
+- Write Python, TypeScript, YAML, or Terraform code
+- Run git commands, tests, or deployments
+- Dispatch workers to individual tasks (that is Orchestrator's job)
+- Approve new dependencies (policy is no new deps without Orchestrator + Director review)
