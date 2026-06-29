@@ -1,4 +1,6 @@
-﻿# Worker: Core-B: Monte Carlo Runner
+> **STATUS: DONE (Phase 1 complete).** All files this worker was assigned to create
+> exist in the codebase. Archived for decision trail. Not for active use.
+# Worker: Core-B: Monte Carlo Runner
 
 **Model:** Claude Sonnet 4.6 | **Effort:** high  
 **Depends on:** Core-A must be DONE first (engine must accept `intervention=` param)
@@ -46,3 +48,4 @@ Implement the paired Monte Carlo runner with common random numbers (CRN), and re
 - `_inprocess_sweep` must evaluate `ALL_BASELINES` + `n_candidates` random Dirichlet allocations
 - Sort order: feasible first, then by `mean_overflow_cat_days` ascending
 - `TEMPORAL_ENABLED` flag and `_temporal_sweep` stub must remain untouched
+

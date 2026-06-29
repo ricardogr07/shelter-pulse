@@ -1,70 +1,105 @@
-﻿# Shared Context: All Workers
+# Shared -- Context for ALL Workers
 
-Read this before starting any task. It applies to every worker (kiro, Codex, or any other agent).
+Read this before writing a single line of code.
 
 ## Project
 
-**Name:** ShelterPulse  
-**Root:** `c:/git/shelter-pulse`  
-**Package:** `shelterpulse` (Python) + `ui/` (Next.js)  
-**Deadline:** Jul 6 2026 (submit early); hard deadline Jul 7 23:59 BST  
-**Jun 28 gate:** Run `run_optimization_sweep(scenario, budget=5000, n_candidates=4, use_bo=False)` → if sensible results → adopt Temporal; else drop it. See `.localagent/docs/10-temporal-gate.md`.
+ShelterPulse -- simulation + optimization lab for cat-shelter resource allocation.
+Hackathon: #hackthekitty 2026. Public repo: ricardogr07/shelter-pulse.
 
-## Before you write any code
+**Deadline: Jul 6 23:59 BST. No extensions.**
 
-1. Read your worker file (`.localagent/agents/worker-*.md`) for scope, ownership, and done criteria
-2. Read your spec file (`.localagent/docs/<number>-<name>.md`) for exact contracts
-3. Read the relevant existing source files: understand what's already there before adding anything
-4. Check `.localagent/docs/STATUS.md`: if your dependency tracks aren't DONE yet, stop
+Root: `c:/git/shelter-pulse`
+Python package: `shelterpulse`
+UI: `ui/` (Next.js + TypeScript + Tailwind)
+Scenarios: `scenarios/whisker_haven.yaml`
 
-## Module boundary (critical)
+## Before Any Code
 
-`shelterpulse/core/` is a **pure Python library**: no I/O, no network, no imports from `shelterpulse.api`, `shelterpulse.cli`, or `shelterpulse.optimize`.
+1. Check your GitHub issue: `gh issue view <N> --repo ricardogr07/shelter-pulse`
+2. Read your worker file (`.kiro/agents/worker-<domain>.md`)
+3. Read the phase spec: `.localagent/docs/PHASE-<N>/00-index.md`
+4. Read the relevant source files before touching them
+5. Check `.kiro/steering/` files (architecture, tech, rules -- always included by kiro)
 
-This is enforced by `tests/unit/test_no_cross_imports.py`. Violating it breaks CI.
+## Current Status (Jun 29 2026)
 
-## How to run code
+**Phases 1-11 code is COMPLETE.** All Python files, UI pages, Docker config, and Terraform
+infrastructure exist. Do NOT recreate existing files.
 
-```bash
-# From c:/git/shelter-pulse:
-uv run pytest tests/unit/<test_file>.py -v      # run specific test file
-uv run pytest tests/unit/ -v                    # all unit tests
-uv run pytest tests/unit/test_conservation.py  # conservation guard (always run after engine changes)
-uv run shelterpulse --help                      # CLI smoke test
+Remaining work: Phase 6 security scan, Phase 7 deploy, Phase 8-10 polish, Phase 11 submission.
+
+## Module Boundary -- CRITICAL
+
+`shelterpulse/core/` is a pure Python library. Zero I/O, zero network, zero imports from:
+- `shelterpulse.api`
+- `shelterpulse.cli`
+- `shelterpulse.optimize`
+
+Enforced by: `tests/unit/test_no_cross_imports.py` (CI fails if violated).
+
+Dependency arrows:
+```
+core  <--  optimize  <--  api/app.py  <--  ui/ (HTTP/JSON only, no Python import)
+core  <--  optimize  <--  cli/main.py
 ```
 
-## How to mark yourself done
+## GitHub Project
 
-Edit `.localagent/docs/STATUS.md`. Find your track row and update:
-- Status: `DONE`
-- Tests: which pytest commands passed (copy the output line count)
-- Notes: anything unusual or that the orchestrator should know
+Project #5 (public): https://github.com/users/ricardogr07/projects/5
+33 issues (#26-58) tracking Phases 6-11. All work must reference an issue number.
 
-Format:
-```
-| Core-A | 02-interventions | kiro | DONE | test_interventions.py 8/8, test_conservation.py 4/4 | - |
-```
+## Current API Endpoints (all exist in shelterpulse/api/app.py)
 
-## What you must NOT do
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| /health | GET | Health check |
+| /simulate | POST | Single simulation run |
+| /optimize | POST | Full optimization sweep |
+| /baselines | GET | 5 named baseline allocations |
+| /sensitivity | POST | Tornado chart data |
+| /simulate/timeline | POST | Daily snapshot timeline |
+| /simulate/builder | POST | Custom scenario simulation |
+| /optimize/builder | POST | Custom scenario optimization |
+| /export | POST | Download YAML+CSV results |
 
-- `git commit`, `git push`, `git reset`, `git add` → orchestrator (Claude) only
-- Edit `.github/workflows/` → orchestrator only
-- Add packages to `pyproject.toml` or `ui/package.json` → ask first
-- Edit files outside your ownership scope → see your worker file
+## Key Functions
 
-## Coding style
+| Function | File | Purpose |
+|----------|------|---------|
+| `load_scenario()` | core/schema.py | Load whisker_haven.yaml → Scenario |
+| `run_simulation(scenario, seed, intervention)` | core/engine.py | One SimPy replication |
+| `resolve_intervention(scenario, allocation)` | core/interventions.py | Budget → InterventionParams |
+| `run_paired(scenario, intervention, seed_set)` | core/montecarlo.py | CRN paired replications |
+| `evaluate_candidate(allocation, scenario, seed_set)` | optimize/interface.py | THE evaluation seam |
+| `run_optimization_sweep(scenario, budget, ...)` | optimize/workflow.py | Full sweep → ranked list |
 
-- Minimum code that satisfies the spec (ponytail constraint)
-- No comments that explain what the code does: only comments for non-obvious WHY
-- Type annotations everywhere in Python (pyrefly checks this)
-- `model_config = ConfigDict(frozen=True, extra="forbid")` on all new Pydantic models
+## CRN Discipline
 
-## Quick reference: existing key functions
+All optimization candidates must use the **same seed_set**. Common Random Numbers removes
+replication variance from comparisons. The seed_set is fixed at sweep start in workflow.py
+and passed to every `evaluate_candidate()` call. Do NOT call `run_simulation()` directly
+from an optimizer -- always go through `evaluate_candidate()`.
 
-| Function | File | What it does |
-|----------|------|-------------|
-| `load_scenario(path)` | `core/schema.py` | Load + validate whisker_haven.yaml → `Scenario` |
-| `run_simulation(scenario, seed, intervention=None)` | `core/engine.py` | One SimPy replication → `SimulationResult` |
-| `evaluate_candidate(allocation, scenario, seed_set)` | `optimize/interface.py` | Multi-rep evaluation → `EvaluationResult` |
-| `ALL_BASELINES` | `optimize/baselines.py` | Dict of named `CandidateAllocation` objects |
-| `run_optimization_sweep(...)` | `optimize/workflow.py` | Full sweep → `list[EvaluationResult]` |
+## Frozen Scenario
+
+`Scenario` has `model_config = ConfigDict(frozen=True)`. Never add mutable state.
+If a scenario change is needed mid-sweep, create a new `Scenario` object.
+
+## Coding Style
+
+- Minimum code (ponytail). YAGNI. No premature abstractions.
+- Type annotations on every function signature.
+- `model_config = ConfigDict(frozen=True, extra="forbid")` on Pydantic models.
+- No `any` in TypeScript without comment justification.
+- Domain language: cats, kittens, isolation queue, foster placement, vet tech, adoption counselor.
+  NEVER: "entities", "units", "agents" (unless AI agent context).
+
+## Forbidden for ALL Workers
+
+- `git add/commit/push/reset/amend` (Orchestrator only)
+- Edit `.github/workflows/` (Director approval required)
+- `pip install` or `npm install <new-package>` modifying lock files (Orchestrator approval)
+- `terraform destroy` (Director approval required)
+- Edit files outside your worker's ownership zone (see your worker-*.md)
+- Mark done without running the required tests first

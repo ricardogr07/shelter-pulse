@@ -1,139 +1,96 @@
-﻿# Orchestrator Protocol
+# Orchestrator
 
-**Role:** Execute phases by dispatching work (to subagents or directly), reviewing results,
-running tests, and committing. This is the Kiro session acting as orchestrator.
+**Role:** Execute phases by dispatching workers, running tests, committing, and managing PRs.
 
----
+## Issue-Driven Workflow
 
-## Read first
+All work starts from a GitHub issue. See `.kiro/docs/playbook-issue-workflow.md` for the
+step-by-step. Short version:
 
-1. @.kiro/agents/SHARED.md
-2. The relevant phase's `00-index.md` and `STATUS.md`
-3. All spec files for the current phase's active wave
+1. `gh issue list --repo ricardogr07/shelter-pulse --label "phase:<N>"` -- find work
+2. `gh issue edit <N> --add-assignee @me` -- claim it
+3. `git checkout -b feat/issue-<N>-<slug>` -- branch
+4. Dispatch appropriate worker (see dispatch table below)
+5. `tox -e lint,test,security` + `cd ui && npm run build` -- validate
+6. `git commit -m "feat: ... \n\nCloses #<N>"` -- commit with close reference
+7. `gh pr create --base develop` -- PR with template
 
----
+## Worker Dispatch Table
 
-## Execution loop
+| Work domain | Worker file | Phase |
+|-------------|-------------|-------|
+| Security scan, triage | Read .localagent/docs/PHASE-6/ | 6 |
+| Terraform plan/apply | worker-terraform.md | 7 |
+| ECR push + ECS deploy | worker-deployment.md | 7 |
+| API endpoint changes | worker-api.md | 8, 9 |
+| UI changes | worker-ui.md | 8, 10 |
+| CLI changes | worker-cli.md | any |
+| Multi-file planning | PLANNER.md | any |
 
-```
-1. Read STATUS.md for the current phase
-2. Find tracks: Status=TODO AND all dependency tracks are DONE
-3. For parallel tracks in the same wave → dispatch as subagents or do sequentially
-4. After each track: run tests, verify done criteria
-5. If pass: update STATUS.md → DONE
-6. If fail: diagnose, fix, re-verify
-7. When all tracks DONE → evaluate phase gate → move to next phase
-```
+## Phase Execution Sequence
 
----
+**Phase 6 (Security):** Issues #26-29
+1. Work through sequentially: pre-scan (#26) → scan (#27) → triage (#28)
+2. Commit Aikido report to /security/
+3. PR to develop, merge, promote develop → main
 
-## Phase 2: UI Expansion (Jun 27–30)
+**Phase 7 (Deploy):** Issues #30-35
+1. worker-terraform.md: issues #30 (ECR), #31 (apply), #32 (UI service check)
+2. worker-deployment.md: issues #33 (push image), #34 (verify live)
+3. After live URL confirmed: README update (#34)
+4. PR to develop, merge, promote to main
 
-### Wave 2a (parallel, no deps)
-- **01-routing**: Move wizard to /demo, add NavBar + layout + /simulate placeholder
-- **04-custom-scenario-api**: New `POST /simulate/custom` + `/optimize/custom` endpoints
+**Phase 8 (Polish):** Issues #36-41
+Parallel:
+- Track A (API): #36 BO comparison response field → worker-api.md
+- Track B (UI): #36 comparison panel → worker-ui.md
+Then sequential: #37 (timeline fix), #38 (warm-start), #39 (kiro write-up), #40 (tox rerun)
 
-### Wave 2b (after 2a)
-- **02-landing-page**: Marketing-quality landing at `/`
-- **03-custom-simulation**: Full form + results at `/simulate`
+**Phase 9 (Async):** Issues #42-46
+1. #42 (Temporal): flip TEMPORAL_ENABLED → worker-api.md
+2. #43 (RabbitMQ + SSE): async endpoint → worker-api.md
+3. #44, #45 (ClickHouse + UI): worker-api.md + worker-ui.md
+4. Ship what's ready by Jul 5
 
-### Verify:
-```bash
-uv run pytest tests/unit/ -q              # all Python tests pass
-cd ui && npm run build                     # Next.js builds clean
-```
+**Phase 10 (Backlog):** Issues #47-54
+Dispatch in priority order (P1 first):
+- #47 clinic callout (1h), #48 CORS restrict (30min), #49 pickle cache (1h)
+- #50 sliders (2h), #51 a11y (2h) -- if time permits
+- #52, #53 stretch goals
 
----
+**Phase 11 (Submit):** Issues #55-58
+- #55 README live URLs: direct commit after Phase 7 confirmed
+- #56 Demo video: human-only task
+- #57 Submission: human-only task, hard deadline Jul 6 23:59 BST
 
-## Phase 3: Analytics (Jul 1–3)
+## Review Protocol
 
-### Wave 3a (parallel)
-- **01-sensitivity-api**: POST /sensitivity endpoint
-- **02-time-series**: Engine event recorder + timeline endpoint
-- **03-uncertainty-bands**: CI-95 fields in result models
-
-### Wave 3b
-- **04-analytics-ui**: Render sensitivity, timeline, CI on /simulate page
-
-### Verify:
-```bash
-uv run pytest tests/unit/ -v              # includes new test files
-uv run pytest tests/unit/test_conservation.py -v  # regression guard
-cd ui && npm run build
-```
-
----
-
-## Phase 4: Polish (Jul 3–5)
-
-### Wave 4a (parallel, no deps)
-- **01-security-scan**: pip-audit + npm audit → security/
-- **04-temporal-gate**: Run gate test, document decision
-- **.kiro/ commit**: git add .kiro/
-
-### Wave 4b (after Phases 2+3)
-- **02-demo-script**: Write docs/demo-script.md
-- **03-ux-polish**: Loading, errors, responsive, a11y
-
-### Verify:
-```bash
-uv run pytest -q
-cd ui && npm run build
-```
-
----
-
-## Phase 5: Cloud + Submission (Jul 5–7)
-
-### Wave 5a
-- **01-aws-setup**: User creates AWS Free Plan account
-
-### Wave 5b (sequential)
-- **02-cloud-deploy**: ECR + App Runner
-- **03-readme-urls**: Update README with live URLs
-- **04-demo-video**: Record < 5 min walkthrough
-- **05-submission-checklist**: Final gate
-
-### Verify:
-```bash
-curl <LIVE_API_URL>/health
-# Open <LIVE_UI_URL> in browser, run full flow
-```
-
----
-
-## Review protocol (after each track)
+After every worker session:
 
 ```bash
-# 1. Run relevant tests
-uv run pytest tests/unit/ -q
-
-# 2. Conservation guard (if core/ was touched)
-uv run pytest tests/unit/test_conservation.py -v
-
-# 3. Cross-import guard (if core/ was touched)
-uv run pytest tests/unit/test_no_cross_imports.py -v
-
-# 4. UI build (if ui/ was touched)
-cd ui && npm run build
+uv run pytest tests/unit/test_conservation.py -v   # conservation -- must pass
+uv run pytest tests/unit/ -v                        # all unit tests
+tox -e lint                                         # pyrefly
+tox -e security                                     # bandit
+cd ui && npm run build                              # only if UI changed
+git diff --name-only                                # verify scope
 ```
 
----
+## PR Rules
 
-## Commit convention
-
-```
-feat: <track name>: <one-line description>
-fix: <what was wrong>
-docs: <documentation change>
-chore: <non-functional change>
-```
-
----
-
-## Rules
-
-- No `git push --force`, no `--amend`, no `--no-verify`
-- No changes to `.github/workflows/`
+- Squash merge always: `gh pr merge <N> --squash --delete-branch`
+- PR body must include "Closes #<issue-number>" for auto-close
+- Never push directly to develop or main
+- Never use --no-verify or --force-push
+- Never edit `.github/workflows/` without Director approval
 - No new packages without Director approval
-- Architecture questions → escalate to Director
+
+## CI/CD Summary
+
+See `.kiro/docs/playbook-pr-cicd.md` for full detail.
+
+| Git action | CI/CD triggered |
+|-----------|----------------|
+| PR to develop | ci.yml: lint + test + security + UI build |
+| Merge develop → main | promote.yml: full suite + Docker build + GHCR push |
+| Push `v*` tag on main | deploy.yml: ECR push + ECS rolling update |

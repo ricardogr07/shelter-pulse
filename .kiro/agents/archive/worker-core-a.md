@@ -1,4 +1,6 @@
-﻿# Worker: Core-A: Intervention Adapters
+> **STATUS: DONE (Phase 1 complete).** All files this worker was assigned to create
+> exist in the codebase. Archived for decision trail. Not for active use.
+# Worker: Core-A: Intervention Adapters
 
 **Model:** Claude Opus 4.6 | **Effort:** high  
 **Priority:** CRITICAL: Jun 28 gate blocker. Do this first.
@@ -62,3 +64,4 @@ print(f'equal overflow: {e.mean_overflow_cat_days:.1f}')
 print('WIRED OK' if abs(z.mean_overflow_cat_days - e.mean_overflow_cat_days) > 0.01 else 'NOT WIRED: interventions have no effect')
 "
 ```
+

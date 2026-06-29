@@ -1,53 +1,79 @@
-﻿# Worker: API: FastAPI REST Adapter
+# Worker: API
 
-**Model:** Claude Sonnet 4.6 | **Effort:** medium  
-**Depends on:** Core-A (interventions) + Core-B (montecarlo) must be DONE  
-**Parallel with:** CLI worker (worker-cli.md)
+**Model:** Claude Sonnet 4.6 | **Effort:** medium | **Phase:** 8, 9
 
-## Role
+**Role:** Maintain and extend `shelterpulse/api/app.py`. File already exists and is
+production-ready. Do NOT recreate it.
 
-Implement the FastAPI REST surface. Four routes: `/health`, `/simulate`, `/optimize`, `/baselines`. Add `/export` once Core-D is done. All logic lives in core: this file is plumbing only.
+## Files You Own
 
-## Read first
+- `shelterpulse/api/app.py` (extend only)
+- `tests/e2e/test_api.py` (extend only)
 
+Forbidden zones: core/, optimize/ (read-only reference), cli/, ui/, .github/workflows/
+
+## Current Endpoints (DO NOT re-implement)
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| /health | GET | Returns `{"status": "ok"}` |
+| /simulate | POST | Single run via run_simulation() |
+| /optimize | POST | Full sweep via run_optimization_sweep() |
+| /baselines | GET | 5 named allocations from baselines.py |
+| /sensitivity | POST | Tornado chart: 6 perturbations via evaluate_candidate() |
+| /simulate/timeline | POST | Daily snapshot data via run_simulation() |
+| /simulate/builder | POST | Custom scenario: _builder_to_scenario() + simulate |
+| /optimize/builder | POST | Custom scenario: _builder_to_scenario() + sweep |
+| /export | POST | export_results() from core/export.py → ZIP |
+
+## How to Add a New Endpoint
+
+1. Define input model (Pydantic, frozen or regular)
+2. Define response model (Pydantic)
+3. Add thin route function: validate → call into optimize/ or core/ → return response model
+4. Use `_get_scenario()` for the demo scenario (Whisker Haven)
+5. Use `_builder_to_scenario()` for builder-form inputs
+6. No business logic in app.py
+
+## How to Test
+
+```bash
+# Start API in one terminal
+uv run uvicorn shelterpulse.api.app:app --reload
+
+# Run e2e suite in another
+uv run pytest tests/e2e/ -v
+
+# Manual smoke
+curl http://localhost:8000/health
+curl -X POST http://localhost:8000/optimize \
+  -H "Content-Type: application/json" \
+  -d '{"n_candidates": 4, "n_reps": 8, "use_bo": false}'
 ```
-@.localagent/agents/SHARED.md
-@.localagent/docs/05-rest-api.md
-```
 
-## Files you own
+## Phase 8 Task (Issue #36)
 
-| File | Action |
-|------|--------|
-| `shelterpulse/api/app.py` | **Create** |
-| `tests/e2e/test_api.py` | **Create** |
+BO-vs-baselines comparison: the `/optimize` response already returns a ranked
+`list[EvaluationResult]` including baselines with `allocation_name` field.
+Verify the field is populated for named baselines. If missing, extend the response so
+the UI can label rows "Equal Split", "All Foster", etc. Do not change the existing
+response structure -- add fields only.
 
-## Files you must NOT touch
+## Phase 9 Tasks (Issues #42, #43)
 
-- `core/*.py`: not your scope
-- `optimize/*.py`: not your scope
-- `cli/main.py`: owned by CLI worker
-- `ui/`: not your scope
+**Issue #42 (Temporal activation):**
+- One-line change: `TEMPORAL_ENABLED = True` in `optimize/workflow.py`
+- Wire Temporal worker process in docker-compose.yml (new service)
+- Verify sweep still returns ranked results
 
-## Done criteria
+**Issue #43 (Async /optimize + SSE):**
+- POST `/optimize` → returns `{"workflow_id": "<uuid>"}` immediately (non-blocking)
+- GET `/optimize/stream?id=<uuid>` → SSE endpoint streaming progress events
+- New optional dep: `aio-pika>=9.4` (Orchestrator approval required before adding)
 
-- [ ] `uv run pytest tests/e2e/test_api.py -v`: all tests pass (uses httpx AsyncClient, no server needed)
-- [ ] `uvicorn shelterpulse.api.app:app` starts without errors
-- [ ] `curl http://localhost:8000/health` → `{"status":"ok","scenario":"Whisker Haven"}`
-- [ ] `curl -X POST http://localhost:8000/simulate -H "Content-Type: application/json" -d "{}"` returns overflow + cost
-- [ ] Update `.localagent/docs/STATUS.md` row for API
+## Key Contracts
 
-## Key contracts
-
-- Scenario is loaded once at startup from `scenarios/whisker_haven.yaml`: no per-request file I/O
-- No business logic in `app.py`: all computation via `core/` and `optimize/`
-- CORS: `allow_origins=["*"]` (judges need cross-origin access from browser)
-- `AllocationIn` must validate that shares sum to ≤ 1 (Pydantic model_validator)
-- `/optimize` accepts `use_bo: bool = True`: pass through to `run_optimization_sweep`
-- `/export` route: see spec §"Add /export route": returns zip with YAML + CSV
-
-## Add to `pyproject.toml` scripts (only if not already there)
-
-```toml
-shelterpulse-api = "shelterpulse.api.app:app"
-```
+- No simulation logic in app.py (all calls go into optimize/ or core/)
+- Single evaluation seam: optimizers call `evaluate_candidate()` in interface.py only
+- CRN: seed_set fixed at sweep start in workflow.py, same across all candidates
+- CORS: `allow_origins` sourced from env var (restrict in prod -- Phase 10 issue #48)
