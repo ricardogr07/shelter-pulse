@@ -36,4 +36,4 @@ async def test_baselines_returns_four(client):
     r = await client.get("/baselines")
     assert r.status_code == 200
     data = r.json()
-    assert len(data) == 4
+    assert len(data) == 5

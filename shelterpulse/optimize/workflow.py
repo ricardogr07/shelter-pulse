@@ -40,6 +40,11 @@ class EvaluationResult:
     std_overflow_cat_days: float
     mean_total_cost: float
     is_feasible: bool   # True if mean_total_cost ≤ scenario budget
+    # 95% confidence intervals (t-based)
+    ci95_overflow_low: float = 0.0
+    ci95_overflow_high: float = 0.0
+    ci95_cost_low: float = 0.0
+    ci95_cost_high: float = 0.0
 
 
 def _inprocess_sweep(

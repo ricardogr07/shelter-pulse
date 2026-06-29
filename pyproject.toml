@@ -20,7 +20,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-optimize = ["jax", "jaxlib"]
+optimize = [
+    "jax",
+    "jaxbo>=0.1.2",
+    "jaxlib",
+    "pydoe>=1.3.0",
+]
 temporal = ["temporalio>=1.7"]
 
 [project.scripts]

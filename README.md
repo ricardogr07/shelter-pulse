@@ -56,10 +56,14 @@ security/       Aikido scan reports
 
 | Service | URL |
 |---------|-----|
-| UI | _URL added after cloud deployment (Jul 4-5)_ |
-| API docs | _URL added after cloud deployment (Jul 4-5)_ |
+| App (UI) | https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws |
+| API docs | https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/api/docs |
 
-To deploy: push to GitHub → connect repo on [Render](https://render.com) → two Web Services (API uses root `Dockerfile` target `api`, UI uses root `Dockerfile` target `ui` with `NEXT_PUBLIC_API_URL` build arg set to the API service URL).
+Deployed as a **single consolidated container on AWS ECS Express Mode**: nginx serves the
+Next.js static export and reverse-proxies `/api/*` to uvicorn in the same task — one ALB,
+one HTTPS URL, no CORS (see [ADR-011](docs/adr/011-ecs-express-mode.md)). A GitHub release
+builds the `app` Docker target, pushes it to ECR, and updates the Express service via the
+AWS CLI.
 
 ## Design decisions
 

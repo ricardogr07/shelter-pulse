@@ -1,8 +1,6 @@
 name: Deploy
 
 on:
-  push:
-    tags: ["v*"]
   workflow_call:
     inputs:
       version:
@@ -41,18 +39,45 @@ jobs:
             echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build and push image
+      - name: Build and push consolidated image
         uses: docker/build-push-action@v5
         with:
           context: .
+          target: app
           push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=/api
           tags: |
             ${{ steps.ecr-login.outputs.registry }}/shelterpulse:v${{ steps.version.outputs.tag }}
             ${{ steps.ecr-login.outputs.registry }}/shelterpulse:latest
+
+      - name: Ensure latest AWS CLI v2 (Express Mode commands)
+        if: vars.ECS_EXPRESS_SERVICE_ARN != ''
+        run: |
+          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+          unzip -q awscliv2.zip
+          sudo ./aws/install --update
+          aws --version
+
+      - name: Deploy to ECS Express Mode
+        if: vars.ECS_EXPRESS_SERVICE_ARN != ''
+        env:
+          SERVICE_ARN: ${{ vars.ECS_EXPRESS_SERVICE_ARN }}
+          IMAGE: ${{ steps.ecr-login.outputs.registry }}/shelterpulse:v${{ steps.version.outputs.tag }}
+        run: |
+          aws ecs update-express-gateway-service \
+            --service-arn "$SERVICE_ARN" \
+            --primary-container "{\"image\":\"$IMAGE\",\"containerPort\":80}" \
+            --monitor-resources DEPLOYMENT \
+            --monitor-mode TEXT-ONLY
 
       - name: Summary
         run: |
           echo "### Deployed v${{ steps.version.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Image: \`${{ steps.ecr-login.outputs.registry }}/shelterpulse:v${{ steps.version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "App Runner will auto-deploy from ECR once the service is created." >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ vars.ECS_EXPRESS_SERVICE_ARN }}" ]; then
+            echo "Updated ECS Express service \`${{ vars.ECS_EXPRESS_SERVICE_ARN }}\`." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⚠️ \`ECS_EXPRESS_SERVICE_ARN\` variable not set — image pushed but no service updated. Create the Express service first, then set the variable." >> "$GITHUB_STEP_SUMMARY"
+          fi
