@@ -6,7 +6,7 @@ inclusion: always
 
 **What this is:** A simulation and optimization laboratory for cat-shelter resource allocation, built for the #hackthekitty 2026 hackathon.
 
-**Core demo scenario:** "Whisker Haven": a mid-size cat-only rescue shelter navigating kitten season (spring/summer intake surge). The shelter has 80 housing slots, 12 isolation slots, 1.5 FTE vet techs, and a $5,000 intervention budget. The model runs a 90-day simulation covering the full cat flow: intake → assessment → isolation/medical clearance → housing → foster → adoption-ready → adopted/transferred.
+**Core demo scenario:** "Whisker Haven": a mid-size cat-only rescue shelter navigating kitten season (spring/summer intake surge). The shelter has 35 housing slots, 5 isolation slots, 1.5 FTE vet techs, a small foster network (8 placements), and a $5,000 intervention budget. Intake surges 2.5x during kitten season peak. The model runs a 90-day simulation covering the full cat flow: intake → assessment → isolation/medical clearance → housing → foster → adoption-ready → adopted/transferred.
 
 **Custom simulation:** Beyond the demo, any user can build their own scenario: choosing geographic area (urban/suburban/rural), climate region, shelter size, budget, and personal constraints. The system simulates and optimizes against their specific parameters.
 
@@ -16,14 +16,24 @@ inclusion: always
 - Shelter managers: configure custom scenarios, review optimization + analytics
 - Hackathon judges: access live URL or run `docker compose up`, evaluate via UI + API + CLI
 
-**Deadline:** Submit by Jul 6 2026 (hard deadline Jul 7 23:59 BST).
+**Deadline:** Submit by Jul 6 2026 (hard deadline Jul 6 23:59 BST). No extensions.
 
-**Phases (ALL ship by Jul 7):**
-1. Core sim + API + CLI + wizard + Docker (DONE)
-2. UI expansion: landing page, routing, custom simulation builder
-3. Analytics: sensitivity analysis, time-series, uncertainty bands
-4. Polish: security scan, demo script, UX refinements, Temporal gate
-5. Cloud (AWS App Runner) + demo video + submission
+**Phase status (Jun 29 2026):**
+
+Phases 1-11 code is **COMPLETE**. All Python files, UI pages, Docker config, and Terraform
+infrastructure exist and are deployed. Remaining work is submission sprint (Phases 6-11).
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 1-5 | Core sim, BO, API, CLI, UI, Docker, ECS deploy | DONE |
+| 6 | Aikido Security Scan | TODO |
+| 7 | AWS Deployment (verify live) | TODO |
+| 8 | Polish and Rubric improvements | TODO |
+| 9 | Async BO workers + Observability | TODO |
+| 10 | Pre-deliverable ideas backlog | TODO |
+| 11 | Final Deliverable: video + submission | TODO |
+
+GitHub Project #5 tracks all remaining work: https://github.com/users/ricardogr07/projects/5
 
 **Non-negotiables (never cut):**
 1. < 5 min demo video covering landing page + custom simulation + optimization

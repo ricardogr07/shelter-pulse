@@ -1,4 +1,6 @@
-﻿# Worker: Core-D: Reproducible Export
+> **STATUS: DONE (Phase 1 complete).** All files this worker was assigned to create
+> exist in the codebase. Archived for decision trail. Not for active use.
+# Worker: Core-D: Reproducible Export
 
 **Model:** Claude Haiku 4.5 | **Effort:** medium  
 **Parallel with:** Core-A, Core-B, Core-C (can be done simultaneously)
@@ -52,3 +54,4 @@ def export_results(
 - No new dependencies: `yaml` (pyyaml, already installed) + `csv` (stdlib)
 - Round floats to 2 decimal places in output files
 - `rank` starts at 1 for the first result in the list
+
