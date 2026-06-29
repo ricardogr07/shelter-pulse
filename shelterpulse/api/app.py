@@ -181,8 +181,8 @@ def simulate(req: SimulateRequest) -> EvaluationOut:
 
 @app.post("/optimize", response_model=list[EvaluationOut])
 def optimize(req: SweepRequest) -> list[EvaluationOut]:
-    # Cache hit for demo params
-    if req.n_candidates == 30 and req.n_replications == 64 and req.use_bo:
+    # Cache hit for demo params (must match scripts/precompute_demo.py: 10 candidates, 16 reps, BO)
+    if req.n_candidates == 10 and req.n_replications == 16 and req.use_bo:
         cached = _load_demo_cache()
         if cached:
             return [_er_to_out(r) for r in cached]
@@ -270,27 +270,25 @@ def sensitivity_builder(req: BuilderRequest) -> list[SensitivityPoint]:
 
 # ── Timeline endpoints ────────────────────────────────────────────────────────
 
-@app.post("/simulate/timeline", response_model=list[TimelinePoint])
-def simulate_timeline(req: SimulateRequest) -> list[TimelinePoint]:
-    """Daily housing_used + overflow for one simulation run (seed=scenario.seed)."""
-    from shelterpulse.core.engine import run_simulation
+def _run_timeline(scenario, alloc: CandidateAllocation) -> list[TimelinePoint]:
+    """Daily housing occupancy + overflow for one simulation run (seed=scenario.seed).
+
+    overflow = cats queued for housing (above capacity). simpy.Resource.count is
+    capped at capacity, so the housing queue length is the real "above capacity" signal.
+    """
+    import simpy
+
+    from shelterpulse.core.engine import _Counters, _intake_generator
     from shelterpulse.core.interventions import resolve_intervention
 
-    scenario = _get_scenario()
-    alloc = CandidateAllocation(**req.allocation.model_dump())
     intervention = resolve_intervention(
         alloc.foster_support, alloc.clinic_hours,
         alloc.temporary_isolation, alloc.adoption_events, scenario,
     )
 
-    # Re-run with hourly sampler data exposed via a thin wrapper
-    import simpy
-
     rng = np.random.default_rng(scenario.seed)
     env = simpy.Environment()
-    housing_cap = scenario.housing_capacity
     isolation_cap = scenario.isolation_capacity
-
     extra_isolation = intervention.extra_isolation_slots
     extra_foster = intervention.extra_foster_slots
     vet_cap = max(1, int(sum(w.fte for w in scenario.workforce if w.role.value == "vet_tech")))
@@ -303,12 +301,10 @@ def simulate_timeline(req: SimulateRequest) -> list[TimelinePoint]:
             sum(w.fte for w in scenario.workforce if w.role.value == "animal_care")))),
         "foster_coordinator": simpy.Resource(env, capacity=max(1, int(
             sum(w.fte for w in scenario.workforce if w.role.value == "foster_coordinator")))),
-        "housing": simpy.Resource(env, capacity=housing_cap),
+        "housing": simpy.Resource(env, capacity=scenario.housing_capacity),
         "isolation": simpy.Resource(env, capacity=isolation_cap + extra_isolation),
         "foster": simpy.Resource(env, capacity=scenario.foster_network.capacity + extra_foster),
     }
-
-    from shelterpulse.core.engine import _Counters, _intake_generator
 
     counters = _Counters()
     daily_snapshots: list[dict] = []
@@ -319,15 +315,31 @@ def simulate_timeline(req: SimulateRequest) -> list[TimelinePoint]:
             daily_snapshots.append({
                 "day": day + 1,
                 "housing_used": resources["housing"].count,
-                "overflow": max(0, resources["housing"].count - housing_cap),
+                "overflow": len(resources["housing"].queue),
             })
 
     env.process(_intake_generator(env, scenario, resources, counters, rng,
                                   intervention.adoption_wait_multiplier))
     env.process(_daily_sampler())
-    env.run(until=scenario.duration_days * 24.0)
+    # +1h past the last 24h boundary: SimPy does not run events scheduled exactly at
+    # `until`, so without this the final daily sample (at day*24) is dropped — a 1-day
+    # scenario would return an empty timeline and an N-day one only N-1 points.
+    env.run(until=scenario.duration_days * 24.0 + 1.0)
 
     return [TimelinePoint(**s) for s in daily_snapshots]
+
+
+@app.post("/simulate/timeline", response_model=list[TimelinePoint])
+def simulate_timeline(req: SimulateRequest) -> list[TimelinePoint]:
+    """Daily housing_used + overflow for the Whisker Haven demo scenario."""
+    alloc = CandidateAllocation(**req.allocation.model_dump())
+    return _run_timeline(_get_scenario(), alloc)
+
+
+@app.post("/simulate/timeline/builder", response_model=list[TimelinePoint])
+def simulate_timeline_builder(req: BuilderRequest) -> list[TimelinePoint]:
+    """Daily housing_used + overflow for a custom builder scenario."""
+    return _run_timeline(_builder_to_scenario(req), CandidateAllocation(0.25, 0.25, 0.25, 0.25))
 
 
 # ── Export endpoint ───────────────────────────────────────────────────────────
