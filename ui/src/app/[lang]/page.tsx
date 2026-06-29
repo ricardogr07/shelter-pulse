@@ -1,5 +1,19 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getDictionary } from "@/i18n/dictionaries";
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const descriptions: Record<string, string> = {
+    en: "Simulate your cat shelter's capacity under uncertainty and optimize budget allocation during kitten season.",
+    es: "Simula la capacidad de tu refugio de gatos bajo incertidumbre y optimiza la asignación de presupuesto durante la temporada de gatitos.",
+  };
+  return {
+    title: "Home",
+    description: descriptions[lang] ?? descriptions.en,
+    openGraph: { title: "ShelterPulse — Kitten Season Resource Optimizer" },
+  };
+}
 
 export default async function LandingPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
