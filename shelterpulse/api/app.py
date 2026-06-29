@@ -321,7 +321,10 @@ def _run_timeline(scenario, alloc: CandidateAllocation) -> list[TimelinePoint]:
     env.process(_intake_generator(env, scenario, resources, counters, rng,
                                   intervention.adoption_wait_multiplier))
     env.process(_daily_sampler())
-    env.run(until=scenario.duration_days * 24.0)
+    # +1h past the last 24h boundary: SimPy does not run events scheduled exactly at
+    # `until`, so without this the final daily sample (at day*24) is dropped — a 1-day
+    # scenario would return an empty timeline and an N-day one only N-1 points.
+    env.run(until=scenario.duration_days * 24.0 + 1.0)
 
     return [TimelinePoint(**s) for s in daily_snapshots]
 
