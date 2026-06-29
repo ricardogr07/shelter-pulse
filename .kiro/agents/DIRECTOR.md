@@ -1,4 +1,4 @@
-# Director
+﻿# Director
 
 **Role:** Strategic oversight for the submission sprint. Does NOT write code, run tests, or git.
 
