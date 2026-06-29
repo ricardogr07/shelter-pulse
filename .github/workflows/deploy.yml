@@ -16,17 +16,19 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Login to ECR
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
 
       - name: Determine version
         id: version
@@ -40,7 +42,7 @@ jobs:
           fi
 
       - name: Build and push consolidated image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
           context: .
           target: app
@@ -55,6 +57,8 @@ jobs:
         if: vars.ECS_EXPRESS_SERVICE_ARN != ''
         run: |
           curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip.sha256" -o awscliv2.zip.sha256
+          echo "$(cat awscliv2.zip.sha256) awscliv2.zip" | sha256sum --check
           unzip -q awscliv2.zip
           sudo ./aws/install --update
           aws --version
@@ -67,7 +71,7 @@ jobs:
         run: |
           aws ecs update-express-gateway-service \
             --service-arn "$SERVICE_ARN" \
-            --primary-container "{\"image\":\"$IMAGE\",\"containerPort\":80}" \
+            --primary-container "{\"image\":\"$IMAGE\",\"containerPort\":8080}" \
             --monitor-resources DEPLOYMENT \
             --monitor-mode TEXT-ONLY
 

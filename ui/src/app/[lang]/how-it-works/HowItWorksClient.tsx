@@ -1,13 +1,18 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { getDictionary } from '@/i18n/dictionaries';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
 function Tex({ children, display = false }: { children: string; display?: boolean }) {
-  const html = katex.renderToString(children, { throwOnError: false, displayMode: display });
-  return <span dangerouslySetInnerHTML={{ __html: html }} />;
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (ref.current) {
+      katex.render(children, ref.current, { throwOnError: false, displayMode: display });
+    }
+  }, [children, display]);
+  return <span ref={ref} />;
 }
 
 function MathBlock({ children }: { children: string }) {
