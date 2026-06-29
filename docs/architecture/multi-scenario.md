@@ -1,7 +1,7 @@
-# Multi-Scenario Architecture (Phase 3)
+﻿# Multi-Scenario Architecture (Phase 3)
 
 Describes the data model and module additions that allow any shelter to load, store,
-and compare custom scenarios — not just the hardcoded Whisker Haven.
+and compare custom scenarios: not just the hardcoded Whisker Haven.
 
 ---
 
@@ -16,7 +16,7 @@ shelterpulse/
     db.py          # engine + session factory (SQLite default)
 ```
 
-`store/` is an **adapter** — same boundary rules as `api/` and `cli/`:
+`store/` is an **adapter**: same boundary rules as `api/` and `cli/`:
 - May import from `shelterpulse.core` (to call `load_scenario`, validate Pydantic models)
 - Must NOT be imported by `shelterpulse.core`
 - `tests/unit/test_no_cross_imports.py` must be extended to cover `store/`
@@ -52,10 +52,10 @@ New router: `/scenarios`
 
 | Method | Route | Body | Returns |
 |--------|-------|------|---------|
-| `GET` | `/scenarios` | — | `list[ScenarioSummary]` |
+| `GET` | `/scenarios` |: | `list[ScenarioSummary]` |
 | `POST` | `/scenarios` | `ScenarioCreate(slug, name, yaml_content)` | `ScenarioRecord` |
-| `GET` | `/scenarios/{slug}` | — | `ScenarioDetail` (includes parsed Pydantic model) |
-| `DELETE` | `/scenarios/{slug}` | — | `204` |
+| `GET` | `/scenarios/{slug}` |: | `ScenarioDetail` (includes parsed Pydantic model) |
+| `DELETE` | `/scenarios/{slug}` |: | `204` |
 | `POST` | `/scenarios/import` | multipart CSV file | `ScenarioRecord` |
 | `POST` | `/scenarios/compare` | `CompareRequest(slugs: list[str], n_reps)` | `list[EvaluationResult]` |
 

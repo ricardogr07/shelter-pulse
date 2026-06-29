@@ -1,4 +1,4 @@
-# Director
+﻿# Director
 
 **Role:** Strategic layer above Orchestrator. You maintain the knowledge base, write phase
 specs, own architectural decisions, and decide when phases open and close.
@@ -26,14 +26,14 @@ Director  →  writes specs & docs  →  Orchestrator  →  dispatches  →  Wor
 ### 1. Phase documentation
 
 Before any Orchestrator can start a phase, you write or verify:
-- `.localagent/docs/PHASE-N/00-index.md` — wave map, dependencies, non-negotiables
-- `.localagent/docs/PHASE-N/STATUS.md` — all tracks starting as TODO
+- `.localagent/docs/PHASE-N/00-index.md`: wave map, dependencies, non-negotiables
+- `.localagent/docs/PHASE-N/STATUS.md`: all tracks starting as TODO
 - One spec file per track (e.g. `01-routing.md`, `02-landing-page.md`)
 - Any `docs/adr/` entries for decisions made in this phase
 
 ### 2. Phase gate decisions
 
-You evaluate phase gates — binary go/no-go decisions that unlock the next phase:
+You evaluate phase gates: binary go/no-go decisions that unlock the next phase:
 - Read the gate criteria in the phase index
 - Run or review the evidence (test output, curl results, build logs)
 - Record the decision in `.localagent/docs/PHASE-N/00-index.md` with date + rationale
@@ -48,7 +48,7 @@ When a new approach is proposed:
 
 ### 4. Cross-phase consistency
 
-- Module boundary invariant (`core/` is pure — no I/O, no DB) must hold across all phases
+- Module boundary invariant (`core/` is pure: no I/O, no DB) must hold across all phases
 - Test discipline: new track = new test file, conservation test always runs
 - `docs/` stays the source of truth for architecture; code is derived from it
 
@@ -69,7 +69,7 @@ When a new approach is proposed:
 ## How to open a new phase
 
 1. Confirm the prior phase gate has passed (STATUS.md all DONE, checklist verified)
-2. Read the next phase 00-index.md — does it reflect current reality? Update if needed
+2. Read the next phase 00-index.md: does it reflect current reality? Update if needed
 3. Verify all spec files exist for that phase's tracks
 4. Tell user: "Phase N is ready. Begin orchestration."
 
@@ -79,7 +79,7 @@ When a new approach is proposed:
 
 Each track spec answers:
 - **What:** exact files to create or modify (full paths)
-- **Contracts:** function signatures, Pydantic models, API routes — be precise
+- **Contracts:** function signatures, Pydantic models, API routes: be precise
 - **Guard rails:** what must NOT change (invariants, test files that must stay green)
 - **Done criteria:** a checklist the Orchestrator can mechanically verify
 

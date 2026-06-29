@@ -1,4 +1,4 @@
-# Orchestrator — Phase 2: UI Expansion
+﻿# Orchestrator: Phase 2: UI Expansion
 
 **Role:** Drive Phase 2 tracks to completion. Implement, review, test, and commit.
 
@@ -22,18 +22,18 @@ Phase 1 complete. Running locally:
 
 ---
 
-## Wave 2a — parallel, no external deps
+## Wave 2a: parallel, no external deps
 
 ### Track: 01-routing
 Spec: @.localagent/docs/PHASE-2/01-routing.md
 
 Implementation:
-1. Create `ui/src/components/NavBar.tsx` — sticky nav with links to /, /demo, /simulate
-2. Create `ui/src/components/Footer.tsx` — minimal footer
-3. Update `ui/src/app/layout.tsx` — wrap children with NavBar + Footer
-4. Create `ui/src/app/demo/page.tsx` — copy current `page.tsx` content here
-5. Replace `ui/src/app/page.tsx` — placeholder "Landing page coming..."
-6. Create `ui/src/app/simulate/page.tsx` — placeholder "Custom sim coming..."
+1. Create `ui/src/components/NavBar.tsx`: sticky nav with links to /, /demo, /simulate
+2. Create `ui/src/components/Footer.tsx`: minimal footer
+3. Update `ui/src/app/layout.tsx`: wrap children with NavBar + Footer
+4. Create `ui/src/app/demo/page.tsx`: copy current `page.tsx` content here
+5. Replace `ui/src/app/page.tsx`: placeholder "Landing page coming..."
+6. Create `ui/src/app/simulate/page.tsx`: placeholder "Custom sim coming..."
 
 Verify: `cd ui && npm run build` passes, `/demo` shows the wizard.
 
@@ -41,7 +41,7 @@ Verify: `cd ui && npm run build` passes, `/demo` shows the wizard.
 Spec: @.localagent/docs/PHASE-2/04-custom-scenario-api.md
 
 Implementation:
-1. Create `shelterpulse/api/custom.py` — `build_scenario_from_request()`
+1. Create `shelterpulse/api/custom.py`: `build_scenario_from_request()`
 2. Add `POST /simulate/custom` and `POST /optimize/custom` to `api/app.py`
 3. Create `tests/unit/test_custom_api.py`
 
@@ -49,7 +49,7 @@ Verify: `uv run pytest tests/unit/test_custom_api.py -v` passes, conservation te
 
 ---
 
-## Wave 2b — after Wave 2a done
+## Wave 2b: after Wave 2a done
 
 ### Track: 02-landing-page
 Spec: @.localagent/docs/PHASE-2/02-landing-page.md
@@ -79,6 +79,6 @@ Update STATUS.md row → DONE.
 
 - [ ] `npm run build` clean with 3 routes (/, /demo, /simulate)
 - [ ] Landing page at `/` with CTAs
-- [ ] Custom sim at `/simulate` — form submits to API, results render
-- [ ] Demo wizard at `/demo` — unchanged behavior
+- [ ] Custom sim at `/simulate`: form submits to API, results render
+- [ ] Demo wizard at `/demo`: unchanged behavior
 - [ ] All Python tests pass

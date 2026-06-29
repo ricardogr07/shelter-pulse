@@ -1,4 +1,4 @@
-# Worker: UI — Next.js 6-Step Wizard
+﻿# Worker: UI: Next.js 6-Step Wizard
 
 **Model:** Claude Sonnet 4.6 | **Effort:** high  
 **Depends on:** API worker must be DONE  
@@ -29,8 +29,8 @@ Replace the placeholder `ui/src/app/page.tsx` with a single-page 6-step wizard t
 
 ## Files you must NOT touch
 
-- `ui/next.config.ts` — only modify if `output: "standalone"` is needed and not set
-- `ui/package.json` — no new packages without approval
+- `ui/next.config.ts`: only modify if `output: "standalone"` is needed and not set
+- `ui/package.json`: no new packages without approval
 - All Python files
 - `.github/workflows/`
 
@@ -46,13 +46,13 @@ Replace the placeholder `ui/src/app/page.tsx` with a single-page 6-step wizard t
 
 ## Key rules
 
-- **Single page** at `/` — all 6 steps as conditional sections, wizard state in `useState`
-- **No new npm packages** — check `ui/package.json` before reaching for a chart lib
+- **Single page** at `/`: all 6 steps as conditional sections, wizard state in `useState`
+- **No new npm packages**: check `ui/package.json` before reaching for a chart lib
 - If no chart lib is installed: use CSS bar chart (Tailwind width % via inline style)
-- TypeScript strict mode is on — no `any` without justification
+- TypeScript strict mode is on: no `any` without justification
 - Cat-shelter language throughout: never say "entity", "unit", "agent"
 - `NEXT_PUBLIC_API_URL` env var (default `http://localhost:8000`)
-- Show sensible error state when API is down — don't crash
+- Show sensible error state when API is down: don't crash
 
 ## Environment setup
 

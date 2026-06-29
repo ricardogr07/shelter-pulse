@@ -1,12 +1,12 @@
-# ADR-009: Replace Fake BO with Real scipy GP+EI Optimizer
+﻿# ADR-009: Replace Fake BO with Real scipy GP+EI Optimizer
 
 **Status:** Accepted | **Date:** 2026-06-26 | **Supersedes:** ADR-005 (partially)
 
 ## Context
 
 ADR-005 accepted jaxbo as the BO plugin with "scipy fallback." In practice:
-- `_jaxbo_optimize()` delegates to `_scipy_optimize()` — zero jaxbo code runs.
-- `_scipy_optimize()` is random normal sampling evaluated independently — pure random search.
+- `_jaxbo_optimize()` delegates to `_scipy_optimize()`: zero jaxbo code runs.
+- `_scipy_optimize()` is random normal sampling evaluated independently: pure random search.
 - The "Bayesian Optimization" label is dishonest; there is no surrogate model, no
   acquisition function, no sequential refinement.
 
@@ -38,7 +38,7 @@ Both paths:
 
 - `jaxbo>=0.1.2` added to `[project.optional-dependencies].optimize` (replaces raw jax/jaxlib)
 - `scipy>=1.13` added to main dependencies
-- The optimizer genuinely learns from past evaluations — judges can see convergence
+- The optimizer genuinely learns from past evaluations: judges can see convergence
 - When jaxbo is not installed, falls back to scipy GP+EI (still real BO, not random)
 - ~150 lines of GP+EI code in jaxbo_optimizer.py (scipy path)
 - ADR-005 is superseded: jaxbo is now properly integrated via the real library API,

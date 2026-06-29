@@ -1,4 +1,4 @@
-# Next Steps — Phase 0 Completion + App Runner Deploy
+﻿# Next Steps: Phase 0 Completion + App Runner Deploy
 
 ## Status as of 2026-06-27
 
@@ -15,12 +15,12 @@
 | Release + Deploy workflows | #7 | Manual release → auto deploy to ECR |
 | pyrefly fix for optional jax | #9 | CI fully green |
 | Release workflow fixes (identity, OIDC, version) | #10 | All Codex review items addressed |
-| First release v0.1.0 | — | Image in ECR ✅, GitHub Release created ✅ |
+| First release v0.1.0 |: | Image in ECR ✅, GitHub Release created ✅ |
 | Promote to main (Phase 0) | #8 | Merged, GHCR push successful |
 
-### ⏳ Blocked (AWS account activation — wait 24h)
+### ⏳ Blocked (AWS account activation: wait 24h)
 
-- **App Runner service creation** — `SubscriptionRequiredException`
+- **App Runner service creation**: `SubscriptionRequiredException`
 - Account created today, AWS needs up to 24h to fully activate services
 
 ### 📋 Remaining Tasks (no blockers)

@@ -1,4 +1,4 @@
-# Analytics Architecture (Phase 4)
+﻿# Analytics Architecture (Phase 4)
 
 Describes the new API endpoints, engine changes, and UI components for Pareto
 frontier analysis, uncertainty visualization, sensitivity analysis, and time-series replay.
@@ -9,7 +9,7 @@ frontier analysis, uncertainty visualization, sensitivity analysis, and time-ser
 
 ### What it does
 Sweeps the overflow-vs-cost tradeoff space by varying the optimization objective weight.
-Returns a list of Pareto-optimal allocations — the efficient frontier.
+Returns a list of Pareto-optimal allocations: the efficient frontier.
 
 ### API contract
 
@@ -38,7 +38,7 @@ Requires Phase 5 (Temporal) for acceptable latency at n_points > 10.
 
 ## 2. Uncertainty Bands
 
-No new endpoint needed — `MonteCarloSummary` already exposes `ci_95_lower` / `ci_95_upper`.
+No new endpoint needed: `MonteCarloSummary` already exposes `ci_95_lower` / `ci_95_upper`.
 The change is in the UI: all overflow metrics display as `[mean] ± CI` with a shaded range bar.
 
 ```typescript
@@ -77,7 +77,7 @@ class SensitivityRow(BaseModel):
 
 ### Implementation
 Mutate the frozen Scenario model by constructing a new one via `model_copy(update={...})`.
-`core/` stays pure — the sensitivity sweep is implemented in `optimize/sensitivity.py` (new file).
+`core/` stays pure: the sensitivity sweep is implemented in `optimize/sensitivity.py` (new file).
 
 ---
 
@@ -92,7 +92,7 @@ def run_simulation(
     scenario: Scenario,
     seed: int,
     intervention: InterventionParams | None = None,
-    record_timeline: bool = False,      # new param — False by default
+    record_timeline: bool = False,      # new param: False by default
 ) -> SimulationResult:
     ...
 ```
@@ -121,13 +121,13 @@ POST /simulate  { ..., record_timeline: true }
 → SimulationResponse { ..., timeline: list[TimeSnapshot] }
 ```
 
-No separate route needed — it's a flag on the existing simulate endpoint.
+No separate route needed: it's a flag on the existing simulate endpoint.
 
 ---
 
 ## Chart library decision
 
-Phase 1 used inline `<div style={{ width: X% }}>` for bars — works for simple comparisons.
+Phase 1 used inline `<div style={{ width: X% }}>` for bars: works for simple comparisons.
 Phase 4 needs: Pareto scatter plot, sensitivity tornado chart, time-series line chart.
 These are not achievable with CSS-only bars.
 

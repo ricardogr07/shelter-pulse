@@ -1,5 +1,7 @@
 # CI/CD Workflows
 
+> **Contributor reference**: this is CI/CD context, not the project README. For the project overview, see the [root README.md](../README.md).
+
 ## Branch Strategy
 
 ```mermaid
@@ -15,10 +17,10 @@ All work flows through pull requests. No direct pushes to `develop` or `main`.
 
 | File | Trigger | Purpose |
 |------|---------|---------|
-| `ci.yml` | PR → `develop` | Lint, test, build (quality gate) |
-| `promote.yml` | PR → `main` / push to `main` | Full suite + GHCR image push |
+| `ci.yml` | PR to `develop` | Lint, test, build (quality gate) |
+| `promote.yml` | PR to `main` / push to `main` | Full suite + GHCR image push |
 | `release.yml` | Manual (`workflow_dispatch`) on `main` | Create version tag + GitHub Release with changelog |
-| `deploy.yml` | Tag `v*` pushed (by release workflow) | Build image → push to ECR → App Runner auto-deploys |
+| `deploy.yml` | Tag `v*` pushed (by release workflow) | Build image, push to ECR, ECS Express Mode auto-deploys |
 
 ## Promotion Flow
 
@@ -30,7 +32,7 @@ sequenceDiagram
     participant M as main
     participant R as Release workflow
     participant ECR as ECR
-    participant AR as App Runner
+    participant ECS as ECS Express Mode
 
     Dev->>F: commit work
     F->>D: PR (ci.yml runs)
@@ -41,8 +43,8 @@ sequenceDiagram
     R->>M: Creates tag v0.1.0 + GitHub Release
     Note over R: Generates changelog from merged PRs
     M->>ECR: deploy.yml pushes image
-    ECR->>AR: Auto-deploy (blue/green)
-    Note over AR: Health check → swap or rollback
+    ECR->>ECS: ECS Express Mode auto-deploys
+    Note over ECS: Health check, swap or rollback
 ```
 
 ## Release Process
@@ -51,7 +53,7 @@ Tags can only be created via the Release workflow (protected by tag ruleset).
 No manual `git tag` + `git push` is allowed.
 
 1. Ensure all work is merged to `main` via develop
-2. Go to Actions → Release → Run workflow
+2. Go to Actions, Release, Run workflow
 3. Input version (semver, e.g., `0.1.0`)
 4. Optionally check "dry run" to preview changelog
 5. Workflow creates tag, GitHub Release with auto-changelog, triggers deploy
@@ -72,9 +74,9 @@ graph TD
 
 **Python checks** (composite action `.github/actions/ci-python/`):
 - `uv sync --all-groups`
-- `tox -e lint` — pyrefly type checking
-- `tox -e security` — bandit scan
-- `tox -e test` — pytest unit tests with coverage
+- `tox -e lint`: pyrefly type checking
+- `tox -e security`: bandit scan
+- `tox -e test`: pytest unit tests with coverage
 
 **UI checks** (composite action `.github/actions/ci-ui/`):
 - `npm ci`
@@ -102,7 +104,7 @@ graph TD
     G --> H[Push to GHCR :latest + :sha-xxx]
 ```
 
-**E2E tests**: docker compose up → pytest e2e suite → compose down.
+**E2E tests**: docker compose up, pytest e2e suite, compose down.
 
 ## Deploy (`deploy.yml`)
 
@@ -112,10 +114,10 @@ Triggered automatically when the Release workflow pushes a `v*` tag.
 graph TD
     A[Tag v1.2.3 pushed by Release workflow] --> B[Authenticate AWS via OIDC]
     B --> C[Login to ECR]
-    C --> D[Build + push image to ECR]
-    D --> E[App Runner detects new image]
+    C --> D[Build + push consolidated app image to ECR]
+    D --> E[ECS Express Mode detects new image]
     E --> F{Health check passes?}
-    F -->|yes| G[Traffic shifts to new revision]
+    F -->|yes| G[Traffic shifts to new task revision]
     F -->|no| H[Auto-rollback to previous revision]
 ```
 
@@ -129,14 +131,14 @@ Located in `.github/actions/`:
 | `ci-ui/` | ci.yml, promote.yml | Install node, npm ci, type-check + lint + build + Cypress |
 | `ci-docker/` | promote.yml | Build and push image to GHCR |
 
-## Required Secrets & Variables
+## Required Secrets and Variables
 
 | Name | Where | Purpose |
 |------|-------|---------|
 | `GITHUB_TOKEN` | Built-in | GHCR authentication |
 | `AWS_ROLE_ARN` | Repository secret | OIDC role for AWS access |
 
-No static AWS credentials stored — authentication uses GitHub OIDC → IAM role assumption.
+No static AWS credentials stored: authentication uses GitHub OIDC, IAM role assumption.
 
 ## Adding Required Status Checks
 

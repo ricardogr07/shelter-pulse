@@ -1,4 +1,4 @@
-# Orchestrator Protocol
+﻿# Orchestrator Protocol
 
 **Role:** Execute phases by dispatching work (to subagents or directly), reviewing results,
 running tests, and committing. This is the Kiro session acting as orchestrator.
@@ -27,7 +27,7 @@ running tests, and committing. This is the Kiro session acting as orchestrator.
 
 ---
 
-## Phase 2 — UI Expansion (Jun 27–30)
+## Phase 2: UI Expansion (Jun 27–30)
 
 ### Wave 2a (parallel, no deps)
 - **01-routing**: Move wizard to /demo, add NavBar + layout + /simulate placeholder
@@ -45,7 +45,7 @@ cd ui && npm run build                     # Next.js builds clean
 
 ---
 
-## Phase 3 — Analytics (Jul 1–3)
+## Phase 3: Analytics (Jul 1–3)
 
 ### Wave 3a (parallel)
 - **01-sensitivity-api**: POST /sensitivity endpoint
@@ -64,7 +64,7 @@ cd ui && npm run build
 
 ---
 
-## Phase 4 — Polish (Jul 3–5)
+## Phase 4: Polish (Jul 3–5)
 
 ### Wave 4a (parallel, no deps)
 - **01-security-scan**: pip-audit + npm audit → security/
@@ -83,7 +83,7 @@ cd ui && npm run build
 
 ---
 
-## Phase 5 — Cloud + Submission (Jul 5–7)
+## Phase 5: Cloud + Submission (Jul 5–7)
 
 ### Wave 5a
 - **01-aws-setup**: User creates AWS Free Plan account
@@ -123,7 +123,7 @@ cd ui && npm run build
 ## Commit convention
 
 ```
-feat: <track name> — <one-line description>
+feat: <track name>: <one-line description>
 fix: <what was wrong>
 docs: <documentation change>
 chore: <non-functional change>
