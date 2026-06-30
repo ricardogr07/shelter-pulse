@@ -128,3 +128,12 @@ See [docs/architecture/](docs/architecture/) for diagrams and [docs/adr/](docs/a
 ## License
 
 Apache-2.0
+
+## Built with Kiro
+
+This project was developed with [Kiro](https://kiro.dev), an AI-powered development environment.
+Kiro assisted across all phases: architecture design, code generation, testing, security patching,
+and infrastructure deployment. Every change was verified through CI (pytest + Cypress + tox)
+before merging.
+
+Full write-up: [docs/kiro.md](docs/kiro.md)
