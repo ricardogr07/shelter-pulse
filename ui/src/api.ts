@@ -50,6 +50,14 @@ export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, 
   return r.json();
 }
 
+export interface CompareResult { winner: EvaluationResult; baselines: Record<string, EvaluationResult> }
+
+export async function optimizeBuilderCompare(s: CustomScenarioParams, reps = 16): Promise<CompareResult> {
+  const r = await fetch(`${API}/optimize/builder/compare`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, n_replications: reps }) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
 /** GET /sensitivity/builder — 6 points (3 params × high/low) merged into 3 tornado rows */
 export async function getSensitivity(s: CustomScenarioParams): Promise<SensitivityResult[]> {
   const r = await fetch(`${API}/sensitivity/builder`, {

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { simulateCustom, optimizeCustom, getSensitivity, getTimeline, getTimelineCompare, type SensitivityResult, type DailySnapshot } from "@/api";
+import { simulateCustom, optimizeCustom, optimizeBuilderCompare, getSensitivity, getTimeline, getTimelineCompare, type SensitivityResult, type DailySnapshot, type CompareResult } from "@/api";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { EvaluationResult, CustomScenario } from "@/types";
 import SensitivityChart from "@/components/SensitivityChart";
 import TimelineChart from "@/components/TimelineChart";
 import CIBadge from "@/components/CIBadge";
+import ComparisonTable from "@/components/ComparisonTable";
 
 const DEFAULTS: CustomScenario = {
   name: "My Shelter",
@@ -46,7 +47,9 @@ export default function SimulateClient({ lang }: { lang: string }) {
   const [form, setForm] = useState<CustomScenario>(DEFAULTS);
   const [simResult, setSimResult] = useState<EvaluationResult | null>(null);
   const [optResults, setOptResults] = useState<EvaluationResult[] | null>(null);
+  const [compareData, setCompareData] = useState<CompareResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'timeline' | 'sensitivity'>('timeline');
   const [timeline, setTimeline] = useState<DailySnapshot[] | null>(null);
@@ -87,7 +90,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
   }
 
   async function runOptimize() {
-    setLoading(true); setError(null); setSimResult(null); setTimelineBaseline(null);
+    setLoading(true); setError(null); setSimResult(null); setTimelineBaseline(null); setCompareData(null);
     try {
       const results = await optimizeCustom(form, 15, 16);
       setOptResults(results);
@@ -102,6 +105,16 @@ export default function SimulateClient({ lang }: { lang: string }) {
     }
     catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
     finally { setLoading(false); }
+  }
+
+  async function runCompare() {
+    setCompareLoading(true); setError(null);
+    try {
+      const result = await optimizeBuilderCompare(form, 16);
+      setCompareData(result);
+    }
+    catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
+    finally { setCompareLoading(false); }
   }
 
   const fields: { field: keyof CustomScenario; type?: string; min?: number; max?: number; step?: number }[] = [
@@ -235,6 +248,18 @@ export default function SimulateClient({ lang }: { lang: string }) {
                 </tbody>
               </table>
             </div>
+            <button onClick={runCompare} disabled={compareLoading}
+              className="mt-4 px-5 py-2 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors">
+              {compareLoading ? "Comparing…" : "Compare against baselines →"}
+            </button>
+          </div>
+        )}
+
+        {compareData && (
+          <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">BO Winner vs Baselines</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">Ranked by overflow cat-days. The optimizer&apos;s best allocation compared against 5 named strategies.</p>
+            <ComparisonTable winner={compareData.winner} baselines={compareData.baselines} />
           </div>
         )}
       </div>
