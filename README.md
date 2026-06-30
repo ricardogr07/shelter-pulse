@@ -108,6 +108,21 @@ uv run tox -e test                            # tests only
 cd ui && npm run type-check && npm run lint   # frontend
 ```
 
+## Test suite
+
+| Suite | Tool | Count | Status |
+|-------|------|-------|--------|
+| Unit tests | pytest | 48 tests | ✅ All passing |
+| E2E API tests | pytest + httpx | 8 tests | ✅ All passing |
+| UI smoke tests | Cypress | 4 tests | ✅ All passing |
+| Type checking | TypeScript tsc | — | ✅ No errors |
+| Lint (Python) | pyrefly | — | ✅ Clean |
+| Lint (JS/TS) | ESLint | — | ✅ Clean |
+| Security | Bandit | — | ✅ No findings |
+| Coverage | pytest-cov | 76% | — |
+
+All checks run on every PR via GitHub Actions CI.
+
 ## Project structure
 
 | Path | Purpose |
