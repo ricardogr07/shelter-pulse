@@ -49,16 +49,17 @@ def test_gp_ei_convergence(scenario, seeds):
         f"GP+EI best ({best_bo:.1f}) should beat random best ({best_random:.1f})"
     )
 
-@pytest.mark.skip(reason="pending: warm_start param not in optimize_jaxbo yet")
 def test_warm_start_uses_prior_data(scenario, seeds):
     """Warm-starting with good baselines should help convergence."""
     from shelterpulse.optimize.baselines import ALL_BASELINES
     from shelterpulse.optimize.interface import evaluate_candidate
-    from shelterpulse.optimize.workflow import EvaluationResult
-    
+
     warm = [evaluate_candidate(alloc, scenario, seeds) for alloc in ALL_BASELINES.values()]
     results = optimize_jaxbo(scenario, seeds, n_candidates=8, warm_start=warm)
-    assert len(results) == 8
-    # With warm start, should find something decent
+    # Results include warm-start points + new evaluations
+    assert len(results) >= 8
+    # With warm start from known-good baselines, best should be at least as good
     best = min(r.mean_overflow_cat_days for r in results)
+    best_warm = min(r.mean_overflow_cat_days for r in warm)
+    assert best <= best_warm  # BO should not regress from warm-start best
     assert best >= 0
