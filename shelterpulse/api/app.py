@@ -223,6 +223,28 @@ def optimize_builder(req: BuilderRequest) -> list[EvaluationOut]:
     return [_er_to_out(r) for r in results]
 
 
+class CompareOut(BaseModel):
+    winner: EvaluationOut
+    baselines: dict[str, EvaluationOut]
+
+
+@app.post("/optimize/builder/compare", response_model=CompareOut)
+def optimize_builder_compare(req: BuilderRequest) -> CompareOut:
+    """Run BO optimization + evaluate all baselines against a custom scenario."""
+    scenario = _builder_to_scenario(req)
+    seeds = make_seed_set(scenario.seed, req.n_replications)
+    results = run_optimization_sweep(
+        scenario, budget=req.intervention_budget,
+        n_candidates=15, seed_set=seeds, use_bo=True,
+    )
+    winner = results[0]
+    baseline_results = {
+        name: _er_to_out(evaluate_candidate(alloc, scenario, list(seeds)))
+        for name, alloc in ALL_BASELINES.items()
+    }
+    return CompareOut(winner=_er_to_out(winner), baselines=baseline_results)
+
+
 # ── Sensitivity endpoint ──────────────────────────────────────────────────────
 
 def _sensitivity_points(alloc: CandidateAllocation, seeds: list[int], raw: dict) -> list[SensitivityPoint]:

@@ -64,3 +64,14 @@ async def test_timeline_builder_compare(client):
     assert "before" in data and "after" in data
     assert len(data["before"]) == 30
     assert len(data["after"]) == 30
+
+
+async def test_optimize_builder_compare(client):
+    """Compare endpoint returns winner + 5 baselines evaluated on custom scenario."""
+    r = await client.post("/optimize/builder/compare", json={"duration_days": 30, "housing_capacity": 35, "isolation_slots": 5, "vet_tech_fte": 1.5, "intervention_budget": 5000, "mean_intake_per_day": 3.8, "kitten_fraction": 0.59, "base_adoption_rate": 0.08, "n_replications": 8})
+    assert r.status_code == 200
+    data = r.json()
+    assert "winner" in data
+    assert "baselines" in data
+    assert len(data["baselines"]) == 5
+    assert data["winner"]["mean_overflow_cat_days"] >= 0

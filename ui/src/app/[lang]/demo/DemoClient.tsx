@@ -4,14 +4,9 @@ import { useState } from "react";
 import { simulate, optimize, getBaselines, exportUrl, apiBase } from "@/api";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { AllocationIn, EvaluationResult } from "@/types";
+import ComparisonTable from "@/components/ComparisonTable";
 
 type Step = "configure" | "baseline" | "bottleneck" | "optimize" | "compare" | "export";
-
-interface CompareRow {
-  label: string;
-  result: EvaluationResult;
-  isWinner: boolean;
-}
 
 const ZERO_ALLOC: AllocationIn = {
   foster_support: 0,
@@ -62,7 +57,7 @@ export default function DemoClient({ lang }: { lang: string }) {
   const [step, setStep] = useState<Step>("configure");
   const [baseline, setBaseline] = useState<EvaluationResult | null>(null);
   const [sweepResults, setSweepResults] = useState<EvaluationResult[] | null>(null);
-  const [compareRows, setCompareRows] = useState<CompareRow[] | null>(null);
+  const [compareBaselines, setCompareBaselines] = useState<Record<string, EvaluationResult> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,17 +94,13 @@ export default function DemoClient({ lang }: { lang: string }) {
     setError(null);
     try {
       const baselines = await getBaselines();
-      const winner = sweepResults![0];
       const baselineKeys = Object.keys(baselines);
       const baselineResults = await Promise.all(
         baselineKeys.map((k) => simulate(baselines[k], 32))
       );
-      const rows: CompareRow[] = [
-        { label: "BO Winner", result: winner, isWinner: true },
-        ...baselineKeys.map((k, i) => ({ label: k, result: baselineResults[i], isWinner: false })),
-      ];
-      rows.sort((a, b) => a.result.mean_overflow_cat_days - b.result.mean_overflow_cat_days);
-      setCompareRows(rows);
+      const baselinesMap: Record<string, EvaluationResult> = {};
+      baselineKeys.forEach((k, i) => { baselinesMap[k] = baselineResults[i]; });
+      setCompareBaselines(baselinesMap);
       setStep("compare");
     } catch (e) {
       setError(e instanceof Error ? e.message : "API unreachable — is the backend running?");
@@ -284,45 +275,10 @@ export default function DemoClient({ lang }: { lang: string }) {
             </div>
           )}
 
-          {step === "compare" && compareRows && (
+          {step === "compare" && compareBaselines && winner && (
             <div>
               <StepHeader step={5} label={t.demo.compareTitle} />
-              <div className="overflow-x-auto -mx-2">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="text-left text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700">
-                      <th className="py-2 px-2 font-medium">{t.demo.strategy}</th>
-                      <th className="py-2 px-2 font-medium text-right">Foster</th>
-                      <th className="py-2 px-2 font-medium text-right">Clinic</th>
-                      <th className="py-2 px-2 font-medium text-right">Iso</th>
-                      <th className="py-2 px-2 font-medium text-right">Events</th>
-                      <th className="py-2 px-2 font-medium text-right">{t.demo.overflow}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {compareRows.map((row) => {
-                      const tot = row.result.foster_support + row.result.clinic_hours + row.result.temporary_isolation + row.result.adoption_events;
-                      const pct = (v: number) => tot > 0 ? `${((v / tot) * 100).toFixed(0)}%` : "—";
-                      return (
-                        <tr
-                          key={row.label}
-                          className={`border-b border-zinc-100 dark:border-zinc-800 ${row.isWinner ? "bg-green-50 dark:bg-green-950" : ""}`}
-                        >
-                          <td className="py-2 px-2 font-medium text-zinc-900 dark:text-zinc-50">
-                            {row.isWinner && <span className="mr-1">🏆</span>}
-                            {row.label}
-                          </td>
-                          <td className="py-2 px-2 text-right text-zinc-600 dark:text-zinc-400">{pct(row.result.foster_support)}</td>
-                          <td className="py-2 px-2 text-right text-zinc-600 dark:text-zinc-400">{pct(row.result.clinic_hours)}</td>
-                          <td className="py-2 px-2 text-right text-zinc-600 dark:text-zinc-400">{pct(row.result.temporary_isolation)}</td>
-                          <td className="py-2 px-2 text-right text-zinc-600 dark:text-zinc-400">{pct(row.result.adoption_events)}</td>
-                          <td className="py-2 px-2 text-right font-semibold text-zinc-900 dark:text-zinc-50">{fmt(row.result.mean_overflow_cat_days)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <ComparisonTable winner={winner} baselines={compareBaselines} />
               <Btn onClick={() => setStep("export")}>{t.demo.exportTitle} →</Btn>
             </div>
           )}
