@@ -95,6 +95,7 @@ class BuilderRequest(BaseModel):
     kitten_fraction: float = 0.59
     base_adoption_rate: float = 0.08
     n_replications: int = 32
+    allocation: AllocationIn | None = None
 
 
 class SensitivityPoint(BaseModel):
@@ -339,7 +340,23 @@ def simulate_timeline(req: SimulateRequest) -> list[TimelinePoint]:
 @app.post("/simulate/timeline/builder", response_model=list[TimelinePoint])
 def simulate_timeline_builder(req: BuilderRequest) -> list[TimelinePoint]:
     """Daily housing_used + overflow for a custom builder scenario."""
-    return _run_timeline(_builder_to_scenario(req), CandidateAllocation(0.25, 0.25, 0.25, 0.25))
+    alloc = CandidateAllocation(**req.allocation.model_dump()) if req.allocation else CandidateAllocation(0.25, 0.25, 0.25, 0.25)
+    return _run_timeline(_builder_to_scenario(req), alloc)
+
+
+class TimelineCompareOut(BaseModel):
+    before: list[TimelinePoint]
+    after: list[TimelinePoint]
+
+
+@app.post("/simulate/timeline/builder/compare", response_model=TimelineCompareOut)
+def simulate_timeline_builder_compare(req: BuilderRequest) -> TimelineCompareOut:
+    """Before/after timeline: zero allocation vs provided allocation."""
+    scenario = _builder_to_scenario(req)
+    alloc = CandidateAllocation(**req.allocation.model_dump()) if req.allocation else CandidateAllocation(0.25, 0.25, 0.25, 0.25)
+    before = _run_timeline(scenario, CandidateAllocation(0, 0, 0, 0))
+    after = _run_timeline(scenario, alloc)
+    return TimelineCompareOut(before=before, after=after)
 
 
 # ── Export endpoint ───────────────────────────────────────────────────────────

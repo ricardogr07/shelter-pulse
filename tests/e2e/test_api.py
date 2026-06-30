@@ -37,3 +37,30 @@ async def test_baselines_returns_four(client):
     assert r.status_code == 200
     data = r.json()
     assert len(data) == 5
+
+
+async def test_timeline_builder_default(client):
+    """Builder timeline returns correct number of days with default allocation."""
+    r = await client.post("/simulate/timeline/builder", json={"duration_days": 30, "housing_capacity": 35, "isolation_slots": 5, "vet_tech_fte": 1.5, "intervention_budget": 5000, "mean_intake_per_day": 3.8, "kitten_fraction": 0.59, "base_adoption_rate": 0.08})
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 30
+    assert all("day" in p and "housing_used" in p and "overflow" in p for p in data)
+
+
+async def test_timeline_builder_with_allocation(client):
+    """Builder timeline respects the allocation parameter."""
+    r = await client.post("/simulate/timeline/builder", json={"duration_days": 30, "housing_capacity": 35, "isolation_slots": 5, "vet_tech_fte": 1.5, "intervention_budget": 5000, "mean_intake_per_day": 3.8, "kitten_fraction": 0.59, "base_adoption_rate": 0.08, "allocation": {"foster_support": 0.4, "clinic_hours": 0.0, "temporary_isolation": 0.2, "adoption_events": 0.4}})
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 30
+
+
+async def test_timeline_builder_compare(client):
+    """Compare endpoint returns both before and after timelines."""
+    r = await client.post("/simulate/timeline/builder/compare", json={"duration_days": 30, "housing_capacity": 35, "isolation_slots": 5, "vet_tech_fte": 1.5, "intervention_budget": 5000, "mean_intake_per_day": 3.8, "kitten_fraction": 0.59, "base_adoption_rate": 0.08, "allocation": {"foster_support": 0.4, "clinic_hours": 0.0, "temporary_isolation": 0.2, "adoption_events": 0.4}})
+    assert r.status_code == 200
+    data = r.json()
+    assert "before" in data and "after" in data
+    assert len(data["before"]) == 30
+    assert len(data["after"]) == 30

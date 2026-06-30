@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { simulateCustom, optimizeCustom, getSensitivity, getTimeline, type SensitivityResult, type DailySnapshot } from "@/api";
+import { simulateCustom, optimizeCustom, getSensitivity, getTimeline, getTimelineCompare, type SensitivityResult, type DailySnapshot } from "@/api";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { EvaluationResult, CustomScenario } from "@/types";
 import SensitivityChart from "@/components/SensitivityChart";
@@ -50,6 +50,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'timeline' | 'sensitivity'>('timeline');
   const [timeline, setTimeline] = useState<DailySnapshot[] | null>(null);
+  const [timelineBaseline, setTimelineBaseline] = useState<DailySnapshot[] | null>(null);
   const [sensitivity, setSensitivity] = useState<SensitivityResult[] | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
@@ -61,7 +62,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
   }
 
   async function runSimulate() {
-    setLoading(true); setError(null); setOptResults(null);
+    setLoading(true); setError(null); setOptResults(null); setTimelineBaseline(null);
     try {
       const result = await simulateCustom(form);
       setSimResult(result);
@@ -86,8 +87,19 @@ export default function SimulateClient({ lang }: { lang: string }) {
   }
 
   async function runOptimize() {
-    setLoading(true); setError(null); setSimResult(null);
-    try { setOptResults(await optimizeCustom(form, 15, 16)); }
+    setLoading(true); setError(null); setSimResult(null); setTimelineBaseline(null);
+    try {
+      const results = await optimizeCustom(form, 15, 16);
+      setOptResults(results);
+      // Fetch before/after timeline with winner allocation
+      if (results.length > 0) {
+        const winner = results[0];
+        const alloc = { foster_support: winner.foster_support, clinic_hours: winner.clinic_hours, temporary_isolation: winner.temporary_isolation, adoption_events: winner.adoption_events };
+        const compare = await getTimelineCompare(form, alloc);
+        setTimelineBaseline(compare.before);
+        setTimeline(compare.after);
+      }
+    }
     catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
     finally { setLoading(false); }
   }
@@ -165,7 +177,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
           </div>
         )}
 
-        {simResult && (
+        {(simResult || (optResults && timeline)) && (
           <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
             <div className="flex gap-4 mb-4 border-b border-zinc-200 dark:border-zinc-700">
               <button
@@ -183,7 +195,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
             </div>
             {analyticsLoading && <p className="text-sm text-zinc-500">{t.common.loading}</p>}
             {activeTab === 'timeline' && timeline && (
-              <TimelineChart data={timeline} capacity={form.housing_capacity} />
+              <TimelineChart data={timeline} capacity={form.housing_capacity} baseline={timelineBaseline ?? undefined} />
             )}
             {activeTab === 'sensitivity' && sensitivity && (
               <SensitivityChart data={sensitivity} />

@@ -75,12 +75,23 @@ export async function getSensitivity(s: CustomScenarioParams): Promise<Sensitivi
 }
 
 /** POST /simulate/timeline/builder — daily housing usage for the user's custom scenario */
-export async function getTimeline(s: CustomScenarioParams): Promise<DailySnapshot[]> {
+export async function getTimeline(s: CustomScenarioParams, allocation?: { foster_support: number; clinic_hours: number; temporary_isolation: number; adoption_events: number }): Promise<DailySnapshot[]> {
   const r = await fetch(`${API}/simulate/timeline/builder`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...s, n_replications: 1 }),
+    body: JSON.stringify({ ...s, allocation, n_replications: 1 }),
   });
   if (!r.ok) return [];
+  return r.json();
+}
+
+/** POST /simulate/timeline/builder/compare — before (zero alloc) vs after (given alloc) */
+export async function getTimelineCompare(s: CustomScenarioParams, allocation: { foster_support: number; clinic_hours: number; temporary_isolation: number; adoption_events: number }): Promise<{ before: DailySnapshot[]; after: DailySnapshot[] }> {
+  const r = await fetch(`${API}/simulate/timeline/builder/compare`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...s, allocation, n_replications: 1 }),
+  });
+  if (!r.ok) return { before: [], after: [] };
   return r.json();
 }
