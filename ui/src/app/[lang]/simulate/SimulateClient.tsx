@@ -219,7 +219,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
         {optResults && (
           <div className="mt-8 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">{t.simulate.optResultTitle}</h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">Budget: ${fmt(form.intervention_budget)} — showing how to split it across 4 intervention strategies to minimize overflow.</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">Budget: ${fmt(form.intervention_budget)} - showing how to split it across 4 intervention strategies to minimize overflow.</p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

@@ -69,7 +69,7 @@ export default function DemoClient({ lang }: { lang: string }) {
       setBaseline(result);
       setStep("baseline");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "API unreachable — is the backend running?");
+      setError(e instanceof Error ? e.message : "API unreachable - is the backend running?");
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,7 @@ export default function DemoClient({ lang }: { lang: string }) {
       setSweepResults(results);
       setStep("optimize");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "API unreachable — is the backend running?");
+      setError(e instanceof Error ? e.message : "API unreachable - is the backend running?");
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ export default function DemoClient({ lang }: { lang: string }) {
       setCompareBaselines(baselinesMap);
       setStep("compare");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "API unreachable — is the backend running?");
+      setError(e instanceof Error ? e.message : "API unreachable - is the backend running?");
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ export default function DemoClient({ lang }: { lang: string }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Export failed — is the backend running?");
+      setError(e instanceof Error ? e.message : "Export failed - is the backend running?");
     }
   }
 

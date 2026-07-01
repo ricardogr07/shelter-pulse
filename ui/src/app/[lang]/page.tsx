@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return {
     title: "Home",
     description: descriptions[lang] ?? descriptions.en,
-    openGraph: { title: "ShelterPulse — Kitten Season Resource Optimizer" },
+    openGraph: { title: "ShelterPulse - Kitten Season Resource Optimizer" },
   };
 }
 

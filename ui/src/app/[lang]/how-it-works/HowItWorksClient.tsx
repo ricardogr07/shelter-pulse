@@ -27,16 +27,16 @@ export default function HowItWorksClient({ lang }: { lang: string }) {
       title: "1. The Problem: Kitten Season Resource Allocation",
       content: (
         <div className="space-y-3">
-          <p>Every spring, cat shelters face a surge in intake — kitten season. With fixed budgets and limited space, managers must decide: <em>how do we allocate our intervention budget to minimize overflow?</em></p>
+          <p>Every spring, cat shelters face a surge in intake - kitten season. With fixed budgets and limited space, managers must decide: <em>how do we allocate our intervention budget to minimize overflow?</em></p>
           <p>ShelterPulse models this as a <strong>constrained stochastic optimization problem</strong>:</p>
           <MathBlock>{String.raw`\min_{\mathbf{x}} \; \mathbb{E}\left[\text{Overflow}(\mathbf{x})\right] \quad \text{s.t.} \quad \sum_{i=1}^{4} x_i \leq B`}</MathBlock>
           <p>Where <Tex>{String.raw`\mathbf{x} = (x_1, x_2, x_3, x_4)`}</Tex> is the budget allocation across 4 strategies, and <Tex>{String.raw`B`}</Tex> is the total intervention budget (hard limit, e.g. $5,000).</p>
           <p>The 4 intervention strategies are:</p>
           <ul className="list-disc pl-5 space-y-1">
-            <li><strong>Foster Support</strong> — subsidize foster families to increase network capacity</li>
-            <li><strong>Extra Clinic Hours</strong> — more vet-tech time to speed medical clearance</li>
-            <li><strong>Temporary Isolation</strong> — expand quarantine slots during peak URI season</li>
-            <li><strong>Adoption Events</strong> — reduce adoption wait time with marketing/events</li>
+            <li><strong>Foster Support</strong> - subsidize foster families to increase network capacity</li>
+            <li><strong>Extra Clinic Hours</strong> - more vet-tech time to speed medical clearance</li>
+            <li><strong>Temporary Isolation</strong> - expand quarantine slots during peak URI season</li>
+            <li><strong>Adoption Events</strong> - reduce adoption wait time with marketing/events</li>
           </ul>
         </div>
       )
@@ -82,7 +82,7 @@ foster_network: { capacity: 8 }
 total_intervention_budget: 5000`}</pre>
           </div>
           <p>The <strong>what-if scenario</strong> system lets you change any parameter and re-run: <em>&ldquo;What if intake increases 20%? What if we add 5 isolation slots?&rdquo;</em></p>
-          <p>Multiple seasonal events can stack — e.g., kitten season (day 1–45) + holiday surrender spike (day 60–70, 1.5× multiplier).</p>
+          <p>Multiple seasonal events can stack - e.g., kitten season (day 1-45) + holiday surrender spike (day 60-70, 1.5x multiplier).</p>
         </div>
       )
     },
@@ -115,9 +115,9 @@ total_intervention_budget: 5000`}</pre>
       title: "5. Monte Carlo & Common Random Numbers",
       content: (
         <div className="space-y-3">
-          <p>The simulation is stochastic — each run produces different results. We use <strong>Monte Carlo replication</strong> with <strong>Common Random Numbers (CRN)</strong> for fair comparison:</p>
+          <p>The simulation is stochastic - each run produces different results. We use <strong>Monte Carlo replication</strong> with <strong>Common Random Numbers (CRN)</strong> for fair comparison:</p>
           <MathBlock>{String.raw`\bar{Y}(\mathbf{x}) = \frac{1}{N} \sum_{i=1}^{N} Y(\mathbf{x}, \omega_i), \quad \omega_i \text{ shared across all candidates}`}</MathBlock>
-          <p>By using the <strong>same random seeds</strong> for each candidate allocation, differences in overflow are due to the allocation — not random noise.</p>
+          <p>By using the <strong>same random seeds</strong> for each candidate allocation, differences in overflow are due to the allocation - not random noise.</p>
           <p><strong>Confidence intervals</strong> (95%):</p>
           <MathBlock>{String.raw`\text{CI}_{95} = \bar{Y} \pm 1.96 \cdot \frac{\sigma}{\sqrt{N}}`}</MathBlock>
           <p>With <Tex>{String.raw`N=32`}</Tex> replications, a result of <Tex>{String.raw`234 \pm 18`}</Tex> overflow cat-days means we{"'"}re 95% confident the true expected value is in <Tex>{String.raw`[216, 252]`}</Tex>.</p>
@@ -148,7 +148,7 @@ total_intervention_budget: 5000`}</pre>
           <p>Sensitivity analysis answers: <em>&ldquo;Which parameter matters most?&rdquo;</em></p>
           <p>We vary each input parameter <Tex>{String.raw`\pm 20\%`}</Tex> independently and measure the change in overflow:</p>
           <MathBlock>{String.raw`\Delta\text{Overflow}(p) = \text{Overflow}(p + 20\%) - \text{Overflow}(p - 20\%)`}</MathBlock>
-          <p>Parameters with large <Tex>{String.raw`\Delta\text{Overflow}`}</Tex> are the ones worth investing in. The tornado chart ranks them — typically <strong>intake rate</strong> and <strong>housing capacity</strong> dominate.</p>
+          <p>Parameters with large <Tex>{String.raw`\Delta\text{Overflow}`}</Tex> are the ones worth investing in. The tornado chart ranks them - typically <strong>intake rate</strong> and <strong>housing capacity</strong> dominate.</p>
         </div>
       )
     },

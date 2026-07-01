@@ -33,7 +33,7 @@ export function exportUrl(): string {
   return `${API}/export`;
 }
 
-// Stubs comment removed — these are real now
+// Stubs comment removed - these are real now
 export interface SensitivityResult { parameter: string; low_overflow: number; base_overflow: number; high_overflow: number; }
 export interface DailySnapshot { day: number; housing_used: number; overflow: number; }
 export interface CustomScenarioParams { name: string; duration_days: number; housing_capacity: number; isolation_slots: number; vet_tech_fte: number; intervention_budget: number; mean_intake_per_day: number; kitten_fraction: number; base_adoption_rate: number; }
@@ -58,7 +58,7 @@ export async function optimizeBuilderCompare(s: CustomScenarioParams, reps = 16)
   return r.json();
 }
 
-/** GET /sensitivity/builder — 6 points (3 params × high/low) merged into 3 tornado rows */
+/** GET /sensitivity/builder - 6 points (3 params x high/low) merged into 3 tornado rows */
 export async function getSensitivity(s: CustomScenarioParams): Promise<SensitivityResult[]> {
   const r = await fetch(`${API}/sensitivity/builder`, {
     method: "POST",
@@ -82,7 +82,7 @@ export async function getSensitivity(s: CustomScenarioParams): Promise<Sensitivi
   }));
 }
 
-/** POST /simulate/timeline/builder — daily housing usage for the user's custom scenario */
+/** POST /simulate/timeline/builder - daily housing usage for the user's custom scenario */
 export async function getTimeline(s: CustomScenarioParams, allocation?: { foster_support: number; clinic_hours: number; temporary_isolation: number; adoption_events: number }): Promise<DailySnapshot[]> {
   const r = await fetch(`${API}/simulate/timeline/builder`, {
     method: "POST",
@@ -93,7 +93,7 @@ export async function getTimeline(s: CustomScenarioParams, allocation?: { foster
   return r.json();
 }
 
-/** POST /simulate/timeline/builder/compare — before (zero alloc) vs after (given alloc) */
+/** POST /simulate/timeline/builder/compare - before (zero alloc) vs after (given alloc) */
 export async function getTimelineCompare(s: CustomScenarioParams, allocation: { foster_support: number; clinic_hours: number; temporary_isolation: number; adoption_events: number }): Promise<{ before: DailySnapshot[]; after: DailySnapshot[] }> {
   const r = await fetch(`${API}/simulate/timeline/builder/compare`, {
     method: "POST",

@@ -14,7 +14,7 @@ export interface EvaluationResult {
   std_overflow_cat_days: number;
   mean_total_cost: number;
   is_feasible: boolean;
-  // optional — present once ci95 backlog item lands
+  // optional - present once ci95 backlog item lands
   ci95_overflow_low?: number;
   ci95_overflow_high?: number;
   ci95_cost_low?: number;

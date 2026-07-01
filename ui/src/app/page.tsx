@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "ShelterPulse — Redirecting",
+  title: "ShelterPulse - Redirecting",
   other: {
     "http-equiv": "refresh",
   },
 };
 
 /**
- * Root page — immediately redirects to /en.
+ * Root page - immediately redirects to /en.
  * Uses meta-refresh redirect since Next.js static export doesn't support server redirects.
  * Nginx also handles this with a 301, so this is a fallback.
  */
