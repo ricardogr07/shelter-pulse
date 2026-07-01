@@ -9,6 +9,7 @@ Never calls run_simulation() directly — always via evaluate_candidate().
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
@@ -64,6 +65,7 @@ def _jaxbo_gp_ei(
     seed_set: Sequence[int],
     n_candidates: int,
     warm_start: list[EvaluationResult] | None,
+    on_progress: Any | None = None,
 ) -> list[EvaluationResult]:
     """Sequential GP+EI loop using jaxbo.models.GP and jaxbo.acquisitions.EI."""
     from shelterpulse.optimize.interface import evaluate_candidate
@@ -75,6 +77,8 @@ def _jaxbo_gp_ei(
     # --- Initialise with warm-start points or random Dirichlet samples ---
     results: list[EvaluationResult] = []
     X_obs: list[np.ndarray] = []
+    done = 0
+    total = n_candidates
 
     if warm_start:
         for r in warm_start:
@@ -95,6 +99,9 @@ def _jaxbo_gp_ei(
             er = evaluate_candidate(alloc, scenario, seed_list)
             results.append(er)
             X_obs.append(x)
+            done += 1
+            if on_progress:
+                on_progress(done, total)
 
     n_bo = n_candidates - (len(results) - (len(warm_start) if warm_start else 0))
 
@@ -139,6 +146,9 @@ def _jaxbo_gp_ei(
         er = evaluate_candidate(alloc, scenario, seed_list)
         results.append(er)
         X_obs.append(x_next)
+        done += 1
+        if on_progress:
+            on_progress(done, total)
 
     results.sort(key=lambda r: (not r.is_feasible, r.mean_overflow_cat_days))
     return results
@@ -151,6 +161,7 @@ def _random_search(
     seed_set: Sequence[int],
     n_candidates: int,
     warm_start: list[EvaluationResult] | None,
+    on_progress: Any | None = None,
 ) -> list[EvaluationResult]:
     from shelterpulse.optimize.interface import evaluate_candidate
 
@@ -159,8 +170,12 @@ def _random_search(
     results: list[EvaluationResult] = list(warm_start) if warm_start else []
 
     n_needed = n_candidates - len(results)
+    done = 0
     for x in _dirichlet_candidates(rng, max(0, n_needed)):
         results.append(evaluate_candidate(_from_cube(x), scenario, seed_list))
+        done += 1
+        if on_progress:
+            on_progress(done, n_candidates)
 
     results.sort(key=lambda r: (not r.is_feasible, r.mean_overflow_cat_days))
     return results
@@ -173,12 +188,17 @@ def optimize_jaxbo(
     seed_set: Sequence[int],
     n_candidates: int = 30,
     warm_start: list[EvaluationResult] | None = None,
+    on_progress: Any | None = None,
 ) -> list[EvaluationResult]:
     """Run BO over the 4-dimensional budget allocation space.
 
     Returns candidates sorted best-first (feasible, lowest overflow first).
     Uses jaxbo GP+EI when jax is available, random Dirichlet search otherwise.
+
+    Args:
+        on_progress: Optional callback(done: int, total: int) called after each
+            candidate evaluation.
     """
     if _HAS_JAX:
-        return _jaxbo_gp_ei(scenario, seed_set, n_candidates, warm_start)
-    return _random_search(scenario, seed_set, n_candidates, warm_start)
+        return _jaxbo_gp_ei(scenario, seed_set, n_candidates, warm_start, on_progress=on_progress)
+    return _random_search(scenario, seed_set, n_candidates, warm_start, on_progress=on_progress)

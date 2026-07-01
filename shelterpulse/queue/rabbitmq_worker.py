@@ -55,7 +55,17 @@ async def _process_job(body: bytes) -> None:
 
     try:
         if job_type == "optimize_builder":
-            results = _run_optimization(payload)
+            def _report_progress(done: int, total: int) -> None:
+                """Report per-candidate progress to the API webhook."""
+                try:
+                    _post_json(
+                        f"{API_URL}/internal/jobs/{job_id}/progress",
+                        {"done": done, "total": total},
+                    )
+                except Exception as exc:
+                    logger.warning("Progress report failed for %s: %s", job_id, exc)
+
+            results = _run_optimization(payload, on_progress=_report_progress)
 
             # Report completion
             _post_json(
@@ -74,7 +84,7 @@ async def _process_job(body: bytes) -> None:
         )
 
 
-def _run_optimization(payload: dict) -> list[dict]:
+def _run_optimization(payload: dict, on_progress=None) -> list[dict]:
     """Run the BO optimization sweep and return serialized results."""
     from shelterpulse.core.montecarlo import make_seed_set
     from shelterpulse.optimize.workflow import run_optimization_sweep
@@ -95,6 +105,7 @@ def _run_optimization(payload: dict) -> list[dict]:
         n_candidates=15,
         seed_set=seeds,
         use_bo=True,
+        on_progress=on_progress,
     )
 
     # Serialize to dicts (JSON-compatible)

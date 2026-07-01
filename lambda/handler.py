@@ -52,7 +52,7 @@ def _validate_payload(payload: dict) -> None:
         raise ValueError(f"housing_capacity out of bounds: {housing}")
 
 
-def _run_optimization(payload: dict) -> list[dict]:
+def _run_optimization(payload: dict, on_progress=None) -> list[dict]:
     """Run the BO optimization sweep and return serialized results."""
     from shelterpulse.core.montecarlo import make_seed_set
     from shelterpulse.optimize.workflow import run_optimization_sweep
@@ -69,6 +69,7 @@ def _run_optimization(payload: dict) -> list[dict]:
         n_candidates=15,
         seed_set=seeds,
         use_bo=True,
+        on_progress=on_progress,
     )
 
     return [_er_to_out(r).model_dump() for r in results]
@@ -102,13 +103,17 @@ def handler(event: dict, context) -> dict:
                 # Validate payload bounds
                 _validate_payload(body)
 
-                # Report progress start
-                _post_json(
-                    f"{API_URL}/internal/jobs/{job_id}/progress",
-                    {"done": 0, "total": 15},
-                )
+                def _report_progress(done: int, total: int) -> None:
+                    """Report per-candidate progress to the API webhook."""
+                    try:
+                        _post_json(
+                            f"{API_URL}/internal/jobs/{job_id}/progress",
+                            {"done": done, "total": total},
+                        )
+                    except Exception as exc:
+                        logger.warning("Progress report failed for %s: %s", job_id, exc)
 
-                results = _run_optimization(body)
+                results = _run_optimization(body, on_progress=_report_progress)
 
                 # Report completion
                 _post_json(

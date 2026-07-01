@@ -1,8 +1,10 @@
 """FastAPI REST adapter for ShelterPulse."""
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import io
+import json
 import os
 import pickle
 import tempfile
@@ -305,7 +307,7 @@ async def optimize_builder(req: BuilderRequest, request: fastapi.Request, respon
         )
 
     job_id = str(uuid4())
-    job_store.create(job_id, total=15, client_ip=ip)
+    job_store.create(job_id, total=20, client_ip=ip)  # 15 BO candidates + 5 baselines
     publisher = get_publisher()
     await publisher.publish_job(job_id, {
         "type": "optimize_builder",
@@ -342,6 +344,72 @@ def get_job_results(job_id: str):
     if job.status != JobStatus.COMPLETED:
         raise fastapi.HTTPException(status_code=409, detail=f"Job is {job.status.value}, not completed")
     return job.results
+
+
+# ── SSE progress streaming ────────────────────────────────────────────────────
+
+_SSE_TIMEOUT_SECONDS = 300  # 5 minutes
+
+
+@app.get("/optimize/{job_id}/stream")
+async def stream_job_progress(job_id: str):
+    """Server-Sent Events stream for real-time job progress.
+
+    Emits events:
+      - event: progress, data: {"done": X, "total": N}
+      - event: complete, data: {"results": [...]}
+      - event: error, data: {"message": "..."}
+
+    Stream closes on completion, error, or 5-min timeout.
+    """
+    job = job_store.get(job_id)
+    if not job:
+        raise fastapi.HTTPException(status_code=404, detail="Job not found")
+
+    async def event_generator():
+        queue = job_store.subscribe(job_id)
+        try:
+            # Emit current state immediately (in case progress already advanced)
+            current_job = job_store.get(job_id)
+            if current_job:
+                if current_job.status == JobStatus.COMPLETED:
+                    yield f"event: complete\ndata: {json.dumps({'results': current_job.results})}\n\n"
+                    return
+                if current_job.status == JobStatus.FAILED:
+                    yield f"event: error\ndata: {json.dumps({'message': current_job.error or 'Job failed'})}\n\n"
+                    return
+                if current_job.progress_done > 0:
+                    yield f"event: progress\ndata: {json.dumps({'done': current_job.progress_done, 'total': current_job.progress_total})}\n\n"
+
+            # Stream events as they arrive
+            while True:
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=_SSE_TIMEOUT_SECONDS)
+                except asyncio.TimeoutError:
+                    yield f"event: error\ndata: {json.dumps({'message': 'Stream timeout'})}\n\n"
+                    return
+
+                event_type = event.get("event", "progress")
+                if event_type == "progress":
+                    yield f"event: progress\ndata: {json.dumps({'done': event['done'], 'total': event['total']})}\n\n"
+                elif event_type == "complete":
+                    yield f"event: complete\ndata: {json.dumps({'results': event['results']})}\n\n"
+                    return
+                elif event_type == "error":
+                    yield f"event: error\ndata: {json.dumps({'message': event['message']})}\n\n"
+                    return
+        finally:
+            job_store.unsubscribe(job_id, queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        },
+    )
 
 
 # ── Internal webhook endpoints (called by workers) ────────────────────────────
