@@ -1,6 +1,8 @@
+> **SUPERSEDED by [ADR-012](012-queue-abstraction.md).** Temporal was replaced with a queue abstraction (RabbitMQ local, SQS+Lambda prod). Kept for decision trail.
+
 # ADR-004: Gate Temporal Adoption to EOD June 28
 
-**Status:** Accepted | **Date:** 2026-06-26
+**Status:** Superseded by ADR-012 | **Date:** 2026-06-26
 
 ## Context
 
