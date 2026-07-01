@@ -15,8 +15,8 @@ WORKDIR /app
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install only optimize deps (core simulation + BO engine) - no API/CLI deps
-RUN uv sync --no-dev --no-install-project --extra optimize
+# Install only optimize deps (core simulation + BO engine) + store for DuckDB on EFS
+RUN uv sync --no-dev --no-install-project --extra optimize --extra store
 
 # pyDOE shim (same as main Dockerfile)
 RUN python -c "import site; sp=[p for p in site.getsitepackages() if 'site-packages' in p][0]; open(sp+'/pyDOE.py','w').write('from pydoe import *\nfrom pydoe import lhs\n')"

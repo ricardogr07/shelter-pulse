@@ -10,6 +10,9 @@ services:
       - QUEUE_BACKEND=rabbitmq
       - RABBITMQ_URL=amqp://shelter:pulse@rabbitmq:5672/
       - INTERNAL_KEY=dev-key-123
+      - DUCKDB_PATH=/app/data/shelterpulse.duckdb
+    volumes:
+      - shelterpulse-data:/app/data
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
@@ -57,6 +60,9 @@ services:
       - RABBITMQ_URL=amqp://shelter:pulse@rabbitmq:5672/
       - API_URL=http://api:8000
       - INTERNAL_KEY=dev-key-123
+      - DUCKDB_PATH=/app/data/shelterpulse.duckdb
+    volumes:
+      - shelterpulse-data:/app/data
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -64,3 +70,6 @@ services:
         condition: service_healthy
     deploy:
       replicas: 1
+
+volumes:
+  shelterpulse-data:

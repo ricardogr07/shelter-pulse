@@ -25,6 +25,7 @@ from shelterpulse.optimize.interface import evaluate_candidate
 from shelterpulse.optimize.workflow import CandidateAllocation, run_optimization_sweep
 from shelterpulse.queue import get_publisher
 from shelterpulse.queue.job_store import JobStatus, job_store
+from shelterpulse.store import get_runs_for_shelter, init_schema, log_consent, save_run
 from shelterpulse.api.rate_limit import (
     check_rate_limit,
     export_limiter,
@@ -46,6 +47,16 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
+
+@app.on_event("startup")
+def _startup() -> None:
+    """Initialize DuckDB schema on app startup."""
+    try:
+        init_schema()
+    except Exception:
+        # Non-fatal: store is optional (duckdb may not be installed in all envs)
+        pass
 
 _SCENARIO_PATH = Path(__file__).parent.parent.parent / "scenarios" / "whisker_haven.yaml"
 _CACHE_PATH = Path(__file__).parent.parent.parent / "scenarios" / "whisker_haven_cache.pkl"
@@ -136,6 +147,10 @@ class BuilderRequest(BaseModel):
     base_adoption_rate: float = 0.08
     n_replications: int = 32
     allocation: AllocationIn | None = None
+    # Consent and metadata
+    consent_storage: bool = False
+    is_test_data: bool = False
+    name: str = "My Shelter"
 
     @model_validator(mode="after")
     def clamp_params(self) -> "BuilderRequest":
@@ -295,6 +310,27 @@ async def optimize_builder(req: BuilderRequest, request: fastapi.Request, respon
             scenario, budget=req.intervention_budget,
             n_candidates=15, seed_set=seeds, use_bo=True,
         )
+        # Persist if user consented
+        if req.consent_storage:
+            try:
+                import dataclasses as dc
+                sync_job_id = str(uuid4())
+                result_dicts = [
+                    {**dc.asdict(r.allocation), "mean_overflow_cat_days": r.mean_overflow_cat_days,
+                     "std_overflow_cat_days": r.std_overflow_cat_days, "mean_total_cost": r.mean_total_cost,
+                     "is_feasible": r.is_feasible, "ci95_overflow_low": r.ci95_overflow_low,
+                     "ci95_overflow_high": r.ci95_overflow_high, "ci95_cost_low": r.ci95_cost_low,
+                     "ci95_cost_high": r.ci95_cost_high}
+                    for r in results
+                ]
+                save_run(sync_job_id, req.model_dump(), result_dicts, consent=True, is_test=req.is_test_data)
+            except Exception:
+                pass  # Non-fatal: store may not be initialized
+        # Always log the consent decision (even when declined) for audit trail
+        try:
+            log_consent(str(uuid4()), get_client_ip(request), req.consent_storage, req.is_test_data)
+        except Exception:
+            pass  # Non-fatal: store may not be initialized
         return [_er_to_out(r) for r in results]
 
     # Async dispatch: publish to queue and return immediately
@@ -312,6 +348,8 @@ async def optimize_builder(req: BuilderRequest, request: fastapi.Request, respon
     await publisher.publish_job(job_id, {
         "type": "optimize_builder",
         "request": req.model_dump(),
+        "consent_storage": req.consent_storage,
+        "is_test_data": req.is_test_data,
     })
     response.status_code = 202
     return {"job_id": job_id, "status": "queued"}
@@ -344,6 +382,32 @@ def get_job_results(job_id: str):
     if job.status != JobStatus.COMPLETED:
         raise fastapi.HTTPException(status_code=409, detail=f"Job is {job.status.value}, not completed")
     return job.results
+
+
+# ── Run history ───────────────────────────────────────────────────────────────
+
+
+@app.get("/runs/recent")
+def get_recent_runs(
+    name: str = fastapi.Query(..., description="Shelter name to match"),
+    housing_capacity: int = fastapi.Query(..., description="Housing capacity"),
+    isolation_slots: int = fastapi.Query(..., description="Isolation slots"),
+    intervention_budget: float = fastapi.Query(..., description="Budget"),
+    limit: int = fastapi.Query(10, ge=1, le=50),
+):
+    """Fetch recent optimization runs matching a shelter by name + key params."""
+    runs = get_runs_for_shelter(
+        name=name,
+        housing_capacity=housing_capacity,
+        isolation_slots=isolation_slots,
+        intervention_budget=intervention_budget,
+        limit=limit,
+    )
+    # Convert datetime objects to ISO strings for JSON serialization
+    for run in runs:
+        if run.get("created_at"):
+            run["created_at"] = run["created_at"].isoformat()
+    return runs
 
 
 # ── SSE progress streaming ────────────────────────────────────────────────────

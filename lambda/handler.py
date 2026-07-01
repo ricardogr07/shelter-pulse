@@ -115,6 +115,32 @@ def handler(event: dict, context) -> dict:
 
                 results = _run_optimization(body, on_progress=_report_progress)
 
+                # Persist to DuckDB if user consented (Lambda has EFS mount)
+                if body.get("consent_storage"):
+                    try:
+                        from shelterpulse.store import save_run
+                        save_run(
+                            job_id=job_id,
+                            scenario=body.get("request", {}),
+                            results=results,
+                            consent=True,
+                            is_test=body.get("is_test_data", False),
+                        )
+                    except Exception as e:
+                        logger.warning("DuckDB persistence failed for %s: %s", job_id, e)
+
+                # Always log the consent decision for audit trail
+                try:
+                    from shelterpulse.store import log_consent
+                    log_consent(
+                        session_id=job_id,
+                        ip=body.get("request", {}).get("_client_ip", "unknown"),
+                        consent=bool(body.get("consent_storage")),
+                        is_test=body.get("is_test_data", False),
+                    )
+                except Exception as e:
+                    logger.warning("Consent logging failed for %s: %s", job_id, e)
+
                 # Report completion
                 _post_json(
                     f"{API_URL}/internal/jobs/{job_id}/complete",

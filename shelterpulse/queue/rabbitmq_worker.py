@@ -67,6 +67,33 @@ async def _process_job(body: bytes) -> None:
 
             results = _run_optimization(payload, on_progress=_report_progress)
 
+            # Persist to DuckDB if user consented
+            if payload.get("consent_storage"):
+                try:
+                    from shelterpulse.store import save_run, log_consent
+                    save_run(
+                        job_id=job_id,
+                        scenario=payload.get("request", {}),
+                        results=results,
+                        consent=True,
+                        is_test=payload.get("is_test_data", False),
+                    )
+                    logger.info("Job %s persisted to DuckDB", job_id)
+                except Exception as e:
+                    logger.warning("DuckDB persistence failed for %s: %s", job_id, e)
+
+            # Always log the consent decision for audit trail
+            try:
+                from shelterpulse.store import log_consent
+                log_consent(
+                    session_id=job_id,
+                    ip=payload.get("request", {}).get("_client_ip", "unknown"),
+                    consent=bool(payload.get("consent_storage")),
+                    is_test=payload.get("is_test_data", False),
+                )
+            except Exception as e:
+                logger.warning("Consent logging failed for %s: %s", job_id, e)
+
             # Report completion
             _post_json(
                 f"{API_URL}/internal/jobs/{job_id}/complete",
