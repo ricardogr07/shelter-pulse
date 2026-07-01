@@ -37,6 +37,21 @@ def _post_json(url: str, data: dict) -> None:
         resp.read()
 
 
+def _validate_payload(payload: dict) -> None:
+    """Validate payload bounds before running expensive computation."""
+    req_data = payload.get("request", {})
+    n_reps = req_data.get("n_replications", 32)
+    duration = req_data.get("duration_days", 90)
+    housing = req_data.get("housing_capacity", 35)
+
+    if not (1 <= n_reps <= 128):
+        raise ValueError(f"n_replications out of bounds: {n_reps}")
+    if not (1 <= duration <= 365):
+        raise ValueError(f"duration_days out of bounds: {duration}")
+    if not (1 <= housing <= 500):
+        raise ValueError(f"housing_capacity out of bounds: {housing}")
+
+
 def _run_optimization(payload: dict) -> list[dict]:
     """Run the BO optimization sweep and return serialized results."""
     from shelterpulse.core.montecarlo import make_seed_set
@@ -84,6 +99,9 @@ def handler(event: dict, context) -> dict:
 
         try:
             if job_type == "optimize_builder":
+                # Validate payload bounds
+                _validate_payload(body)
+
                 # Report progress start
                 _post_json(
                     f"{API_URL}/internal/jobs/{job_id}/progress",

@@ -35,6 +35,7 @@ class Job:
     progress_total: int = 0
     results: list[dict[str, Any]] = field(default_factory=list)
     error: str | None = None
+    client_ip: str = ""
 
 
 class JobStore:
@@ -48,9 +49,9 @@ class JobStore:
         self._jobs: dict[str, Job] = {}
         self._lock = threading.Lock()
 
-    def create(self, job_id: str, total: int = 0) -> Job:
+    def create(self, job_id: str, total: int = 0, client_ip: str = "") -> Job:
         """Register a new job as queued."""
-        job = Job(job_id=job_id, progress_total=total)
+        job = Job(job_id=job_id, progress_total=total, client_ip=client_ip)
         with self._lock:
             self._jobs[job_id] = job
         return job
@@ -59,6 +60,15 @@ class JobStore:
         """Get job by ID. Returns None if not found."""
         with self._lock:
             return self._jobs.get(job_id)
+
+    def count_active_by_ip(self, client_ip: str) -> int:
+        """Count jobs in queued/running state for a given client IP."""
+        with self._lock:
+            return sum(
+                1 for job in self._jobs.values()
+                if job.client_ip == client_ip
+                and job.status in (JobStatus.QUEUED, JobStatus.RUNNING)
+            )
 
     def update_progress(self, job_id: str, done: int, total: int) -> None:
         """Update progress counters for a running job."""
