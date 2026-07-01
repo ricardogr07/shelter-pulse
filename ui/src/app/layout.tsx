@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "Simulation and optimization lab for cat-shelter resource allocation during kitten season. Bayesian optimization finds the best budget split to minimize overflow.",
   metadataBase: new URL(SITE_URL),
   openGraph: {
-    title: "ShelterPulse — Kitten Season Resource Optimizer",
+    title: "ShelterPulse - Kitten Season Resource Optimizer",
     description:
       "Simulate your shelter capacity under uncertainty and find the optimal budget allocation to minimize overflow during kitten season.",
     siteName: "ShelterPulse",

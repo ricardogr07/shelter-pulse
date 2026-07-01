@@ -47,7 +47,7 @@ export default function ComparisonTable({ winner, baselines }: Props) {
         <tbody>
           {rows.map((row) => {
             const tot = row.result.foster_support + row.result.clinic_hours + row.result.temporary_isolation + row.result.adoption_events;
-            const pct = (v: number) => tot > 0 ? `${((v / tot) * 100).toFixed(0)}%` : "—";
+            const pct = (v: number) => tot > 0 ? `${((v / tot) * 100).toFixed(0)}%` : "-";
             return (
               <tr
                 key={row.label}
