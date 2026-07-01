@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { simulateCustom, optimizeCustom, optimizeBuilderCompare, getSensitivity, getTimeline, getTimelineCompare, type SensitivityResult, type DailySnapshot, type CompareResult } from "@/api";
+import { simulateCustom, optimizeCustom, optimizeBuilderCompare, getSensitivity, getTimeline, getTimelineCompare, type SensitivityResult, type DailySnapshot, type CompareResult, type AsyncJobResponse } from "@/api";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { EvaluationResult, CustomScenario } from "@/types";
 import SensitivityChart from "@/components/SensitivityChart";
 import TimelineChart from "@/components/TimelineChart";
 import CIBadge from "@/components/CIBadge";
 import ComparisonTable from "@/components/ComparisonTable";
+import ProgressStream from "@/components/ProgressStream";
 
 const DEFAULTS: CustomScenario = {
   name: "My Shelter",
@@ -51,6 +52,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
   const [loading, setLoading] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [asyncJobId, setAsyncJobId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'timeline' | 'sensitivity'>('timeline');
   const [timeline, setTimeline] = useState<DailySnapshot[] | null>(null);
   const [timelineBaseline, setTimelineBaseline] = useState<DailySnapshot[] | null>(null);
@@ -90,21 +92,45 @@ export default function SimulateClient({ lang }: { lang: string }) {
   }
 
   async function runOptimize() {
-    setLoading(true); setError(null); setSimResult(null); setTimelineBaseline(null); setCompareData(null);
+    setLoading(true); setError(null); setSimResult(null); setTimelineBaseline(null); setCompareData(null); setAsyncJobId(null);
     try {
-      const results = await optimizeCustom(form, 15, 16);
-      setOptResults(results);
-      // Fetch before/after timeline with winner allocation
-      if (results.length > 0) {
-        const winner = results[0];
-        const alloc = { foster_support: winner.foster_support, clinic_hours: winner.clinic_hours, temporary_isolation: winner.temporary_isolation, adoption_events: winner.adoption_events };
-        const compare = await getTimelineCompare(form, alloc);
-        setTimelineBaseline(compare.before);
-        setTimeline(compare.after);
+      const response = await optimizeCustom(form, 15, 16);
+
+      // Check if async dispatch (202 with job_id)
+      if ("job_id" in response) {
+        setAsyncJobId((response as AsyncJobResponse).job_id);
+        setLoading(false);
+        return;
       }
+
+      // Sync path: results returned directly
+      const results = response as EvaluationResult[];
+      await handleOptResults(results);
     }
     catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
     finally { setLoading(false); }
+  }
+
+  async function handleOptResults(results: EvaluationResult[]) {
+    setOptResults(results);
+    setAsyncJobId(null);
+    // Fetch before/after timeline with winner allocation
+    if (results.length > 0) {
+      const winner = results[0];
+      const alloc = { foster_support: winner.foster_support, clinic_hours: winner.clinic_hours, temporary_isolation: winner.temporary_isolation, adoption_events: winner.adoption_events };
+      const compare = await getTimelineCompare(form, alloc);
+      setTimelineBaseline(compare.before);
+      setTimeline(compare.after);
+    }
+  }
+
+  function handleStreamComplete(results: EvaluationResult[]) {
+    handleOptResults(results);
+  }
+
+  function handleStreamError(message: string) {
+    setAsyncJobId(null);
+    setError(message);
   }
 
   async function runCompare() {
@@ -162,6 +188,17 @@ export default function SimulateClient({ lang }: { lang: string }) {
         </div>
 
         {error && <p className="mt-4 text-red-500">{error}</p>}
+
+        {asyncJobId && (
+          <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-3">Optimizing...</h2>
+            <ProgressStream
+              jobId={asyncJobId}
+              onComplete={handleStreamComplete}
+              onError={handleStreamError}
+            />
+          </div>
+        )}
 
         {simResult && (
           <div className="mt-8 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">

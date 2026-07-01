@@ -59,8 +59,11 @@ class TestLambdaHandler:
         body = json.loads(result["body"])
         assert body["processed"] == 1
         assert body["errors"] == 0
-        # Should have called progress + complete
-        assert mock_post.call_count == 2
+        # Only complete webhook called (progress is reported via on_progress
+        # callback which doesn't fire when _run_optimization is mocked)
+        assert mock_post.call_count == 1
+        call_url = mock_post.call_args_list[0][0][0]
+        assert "/internal/jobs/test-job-1/complete" in call_url
 
     def test_handler_reports_failure_on_error(self):
         """Handler calls fail webhook when optimization raises."""

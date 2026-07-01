@@ -52,6 +52,7 @@ def _inprocess_sweep(
     budget: float,
     n_candidates: int,
     seed_set: Sequence[int],
+    on_progress: Any | None = None,
 ) -> list[EvaluationResult]:
     """Evaluate all baselines + n_candidates random allocations, return ranked results."""
     import numpy as np
@@ -61,11 +62,16 @@ def _inprocess_sweep(
 
     seed_list = list(seed_set)
     results: list[EvaluationResult] = []
+    total = len(ALL_BASELINES) + n_candidates
+    done = 0
 
     for _name, alloc in ALL_BASELINES.items():
         results.append(evaluate_candidate(alloc, scenario, seed_list))
+        done += 1
+        if on_progress:
+            on_progress(done, total)
 
-    # Random candidates (uniform Dirichlet — guaranteed to sum to 1)
+    # Random candidates (uniform Dirichlet -- guaranteed to sum to 1)
     rng = np.random.default_rng(scenario.seed)
     for _ in range(n_candidates):
         shares = rng.dirichlet([1.0, 1.0, 1.0, 1.0])
@@ -76,6 +82,9 @@ def _inprocess_sweep(
             adoption_events=float(shares[3]),
         )
         results.append(evaluate_candidate(alloc, scenario, seed_list))
+        done += 1
+        if on_progress:
+            on_progress(done, total)
 
     results.sort(key=lambda r: (not r.is_feasible, r.mean_overflow_cat_days))
     return results
@@ -105,6 +114,7 @@ def run_optimization_sweep(
     n_candidates: int = 30,
     seed_set: Sequence[int] | None = None,
     use_bo: bool = True,
+    on_progress: Any | None = None,
 ) -> list[EvaluationResult]:
     """Entry point for the optimization sweep.
 
@@ -114,6 +124,8 @@ def run_optimization_sweep(
         n_candidates: Number of candidate allocations to evaluate.
         seed_set: Replication seeds. Defaults to 64 seeds starting from scenario.seed.
         use_bo: If True, run JAX-BO optimizer (or scipy fallback) merged with baselines.
+        on_progress: Optional callback(done: int, total: int) called after each
+            candidate evaluation. Used by workers to report progress.
 
     Returns:
         List of EvaluationResult, one per candidate evaluated.
@@ -125,10 +137,20 @@ def run_optimization_sweep(
         return _temporal_sweep(scenario, budget, n_candidates, seed_set)
     if use_bo:
         from shelterpulse.optimize.jaxbo_optimizer import optimize_jaxbo
+        from shelterpulse.optimize.baselines import ALL_BASELINES
 
-        bo_results = optimize_jaxbo(scenario, seed_set, n_candidates)
-        baseline_results = _inprocess_sweep(scenario, budget, 0, seed_set)
+        # Unified progress: BO candidates + baselines
+        total = n_candidates + len(ALL_BASELINES)
+        _counter = [0]  # mutable closure
+
+        def _unified_progress(done: int, total_inner: int) -> None:
+            _counter[0] += 1
+            if on_progress:
+                on_progress(_counter[0], total)
+
+        bo_results = optimize_jaxbo(scenario, seed_set, n_candidates, on_progress=_unified_progress)
+        baseline_results = _inprocess_sweep(scenario, budget, 0, seed_set, on_progress=_unified_progress)
         combined = baseline_results + bo_results
         combined.sort(key=lambda r: (not r.is_feasible, r.mean_overflow_cat_days))
         return combined
-    return _inprocess_sweep(scenario, budget, n_candidates, seed_set)
+    return _inprocess_sweep(scenario, budget, n_candidates, seed_set, on_progress=on_progress)

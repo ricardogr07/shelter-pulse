@@ -44,10 +44,15 @@ export async function simulateCustom(s: CustomScenarioParams): Promise<Evaluatio
   return r.json();
 }
 
-export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, reps = 32): Promise<EvaluationResult[]> {
+export interface AsyncJobResponse { job_id: string; status: string }
+
+export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, reps = 32): Promise<EvaluationResult[] | AsyncJobResponse> {
   const r = await fetch(`${API}/optimize/builder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, n_candidates: nCandidates, n_replications: reps }) });
   if (!r.ok) throw new Error(await r.text());
-  return r.json();
+  const data = await r.json();
+  // 202 = async dispatch, returns {job_id, status}
+  if (r.status === 202 || data.job_id) return data as AsyncJobResponse;
+  return data as EvaluationResult[];
 }
 
 export interface CompareResult { winner: EvaluationResult; baselines: Record<string, EvaluationResult> }
