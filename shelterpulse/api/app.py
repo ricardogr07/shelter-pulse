@@ -23,9 +23,27 @@ from shelterpulse.optimize.interface import evaluate_candidate
 from shelterpulse.optimize.workflow import CandidateAllocation, run_optimization_sweep
 from shelterpulse.queue import get_publisher
 from shelterpulse.queue.job_store import JobStatus, job_store
+from shelterpulse.api.rate_limit import (
+    check_rate_limit,
+    export_limiter,
+    get_client_ip,
+    optimize_limiter,
+    simulate_limiter,
+)
+
+_ALLOWED_ORIGINS = [
+    "https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws",
+    "http://localhost:3000",
+    "http://localhost:8000",
+]
 
 app = fastapi.FastAPI(title="ShelterPulse API", version="0.1.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 
 _SCENARIO_PATH = Path(__file__).parent.parent.parent / "scenarios" / "whisker_haven.yaml"
 _CACHE_PATH = Path(__file__).parent.parent.parent / "scenarios" / "whisker_haven_cache.pkl"
@@ -66,11 +84,27 @@ class SimulateRequest(BaseModel):
     allocation: AllocationIn = AllocationIn()
     n_replications: int = 64
 
+    @model_validator(mode="after")
+    def clamp_replications(self) -> "SimulateRequest":
+        if self.n_replications < 1:
+            raise ValueError("n_replications must be >= 1")
+        if self.n_replications > 128:
+            raise ValueError("n_replications must be <= 128")
+        return self
+
 
 class SweepRequest(BaseModel):
     n_candidates: int = 30
     n_replications: int = 64
     use_bo: bool = True
+
+    @model_validator(mode="after")
+    def clamp_params(self) -> "SweepRequest":
+        if self.n_candidates < 1 or self.n_candidates > 50:
+            raise ValueError("n_candidates must be between 1 and 50")
+        if self.n_replications < 1 or self.n_replications > 128:
+            raise ValueError("n_replications must be between 1 and 128")
+        return self
 
 
 class EvaluationOut(BaseModel):
@@ -100,6 +134,28 @@ class BuilderRequest(BaseModel):
     base_adoption_rate: float = 0.08
     n_replications: int = 32
     allocation: AllocationIn | None = None
+
+    @model_validator(mode="after")
+    def clamp_params(self) -> "BuilderRequest":
+        if self.duration_days < 1 or self.duration_days > 365:
+            raise ValueError("duration_days must be between 1 and 365")
+        if self.housing_capacity < 1 or self.housing_capacity > 500:
+            raise ValueError("housing_capacity must be between 1 and 500")
+        if self.isolation_slots < 0 or self.isolation_slots > 100:
+            raise ValueError("isolation_slots must be between 0 and 100")
+        if self.vet_tech_fte < 0.1 or self.vet_tech_fte > 20.0:
+            raise ValueError("vet_tech_fte must be between 0.1 and 20.0")
+        if self.intervention_budget < 0 or self.intervention_budget > 1_000_000:
+            raise ValueError("intervention_budget must be between 0 and 1,000,000")
+        if self.mean_intake_per_day < 0.1 or self.mean_intake_per_day > 50.0:
+            raise ValueError("mean_intake_per_day must be between 0.1 and 50.0")
+        if self.kitten_fraction < 0.0 or self.kitten_fraction > 1.0:
+            raise ValueError("kitten_fraction must be between 0.0 and 1.0")
+        if self.base_adoption_rate < 0.0 or self.base_adoption_rate > 1.0:
+            raise ValueError("base_adoption_rate must be between 0.0 and 1.0")
+        if self.n_replications < 1 or self.n_replications > 128:
+            raise ValueError("n_replications must be between 1 and 128")
+        return self
 
 
 class SensitivityPoint(BaseModel):
@@ -177,7 +233,8 @@ def health() -> dict:
 
 
 @app.post("/simulate", response_model=EvaluationOut)
-def simulate(req: SimulateRequest) -> EvaluationOut:
+def simulate(req: SimulateRequest, request: fastapi.Request) -> EvaluationOut:
+    check_rate_limit(simulate_limiter, request)
     scenario = _get_scenario()
     alloc = CandidateAllocation(**req.allocation.model_dump())
     seeds = make_seed_set(scenario.seed, req.n_replications)
@@ -185,7 +242,8 @@ def simulate(req: SimulateRequest) -> EvaluationOut:
 
 
 @app.post("/optimize", response_model=list[EvaluationOut])
-def optimize(req: SweepRequest) -> list[EvaluationOut]:
+def optimize(req: SweepRequest, request: fastapi.Request) -> list[EvaluationOut]:
+    check_rate_limit(optimize_limiter, request)
     # Cache hit for demo params (must match scripts/precompute_demo.py: 10 candidates, 16 reps, BO)
     if req.n_candidates == 10 and req.n_replications == 16 and req.use_bo:
         cached = _load_demo_cache()
@@ -209,7 +267,8 @@ def baselines() -> dict:
 # ── Builder endpoints ─────────────────────────────────────────────────────────
 
 @app.post("/simulate/builder", response_model=EvaluationOut)
-def simulate_builder(req: BuilderRequest) -> EvaluationOut:
+def simulate_builder(req: BuilderRequest, request: fastapi.Request) -> EvaluationOut:
+    check_rate_limit(simulate_limiter, request)
     scenario = _builder_to_scenario(req)
     alloc = CandidateAllocation(0.25, 0.25, 0.25, 0.25)
     seeds = make_seed_set(scenario.seed, req.n_replications)
@@ -217,12 +276,13 @@ def simulate_builder(req: BuilderRequest) -> EvaluationOut:
 
 
 @app.post("/optimize/builder")
-async def optimize_builder(req: BuilderRequest, response: fastapi.Response):
+async def optimize_builder(req: BuilderRequest, request: fastapi.Request, response: fastapi.Response):
     """Run BO optimization on a custom builder scenario.
 
     When QUEUE_BACKEND=sync (default): blocks and returns list[EvaluationOut] (200).
     When QUEUE_BACKEND=rabbitmq|sqs: dispatches async, returns job_id (202).
     """
+    check_rate_limit(optimize_limiter, request)
     queue_backend = os.getenv("QUEUE_BACKEND", "sync")
 
     if queue_backend == "sync":
@@ -236,8 +296,16 @@ async def optimize_builder(req: BuilderRequest, response: fastapi.Response):
         return [_er_to_out(r) for r in results]
 
     # Async dispatch: publish to queue and return immediately
+    ip = get_client_ip(request)
+    _MAX_CONCURRENT_JOBS = 3
+    if job_store.count_active_by_ip(ip) >= _MAX_CONCURRENT_JOBS:
+        raise fastapi.HTTPException(
+            status_code=429,
+            detail=f"Too many active jobs ({_MAX_CONCURRENT_JOBS} max). Wait for current jobs to complete.",
+        )
+
     job_id = str(uuid4())
-    job_store.create(job_id, total=15)
+    job_store.create(job_id, total=15, client_ip=ip)
     publisher = get_publisher()
     await publisher.publish_job(job_id, {
         "type": "optimize_builder",
@@ -318,8 +386,9 @@ class CompareOut(BaseModel):
 
 
 @app.post("/optimize/builder/compare", response_model=CompareOut)
-def optimize_builder_compare(req: BuilderRequest) -> CompareOut:
+def optimize_builder_compare(req: BuilderRequest, request: fastapi.Request) -> CompareOut:
     """Run BO optimization + evaluate all baselines against a custom scenario."""
+    check_rate_limit(optimize_limiter, request)
     scenario = _builder_to_scenario(req)
     seeds = make_seed_set(scenario.seed, req.n_replications)
     results = run_optimization_sweep(
@@ -473,7 +542,8 @@ def simulate_timeline_builder_compare(req: BuilderRequest) -> TimelineCompareOut
 # ── Export endpoint ───────────────────────────────────────────────────────────
 
 @app.post("/export")
-def export(req: SweepRequest) -> StreamingResponse:
+def export(req: SweepRequest, request: fastapi.Request) -> StreamingResponse:
+    check_rate_limit(export_limiter, request)
     from shelterpulse.core.export import export_results
 
     scenario = _get_scenario()
