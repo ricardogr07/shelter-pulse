@@ -8,7 +8,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy dependency files first for layer caching
 COPY pyproject.toml uv.lock ./
-RUN uv sync --no-dev --no-install-project --extra optimize
+RUN uv sync --no-dev --no-install-project --extra optimize --extra worker
 
 # pyDOE shim: jaxbo imports `pyDOE` (old name); installed package is `pydoe` (new name)
 RUN python -c "import site; sp=[p for p in site.getsitepackages() if 'site-packages' in p][0]; open(sp+'/pyDOE.py','w').write('from pydoe import *\nfrom pydoe import lhs\n')"

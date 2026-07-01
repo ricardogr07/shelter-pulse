@@ -7,11 +7,17 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - QUEUE_BACKEND=rabbitmq
+      - RABBITMQ_URL=amqp://shelter:pulse@rabbitmq:5672/
+      - INTERNAL_KEY=dev-key-123
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       timeout: 5s
       retries: 3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   ui:
     build:
@@ -25,22 +31,36 @@ services:
       api:
         condition: service_healthy
 
-  # Temporal services — enabled only when TEMPORAL_ENABLED=True (Jun 28 gate)
-  # Start with: docker compose --profile temporal up
-  temporal:
-    image: temporalio/auto-setup:latest
+  rabbitmq:
+    build:
+      context: .
+      dockerfile: docker/rabbitmq.Dockerfile
     ports:
-      - "7233:7233"
-    profiles:
-      - temporal
-
-  temporal-ui:
-    image: temporalio/ui:latest
-    ports:
-      - "8080:8080"
+      - "5672:5672"
     environment:
-      - TEMPORAL_ADDRESS=temporal:7233
+      RABBITMQ_DEFAULT_USER: shelter
+      RABBITMQ_DEFAULT_PASS: pulse
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  worker:
+    build:
+      context: .
+      target: api
+    command: [".venv/bin/python", "-m", "shelterpulse.queue.rabbitmq_worker"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - RABBITMQ_URL=amqp://shelter:pulse@rabbitmq:5672/
+      - API_URL=http://api:8000
+      - INTERNAL_KEY=dev-key-123
     depends_on:
-      - temporal
-    profiles:
-      - temporal
+      rabbitmq:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    deploy:
+      replicas: 1

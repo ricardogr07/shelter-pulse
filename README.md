@@ -49,6 +49,8 @@ Next.js + Tailwind frontend calling FastAPI. Sensitivity tornado chart, day-by-d
 
 **Deployment:** nginx + uvicorn in one ECS Fargate task. One ALB, one HTTPS URL, no CORS. Auto-deploys on `v*` tag via GitHub Actions + ECR.
 
+**Async workers:** BO sweeps dispatch to background workers via a queue abstraction. RabbitMQ in docker-compose (horizontal scaling demo), SQS+Lambda in production (zero cost). Feature flag `QUEUE_BACKEND` selects the backend.
+
 ---
 
 ## Results
@@ -73,7 +75,8 @@ Full rationale: [docs/design-decisions.md](docs/design-decisions.md) and [docs/a
 | Common Random Numbers | Without CRN, replication variance swamps allocation signal |
 | GP+EI over random search | Finds better allocations with fewer evaluations; scipy fallback keeps jax optional |
 | Consolidated container | One URL for demo; nginx+uvicorn in one ECS task eliminates CORS |
-| Temporal deferred | In-process sweep < 30 s; architecture is Temporal-ready via `TEMPORAL_ENABLED` flag |
+| RabbitMQ local, SQS+Lambda prod | Demonstrates horizontal scaling locally; zero cost in prod via free tier |
+| DuckDB over ClickHouse | Embedded OLAP, no server needed; same EFS persistence story at $0/month |
 | Domain heuristic excludes clinic hours | Extra vet FTE worsened overflow in Whisker Haven (creates bottleneck elsewhere) |
 
 ---
@@ -88,6 +91,9 @@ docker compose up
 
 - UI: http://localhost:3000
 - API docs: http://localhost:8000/docs
+- RabbitMQ management: http://localhost:15672 (shelter/pulse)
+
+This starts 4 services: API (async mode), UI, RabbitMQ, and a background worker.
 
 ### Dev mode
 
@@ -112,14 +118,15 @@ cd ui && npm run type-check && npm run lint   # frontend
 
 | Suite | Tool | Count | Status |
 |-------|------|-------|--------|
-| Unit tests | pytest | 48 tests | ✅ All passing |
+| Unit tests | pytest | 83 tests | ✅ All passing |
 | E2E API tests | pytest + httpx | 8 tests | ✅ All passing |
+| Integration tests | pytest + docker | 3 tests | ✅ All passing |
 | UI smoke tests | Cypress | 4 tests | ✅ All passing |
-| Type checking | TypeScript tsc | — | ✅ No errors |
-| Lint (Python) | pyrefly | — | ✅ Clean |
-| Lint (JS/TS) | ESLint | — | ✅ Clean |
-| Security | Bandit | — | ✅ No findings |
-| Coverage | pytest-cov | 76% | — |
+| Type checking | TypeScript tsc | - | ✅ No errors |
+| Lint (Python) | pyrefly | - | ✅ Clean |
+| Lint (JS/TS) | ESLint | - | ✅ Clean |
+| Security | Bandit | - | ✅ No findings |
+| Coverage | pytest-cov | 76% | - |
 
 All checks run on every PR via GitHub Actions CI.
 
@@ -129,8 +136,10 @@ All checks run on every PR via GitHub Actions CI.
 |---|---|
 | `shelterpulse/core/` | Pure library: simulation, Monte Carlo, schema. Zero I/O. |
 | `shelterpulse/optimize/` | Sweep orchestrator, Bayesian optimizer, baselines |
+| `shelterpulse/queue/` | Async job dispatch: queue abstraction, RabbitMQ/SQS backends, worker |
 | `shelterpulse/api/` | FastAPI REST adapter |
 | `shelterpulse/cli/` | Typer CLI adapter |
+| `lambda/` | AWS Lambda worker (lean container image for SQS-triggered BO sweeps) |
 | `ui/` | Next.js + React + TypeScript + Tailwind |
 | `scenarios/` | YAML scenario files (Whisker Haven demo) |
 | `docs/` | ADRs + architecture diagrams |
@@ -138,7 +147,7 @@ All checks run on every PR via GitHub Actions CI.
 
 The core invariant: `shelterpulse/core/` imports nothing from `shelterpulse.api`, `shelterpulse.cli`, or `shelterpulse.optimize`. Enforced by `tests/unit/test_no_cross_imports.py` on every CI run.
 
-See [docs/architecture/](docs/architecture/) for diagrams and [docs/adr/](docs/adr/) for all 11 decision records.
+See [docs/architecture/](docs/architecture/) for diagrams and [docs/adr/](docs/adr/) for all 12 decision records.
 
 ## License
 

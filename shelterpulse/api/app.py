@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import dataclasses
 import io
+import os
 import pickle
 import tempfile
 import zipfile
 from pathlib import Path
+from uuid import uuid4
 
 import fastapi
 import numpy as np
@@ -19,6 +21,8 @@ from shelterpulse.core.schema import Scenario, load_scenario
 from shelterpulse.optimize.baselines import ALL_BASELINES
 from shelterpulse.optimize.interface import evaluate_candidate
 from shelterpulse.optimize.workflow import CandidateAllocation, run_optimization_sweep
+from shelterpulse.queue import get_publisher
+from shelterpulse.queue.job_store import JobStatus, job_store
 
 app = fastapi.FastAPI(title="ShelterPulse API", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -212,15 +216,100 @@ def simulate_builder(req: BuilderRequest) -> EvaluationOut:
     return _er_to_out(evaluate_candidate(alloc, scenario, seeds))
 
 
-@app.post("/optimize/builder", response_model=list[EvaluationOut])
-def optimize_builder(req: BuilderRequest) -> list[EvaluationOut]:
-    scenario = _builder_to_scenario(req)
-    seeds = make_seed_set(scenario.seed, req.n_replications)
-    results = run_optimization_sweep(
-        scenario, budget=req.intervention_budget,
-        n_candidates=15, seed_set=seeds, use_bo=True,
-    )
-    return [_er_to_out(r) for r in results]
+@app.post("/optimize/builder")
+async def optimize_builder(req: BuilderRequest, response: fastapi.Response):
+    """Run BO optimization on a custom builder scenario.
+
+    When QUEUE_BACKEND=sync (default): blocks and returns list[EvaluationOut] (200).
+    When QUEUE_BACKEND=rabbitmq|sqs: dispatches async, returns job_id (202).
+    """
+    queue_backend = os.getenv("QUEUE_BACKEND", "sync")
+
+    if queue_backend == "sync":
+        # Existing synchronous behavior
+        scenario = _builder_to_scenario(req)
+        seeds = make_seed_set(scenario.seed, req.n_replications)
+        results = run_optimization_sweep(
+            scenario, budget=req.intervention_budget,
+            n_candidates=15, seed_set=seeds, use_bo=True,
+        )
+        return [_er_to_out(r) for r in results]
+
+    # Async dispatch: publish to queue and return immediately
+    job_id = str(uuid4())
+    job_store.create(job_id, total=15)
+    publisher = get_publisher()
+    await publisher.publish_job(job_id, {
+        "type": "optimize_builder",
+        "request": req.model_dump(),
+    })
+    response.status_code = 202
+    return {"job_id": job_id, "status": "queued"}
+
+
+# ── Job status endpoints ──────────────────────────────────────────────────────
+
+@app.get("/optimize/{job_id}/status")
+def get_job_status(job_id: str):
+    """Poll the status of an async optimization job."""
+    job = job_store.get(job_id)
+    if not job:
+        raise fastapi.HTTPException(status_code=404, detail="Job not found")
+    return {
+        "job_id": job.job_id,
+        "status": job.status.value,
+        "progress_done": job.progress_done,
+        "progress_total": job.progress_total,
+    }
+
+
+@app.get("/optimize/{job_id}/results")
+def get_job_results(job_id: str):
+    """Retrieve results of a completed optimization job."""
+    job = job_store.get(job_id)
+    if not job:
+        raise fastapi.HTTPException(status_code=404, detail="Job not found")
+    if job.status == JobStatus.FAILED:
+        raise fastapi.HTTPException(status_code=500, detail=job.error or "Job failed")
+    if job.status != JobStatus.COMPLETED:
+        raise fastapi.HTTPException(status_code=409, detail=f"Job is {job.status.value}, not completed")
+    return job.results
+
+
+# ── Internal webhook endpoints (called by workers) ────────────────────────────
+
+_INTERNAL_KEY = os.getenv("INTERNAL_KEY", "dev-key-123")
+
+
+@app.post("/internal/jobs/{job_id}/progress")
+def receive_job_progress(job_id: str, request: fastapi.Request, payload: dict):
+    """Worker reports progress for a running job."""
+    _validate_internal_key(request)
+    job_store.update_progress(job_id, payload.get("done", 0), payload.get("total", 0))
+    return {"ok": True}
+
+
+@app.post("/internal/jobs/{job_id}/complete")
+def receive_job_complete(job_id: str, request: fastapi.Request, payload: dict):
+    """Worker reports job completion with results."""
+    _validate_internal_key(request)
+    job_store.complete(job_id, payload.get("results", []))
+    return {"ok": True}
+
+
+@app.post("/internal/jobs/{job_id}/fail")
+def receive_job_fail(job_id: str, request: fastapi.Request, payload: dict):
+    """Worker reports job failure."""
+    _validate_internal_key(request)
+    job_store.fail(job_id, payload.get("error", "Unknown error"))
+    return {"ok": True}
+
+
+def _validate_internal_key(request: fastapi.Request) -> None:
+    """Check X-Internal-Key header matches expected value."""
+    key = request.headers.get("X-Internal-Key", "")
+    if key != _INTERNAL_KEY:
+        raise fastapi.HTTPException(status_code=403, detail="Invalid internal key")
 
 
 class CompareOut(BaseModel):
