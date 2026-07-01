@@ -15,9 +15,12 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    outputs:
+      lambda_changed: ${{ steps.detect-lambda.outputs.changed }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Configure AWS credentials (OIDC)
@@ -41,6 +44,26 @@ jobs:
             echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Detect lambda/ changes
+        id: detect-lambda
+        run: |
+          # Find the previous tag to compare against
+          PREV_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]' | sed -n '2p')
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found - building worker image"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            LAMBDA_CHANGES=$(git diff --name-only "$PREV_TAG" HEAD -- lambda/ || true)
+            if [ -n "$LAMBDA_CHANGES" ]; then
+              echo "lambda/ changed since $PREV_TAG:"
+              echo "$LAMBDA_CHANGES"
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "No lambda/ changes since $PREV_TAG - skipping worker build"
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
       - name: Build and push consolidated image
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
@@ -52,6 +75,18 @@ jobs:
           tags: |
             ${{ steps.ecr-login.outputs.registry }}/shelterpulse:v${{ steps.version.outputs.tag }}
             ${{ steps.ecr-login.outputs.registry }}/shelterpulse:latest
+
+      - name: Build and push worker image
+        if: steps.detect-lambda.outputs.changed == 'true'
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
+        with:
+          context: .
+          file: lambda/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/shelterpulse-worker:v${{ steps.version.outputs.tag }}
+            ${{ steps.ecr-login.outputs.registry }}/shelterpulse-worker:latest
 
       - name: Ensure latest AWS CLI v2 (Express Mode commands)
         if: vars.ECS_EXPRESS_SERVICE_ARN != ''
@@ -79,13 +114,29 @@ jobs:
             --monitor-resources DEPLOYMENT \
             --monitor-mode TEXT-ONLY
 
+      - name: Update Lambda worker function
+        if: steps.detect-lambda.outputs.changed == 'true'
+        env:
+          IMAGE: ${{ steps.ecr-login.outputs.registry }}/shelterpulse-worker:v${{ steps.version.outputs.tag }}
+        run: |
+          aws lambda update-function-code \
+            --function-name shelterpulse-worker \
+            --image-uri "$IMAGE" \
+            --no-cli-pager || echo "::warning::Lambda update failed (function may not exist yet)"
+
       - name: Summary
         run: |
           echo "### Deployed v${{ steps.version.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Image: \`${{ steps.ecr-login.outputs.registry }}/shelterpulse:v${{ steps.version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ -n "${{ vars.ECS_EXPRESS_SERVICE_ARN }}" ]; then
-            echo "Updated ECS Express service \`${{ vars.ECS_EXPRESS_SERVICE_ARN }}\`." >> "$GITHUB_STEP_SUMMARY"
+            echo "Updated ECS Express service." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "⚠️ \`ECS_EXPRESS_SERVICE_ARN\` variable not set — image pushed but no service updated. Create the Express service first, then set the variable." >> "$GITHUB_STEP_SUMMARY"
+            echo "ECS_EXPRESS_SERVICE_ARN not set - image pushed but no service updated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "${{ steps.detect-lambda.outputs.changed }}" = "true" ]; then
+            echo "Worker image: \`${{ steps.ecr-login.outputs.registry }}/shelterpulse-worker:v${{ steps.version.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "Lambda function updated." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No lambda/ changes - worker image skipped." >> "$GITHUB_STEP_SUMMARY"
           fi

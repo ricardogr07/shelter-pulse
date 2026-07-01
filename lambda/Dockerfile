@@ -26,7 +26,7 @@ RUN find /app/.venv -path '*/jaxbo/*.py' \
     -exec sed -i 's/np\.clip(\([^,]*\),\s*a_min=\([^,)]*\))/np.clip(\1, \2, None)/g' {} \;
 
 # Install Lambda runtime interface client
-RUN .venv/bin/pip install awslambdaric
+RUN uv pip install awslambdaric --python .venv/bin/python
 
 # Copy application source
 COPY shelterpulse/ shelterpulse/

@@ -35,7 +35,7 @@ inclusion: always
 | Cloud | **AWS ECS Express Mode + ECR** -- single consolidated container (nginx + uvicorn), one ALB, one HTTPS URL. See ADR-011. |
 | CI | GitHub Actions (`.github/workflows/ci.yml`, `promote.yml`, `release.yml`, `deploy.yml`) |
 | CD | Tag `v*` triggers `deploy.yml`: build + push `app` target to ECR, ECS auto-deploys |
-| Durable workflow | Temporal gate **closed** (ADR-010). `TEMPORAL_ENABLED = False`. In-process sweep chosen. Architecture remains Temporal-ready. |
+| Async workers | Queue abstraction (ADR-012). `QUEUE_BACKEND=sync\|rabbitmq\|sqs`. RabbitMQ local, SQS+Lambda prod. |
 
 **Phase status (Jun 28 2026):** Phases 1-11 complete. Submission target Jul 6-7.
 
@@ -50,7 +50,8 @@ inclusion: always
 
 - **No new pip packages** without orchestrator (Claude) approval. Every new dep = more attack surface + build time.
 - `jax` / `jaxlib` stay in `[project.optional-dependencies].optimize`: never move to main deps.
-- `temporalio` stays in `[project.optional-dependencies].temporal`.
+- `aio-pika` in `[project.optional-dependencies].worker` for RabbitMQ backend.
+- `boto3` in `[project.optional-dependencies].aws` for SQS backend.
 - **No new npm packages** without approval. Check `package.json` before reaching for a library.
 
 ## Test commands

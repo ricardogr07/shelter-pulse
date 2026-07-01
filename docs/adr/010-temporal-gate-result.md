@@ -1,8 +1,10 @@
-﻿# ADR 010: Temporal Gate Result
+﻿> **SUPERSEDED by [ADR-012](012-queue-abstraction.md).** The async architecture now uses SQS+Lambda (prod) and RabbitMQ (local) instead of Temporal. Kept for decision trail.
+
+# ADR 010: Temporal Gate Result
 
 ## Status
 
-Accepted
+Superseded by ADR-012
 
 ## Date
 

@@ -71,7 +71,7 @@ Positive covariance from shared seeds reduces this substantially: same-seed runs
 **4-simplex → 3-cube projection:**
 - BO works in [0,1]³ (3-dimensional unit cube). The 4-simplex (4 shares summing to 1) is represented by dropping one coordinate and normalizing via softmax. The optimizer sees a 3-cube; the evaluation layer reconstructs 4 shares. See `jaxbo_optimizer.py`.
 
-**Revisit when:** Sweep time exceeds 5 minutes (add Temporal for async worker offload), or when the allocation space grows beyond 4 interventions (projection changes).
+**Revisit when:** Sweep time exceeds 5 minutes (async workers already handle this via queue abstraction), or when the allocation space grows beyond 4 interventions (projection changes).
 
 ---
 
@@ -81,7 +81,7 @@ Positive covariance from shared seeds reduces this substantially: same-seed runs
 
 **Why:**
 - One place to change replication logic, CRN behavior, cost accumulation
-- Makes Temporal adoption trivial: `evaluate_candidate()` maps 1:1 to a Temporal activity. Flip `TEMPORAL_ENABLED` and the same interface dispatches to a durable worker.
+- Makes async dispatch trivial: `evaluate_candidate()` is the natural work unit boundary. The queue abstraction dispatches jobs containing allocations to workers without touching the optimizer interface.
 - Prevents copy-paste drift where two optimizers accidentally use different seed strategies
 
 **Implementation:** `shelterpulse/optimize/interface.py`: `EvaluationResult` carries mean/std/95% CI for both overflow and cost.
@@ -122,20 +122,21 @@ app target   → python:3.12-slim + nginx:alpine + /out + nginx.conf
 
 ---
 
-## 7. Temporal deferred
+## 7. Queue abstraction: RabbitMQ local, SQS+Lambda prod
 
-**Decision:** `TEMPORAL_ENABLED = False`. The in-process sweep completes in < 30s for 20 candidates × 32 replications. Temporal not adopted.
+**Decision:** Offload BO sweep to background workers via a queue abstraction. `QUEUE_BACKEND` env var selects: sync (default, in-process), rabbitmq (docker-compose), sqs (production).
 
-**Why deferral was correct:**
-- In-process is fast enough. Temporal adds: a Temporal server dependency, worker process management, retry/timeout configuration, serialization of `Scenario` and `seed_set` over the task queue. None of that is free.
-- EOD Jun 28 gate (ADR-004): core sim + BO running end-to-end → adopt Temporal. Gate passed but the timing advantage didn't justify the operational cost (ADR-010).
+**Why this architecture:**
+- In-process sweep is 30s - acceptable for a blocking request, but poor UX. Async dispatch returns 202 instantly.
+- Temporal was evaluated but adds $100/month (Cloud) or complex self-hosting. Our workload is short-lived (~30s) and doesn't need durable replay.
+- RabbitMQ locally demonstrates horizontal scaling to judges (`docker compose up --scale worker=4`)
+- SQS+Lambda in production costs $0 (free tier: 1M requests + 1M invocations/month)
 
-**Architecture is Temporal-ready:**
-- `evaluate_candidate()` in `interface.py` is the natural activity boundary
-- `workflow.py` has the `TEMPORAL_ENABLED` flag and the stub orchestration path
-- Flipping the flag routes sweep execution through `temporalio.workflow` without touching the optimizer interface
+**Feature flag ensures safety:**
+- `QUEUE_BACKEND=sync` preserves all existing behavior - CI uses this
+- Adding a new backend is one class implementing `QueuePublisher` protocol + factory entry
 
-**Revisit when:** Sweep time exceeds 2 minutes, or the shelter wants multi-shelter concurrent sweeps that saturate a single process.
+**Revisit when:** Workload requires durable multi-step workflows (retry, compensation, human-in-the-loop approval), or sweep time exceeds Lambda's 15-min timeout.
 
 ---
 
@@ -148,7 +149,7 @@ app target   → python:3.12-slim + nginx:alpine + /out + nginx.conf
 - The optimizer results table only needs horizontal bars sized proportionally to overflow values. That's 3 lines of TSX + 1 Tailwind class.
 - Zero build-time dependency risk, zero bundle impact.
 
-**Ceiling:** No tooltips on hover, no animated transitions, no axis labels, no log scale. Acceptable for hackathon demo; recharts is the obvious add for Phase 4 analytics.
+**Ceiling:** No tooltips on hover, no animated transitions, no axis labels, no log scale. Acceptable for the current scope; recharts is the obvious add if advanced analytics visualization is needed.
 
 ---
 
