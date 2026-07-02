@@ -9,6 +9,7 @@ import json
 import sys
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 # --- Config ---
@@ -17,12 +18,37 @@ API_PORT = 8000           # Mode A/B/C: standalone API
 UI_PORT = 3000            # Mode A/B/C: standalone UI
 
 UI_ROUTES = ["/en", "/en/demo", "/en/how-it-works", "/en/simulate"]
-API_FUNCTIONAL = [
-    ("GET", "/health", lambda d: d["status"] == "ok"),
-    ("GET", "/baselines", lambda d: len(d) == 5),
+
+_BUILDER_BODY = {
+    "duration_days": 30, "housing_capacity": 20, "isolation_slots": 5,
+    "vet_tech_fte": 1.5, "intervention_budget": 5000, "mean_intake_per_day": 3.8,
+    "kitten_fraction": 0.59, "base_adoption_rate": 0.08, "n_replications": 8,
+}
+
+# Endpoints checked here are all synchronous (200, no job polling required).
+# /optimize/builder is intentionally excluded: in production it's always async
+# (202 + job_id), and belongs in tests/e2e/test_prod_smoke.py where the
+# dispatch -> poll -> results chain can actually be exercised.
+API_FUNCTIONAL: list[tuple[str, str, Callable[[object], bool], dict | None]] = [
+    ("GET", "/health", lambda d: d["status"] == "ok", None),
+    ("GET", "/baselines", lambda d: len(d) == 5, None),
     ("POST", "/simulate", lambda d: "mean_overflow_cat_days" in d, {"seed": 42}),
+    # Note: an empty {} body is falsy in Python, so http()'s `if body else None`
+    # would silently send no body at all (FastAPI then 422s on a missing
+    # request body) - always pass a non-empty dict even when every field has
+    # a default, mirroring the existing /simulate check below.
+    ("POST", "/sensitivity", lambda d: len(d) == 6, {"seed": 42}),
+    ("POST", "/simulate/timeline", lambda d: len(d) > 0 and all("day" in p and "housing_used" in p and "overflow" in p for p in d), {"seed": 42}),
+    ("POST", "/simulate/builder", lambda d: "mean_overflow_cat_days" in d, _BUILDER_BODY),
+    ("POST", "/sensitivity/builder", lambda d: len(d) == 6, _BUILDER_BODY),
+    ("POST", "/simulate/timeline/builder", lambda d: len(d) == 30, _BUILDER_BODY),
+    ("POST", "/simulate/timeline/builder/compare", lambda d: len(d["before"]) == 30 and len(d["after"]) == 30, _BUILDER_BODY),
+    ("POST", "/optimize/builder/compare", lambda d: "winner" in d and len(d["baselines"]) == 5, _BUILDER_BODY),
+    ("GET", "/runs/recent", lambda d: isinstance(d, list), None),
+    ("GET", "/runs/analytics", lambda d: isinstance(d, dict), None),
 ]
 API_OPTIMIZE = ("POST", "/optimize", lambda d: len(d) >= 1)
+EXPORT_CHECK = ("POST", "/export", {"n_candidates": 4, "n_replications": 8, "use_bo": False})
 
 
 # --- Helpers ---
@@ -99,6 +125,22 @@ def check_api(base: str, method: str, path: str, validator, results: Results, *,
         results.fail(f"API {method} {path}", f"status={status}")
 
 
+def check_export(base: str, method: str, path: str, body: dict, results: Results, *, timeout: int = 60) -> None:
+    """Verify /export returns a non-trivial ZIP. Binary response - can't reuse http()'s JSON decode."""
+    data = json.dumps(body).encode()
+    req = urllib.request.Request(f"{base}{path}", data=data, method=method, headers={"Content-Type": "application/json"})
+    try:
+        resp = urllib.request.urlopen(req, timeout=timeout)
+        content = resp.read()
+        is_zip = content[:2] == b"PK"  # ZIP local file header magic bytes
+        if resp.status == 200 and is_zip and len(content) > 100:
+            results.ok(f"API {method} {path}")
+        else:
+            results.fail(f"API {method} {path}", f"status={resp.status} zip={is_zip} size={len(content)}")
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
+        results.fail(f"API {method} {path}", str(e))
+
+
 # --- Main ---
 def main() -> int:
     quick = "--quick" in sys.argv
@@ -162,9 +204,7 @@ def main() -> int:
 
     if api_base:
         print("\n[API Functional]")
-        for item in API_FUNCTIONAL:
-            method, path, validator = item[0], item[1], item[2]
-            body = item[3] if len(item) > 3 else None
+        for method, path, validator, body in API_FUNCTIONAL:
             check_api(api_base, method, path, validator, results, body=body)
 
         print("\n[API Optimize (slow)]")
@@ -175,6 +215,9 @@ def main() -> int:
             body={"n_candidates": 4, "n_replications": 8, "use_bo": False},
             timeout=60,
         )
+
+        print("\n[API Export]")
+        check_export(api_base, *EXPORT_CHECK, results)
 
     return results.summary()
 

@@ -68,6 +68,9 @@ desktop.ini
 *.tfstate
 *.tfstate.backup
 *.tfplan
+tfplan*
+*.tfvars
+*.tfvars.json
 
 # Secrets
 .env.local

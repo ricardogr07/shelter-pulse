@@ -24,9 +24,9 @@ variable "subnet_ids" {
 }
 
 variable "api_url" {
-  description = "Base URL of the API for webhook callbacks (ECS Express Mode ALB URL)"
+  description = "Base URL of the API for webhook callbacks. Must include the /api prefix - nginx only proxies paths under /api/* to uvicorn (deploy/nginx-app.conf); a bare origin routes into the static-file location block and 404s."
   type        = string
-  default     = "https://shelter-pulse.com"
+  default     = "https://shelter-pulse.com/api"
 }
 
 variable "internal_key" {
