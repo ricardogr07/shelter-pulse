@@ -134,7 +134,7 @@ git push origin v0.5.0
 Allow 3-5 minutes. Then verify:
 
 ```bash
-LIVE="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws"
+LIVE="https://shelter-pulse.com"
 curl "$LIVE/api/health"    # expect: {"status":"ok"}
 curl -I "$LIVE/en"         # expect: HTTP/2 200
 ```
@@ -256,7 +256,7 @@ deploy.yml: OIDC auth → ECR push → ECS update (containerPort: 8080).
 ### Step 7: Verify live
 
 ```bash
-LIVE="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws"
+LIVE="https://shelter-pulse.com"
 curl "$LIVE/api/health"    # expect: {"status":"ok"}
 curl -I "$LIVE/en"         # expect: HTTP/2 200
 ```

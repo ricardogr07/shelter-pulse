@@ -1,4 +1,4 @@
-﻿---
+---
 inclusion: always
 ---
 
@@ -177,7 +177,7 @@ class MyPublisher:
 | **Platform** | AWS ECS Fargate, ECS Express Mode (single consolidated service) |
 | **Auto-deploy** | `v*` tag → `deploy.yml` → build image → push to ECR → ECS updates service |
 | **Auth** | GitHub OIDC → IAM role (`AWS_ROLE_ARN` secret); no static AWS credentials |
-| **Live URL** | https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws |
+| **Live URL** | https://shelter-pulse.com |
 
 ---
 

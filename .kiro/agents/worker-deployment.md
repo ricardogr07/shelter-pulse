@@ -60,7 +60,7 @@ Allow 3-5 minutes for rolling update before verifying.
 ## Verify Live URL
 
 ```bash
-LIVE="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws"
+LIVE="https://shelter-pulse.com"
 
 # Health check
 curl "$LIVE/api/health"

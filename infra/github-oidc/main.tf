@@ -90,8 +90,13 @@ resource "aws_iam_role_policy" "deploy" {
           "ecs:*ExpressGatewayService",
           "ecs:RegisterTaskDefinition",
           "ecs:DescribeTaskDefinition",
-          "ecs:ListServices",
+
           "ecs:DescribeServices",
+          "ecs:DescribeServiceRevisions",
+          "ecs:DescribeServiceDeployments",
+          "ecs:ListServices",
+          "ecs:ListServiceDeployments",
+          "ecs:ListTaskDefinitions",
           "ecs:TagResource"
         ]
         Resource = "*"
