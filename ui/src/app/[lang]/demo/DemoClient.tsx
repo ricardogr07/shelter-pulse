@@ -135,7 +135,7 @@ export default function DemoClient({ lang }: { lang: string }) {
   const winner = sweepResults?.[0] ?? null;
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 px-4 py-12">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 px-4 py-12">
       <div className="max-w-2xl mx-auto space-y-2">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">🐱 ShelterPulse</h1>
@@ -307,6 +307,6 @@ export default function DemoClient({ lang }: { lang: string }) {
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

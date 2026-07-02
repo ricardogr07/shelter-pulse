@@ -20,7 +20,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
   const t = getDictionary(lang);
 
   return (
-    <main className="bg-zinc-50 dark:bg-zinc-950">
+    <div className="bg-zinc-50 dark:bg-zinc-950">
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-4 py-24 text-center">
         <h1 className="text-5xl font-bold text-zinc-900 dark:text-zinc-50 leading-tight whitespace-pre-line">
@@ -83,6 +83,6 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
           </a>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }

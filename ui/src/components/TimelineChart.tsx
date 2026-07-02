@@ -24,63 +24,64 @@ export default function TimelineChart({ data, capacity, baseline }: Props) {
   const capPct = (capacity / maxVal) * 100;
 
   return (
-    <div className="relative">
-      {/* Legend */}
-      {baseline && (
-        <div className="flex gap-4 mb-2 text-[10px] text-zinc-500 dark:text-zinc-400">
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-2 rounded-sm bg-zinc-300 dark:bg-zinc-600" />
-            Before (no intervention)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-2 rounded-sm bg-sky-400 dark:bg-sky-500" />
-            After (optimized)
-          </span>
+    <figure role="img" aria-label={`Daily housing occupancy chart over ${data.length} days. Capacity: ${capacity} beds. Peak occupancy: ${Math.max(...data.map(d => d.housing_used)).toFixed(0)} cats.`}>
+      <div className="relative">
+        {/* Legend */}
+        {baseline && (
+          <div className="flex gap-4 mb-2 text-[10px] text-zinc-500 dark:text-zinc-400">
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-3 h-2 rounded-sm bg-zinc-300 dark:bg-zinc-600" aria-hidden="true" />
+              Before (no intervention)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-3 h-2 rounded-sm bg-sky-400 dark:bg-sky-500" aria-hidden="true" />
+              After (optimized)
+            </span>
+          </div>
+        )}
+
+        {/* Capacity line */}
+        <div
+          className="absolute left-0 right-0 border-t-2 border-dashed border-amber-500 z-10"
+          style={{ bottom: `${capPct}%` }}
+          aria-hidden="true"
+        >
+          <span className="absolute -top-4 right-0 text-[10px] text-amber-500">capacity</span>
         </div>
-      )}
 
-      {/* Capacity line */}
-      <div
-        className="absolute left-0 right-0 border-t-2 border-dashed border-amber-500 z-10"
-        style={{ bottom: `${capPct}%` }}
-      >
-        <span className="absolute -top-4 right-0 text-[10px] text-amber-500">capacity</span>
-      </div>
+        {/* Bars */}
+        <div className="flex items-end gap-px h-40" aria-hidden="true">
+          {data.map((d, i) => {
+            const pct = (d.housing_used / maxVal) * 100;
+            const isOverflow = d.overflow > 0;
+            const baselinePct = baseline && baseline[i] ? (baseline[i].housing_used / maxVal) * 100 : 0;
 
-      {/* Bars */}
-      <div className="flex items-end gap-px h-40">
-        {data.map((d, i) => {
-          const pct = (d.housing_used / maxVal) * 100;
-          const isOverflow = d.overflow > 0;
-          const baselinePct = baseline && baseline[i] ? (baseline[i].housing_used / maxVal) * 100 : 0;
-
-          return (
-            <div key={d.day} className="flex-1 relative h-full flex items-end">
-              {/* Baseline bar (behind) */}
-              {baseline && baseline[i] && (
+            return (
+              <div key={d.day} className="flex-1 relative h-full flex items-end">
+                {/* Baseline bar (behind) */}
+                {baseline && baseline[i] && (
+                  <div
+                    className="absolute bottom-0 inset-x-0 rounded-t bg-zinc-300 dark:bg-zinc-600 opacity-60"
+                    style={{ height: `${baselinePct}%` }}
+                  />
+                )}
+                {/* Main bar (front) */}
                 <div
-                  className="absolute bottom-0 inset-x-0 rounded-t bg-zinc-300 dark:bg-zinc-600 opacity-60"
-                  style={{ height: `${baselinePct}%` }}
-                  title={`Day ${d.day} before: ${baseline[i].housing_used.toFixed(0)} cats`}
+                  className={`relative w-full rounded-t ${isOverflow ? 'bg-red-400 dark:bg-red-500' : 'bg-sky-400 dark:bg-sky-500'}`}
+                  style={{ height: `${pct}%` }}
                 />
-              )}
-              {/* Main bar (front) */}
-              <div
-                className={`relative w-full rounded-t ${isOverflow ? 'bg-red-400 dark:bg-red-500' : 'bg-sky-400 dark:bg-sky-500'}`}
-                style={{ height: `${pct}%` }}
-                title={`Day ${d.day}: ${d.housing_used.toFixed(0)} cats${isOverflow ? ' (OVERFLOW)' : ''}`}
-              />
-            </div>
-          );
-        })}
-      </div>
+              </div>
+            );
+          })}
+        </div>
 
-      {/* Day labels */}
-      <div className="flex justify-between mt-1 text-[10px] text-zinc-400">
-        {data.filter((_, i) => i % 10 === 0).map(d => (
-          <span key={d.day}>{d.day}</span>
-        ))}
+        {/* Day labels */}
+        <div className="flex justify-between mt-1 text-[10px] text-zinc-400" aria-hidden="true">
+          {data.filter((_, i) => i % 10 === 0).map(d => (
+            <span key={d.day}>{d.day}</span>
+          ))}
+        </div>
       </div>
-    </div>
+    </figure>
   );
 }

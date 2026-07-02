@@ -188,7 +188,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
   ];
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t.simulate.title}</h1>
         <p className="text-zinc-600 dark:text-zinc-400 mb-8">{t.simulate.subtitle}</p>
@@ -460,6 +460,6 @@ export default function SimulateClient({ lang }: { lang: string }) {
 
         <RunHistoryPanel refreshKey={historyRefreshKey} />
       </div>
-    </main>
+    </div>
   );
 }

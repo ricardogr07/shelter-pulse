@@ -100,7 +100,7 @@ export function WhatIfPanel({ scenario, winnerAllocation, originalOverflow }: Pr
   return (
     <div className="mt-6 p-5 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/30 rounded-xl border border-indigo-200 dark:border-indigo-800/50">
       <h3 className="text-base font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2 mb-4">
-        <span>🔮</span> What If?
+        <span role="img" aria-hidden="true">🔮</span> What If?
       </h3>
       <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-4">
         Drag to see how changing parameters affects overflow with the current winning allocation.
@@ -114,21 +114,23 @@ export function WhatIfPanel({ scenario, winnerAllocation, originalOverflow }: Pr
           return (
             <div key={slider.key}>
               <div className="flex justify-between text-xs mb-1">
-                <span className={`font-medium ${isChanged ? "text-indigo-800 dark:text-indigo-200" : "text-zinc-600 dark:text-zinc-400"}`}>
+                <label htmlFor={`whatif-${slider.key}`} className={`font-medium ${isChanged ? "text-indigo-800 dark:text-indigo-200" : "text-zinc-600 dark:text-zinc-400"}`}>
                   {slider.label}
-                </span>
+                </label>
                 <span className={`font-mono ${isChanged ? "text-indigo-700 dark:text-indigo-300 font-semibold" : "text-zinc-500 dark:text-zinc-400"}`}>
                   {slider.format(value)}
                 </span>
               </div>
               <input
+                id={`whatif-${slider.key}`}
                 type="range"
                 min={slider.min}
                 max={slider.max}
                 step={slider.step}
                 value={value}
+                aria-valuetext={slider.format(value)}
                 onChange={(e) => handleSliderChange(slider.key as keyof typeof params, parseFloat(e.target.value))}
-                className="w-full h-2 bg-indigo-200 dark:bg-indigo-800 rounded-lg appearance-none cursor-pointer accent-indigo-600 dark:accent-indigo-400"
+                className="w-full h-2 bg-indigo-200 dark:bg-indigo-800 rounded-lg appearance-none cursor-pointer accent-indigo-600 dark:accent-indigo-400 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
               />
               <div className="flex justify-between text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
                 <span>{slider.format(slider.min)}</span>
@@ -140,7 +142,7 @@ export function WhatIfPanel({ scenario, winnerAllocation, originalOverflow }: Pr
       </div>
 
       {/* Results comparison */}
-      <div className="mt-5 pt-4 border-t border-indigo-200 dark:border-indigo-700/50">
+      <div className="mt-5 pt-4 border-t border-indigo-200 dark:border-indigo-700/50" aria-live="polite" aria-atomic="true">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-[10px] uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Original</p>

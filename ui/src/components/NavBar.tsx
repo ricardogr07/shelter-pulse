@@ -23,7 +23,7 @@ export default function NavBar({ lang }: { lang: string }) {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border-b border-zinc-200 dark:border-zinc-800">
+    <nav aria-label="Main navigation" className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border-b border-zinc-200 dark:border-zinc-800">
       <div className="max-w-5xl mx-auto flex items-center justify-between px-4 h-14">
         <Link href={`/${lang}`} className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           🐱 ShelterPulse
@@ -48,7 +48,7 @@ export default function NavBar({ lang }: { lang: string }) {
           </span>
         </div>
         {/* Mobile hamburger */}
-        <button onClick={() => setOpen(!open)} className="md:hidden p-2 text-zinc-600 dark:text-zinc-300" aria-label="Toggle menu">
+        <button onClick={() => setOpen(!open)} className="md:hidden p-2 text-zinc-600 dark:text-zinc-300" aria-label="Toggle menu" aria-expanded={open}>
           <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             {open ? <path d="M6 18L18 6M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
           </svg>

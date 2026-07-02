@@ -170,7 +170,7 @@ total_intervention_budget: 5000`}</pre>
   const toggle = (i: number) => setExpanded(prev => prev.map((v, j) => j === i ? !v : v));
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t.howItWorks.title}</h1>
         <p className="text-zinc-500 dark:text-zinc-400 mb-8">{t.howItWorks.subtitle}</p>
@@ -186,6 +186,6 @@ total_intervention_budget: 5000`}</pre>
           ))}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
