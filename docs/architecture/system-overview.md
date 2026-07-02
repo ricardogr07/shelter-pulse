@@ -33,6 +33,6 @@ FastAPI (port 8000)
 
 ## Key URLs
 
-- Live app: https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en
-- API docs: https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/api/docs
+- Live app: https://shelter-pulse.com/en
+- API docs: https://shelter-pulse.com/api/docs
 - RabbitMQ (local): http://localhost:15672 (shelter/pulse)
