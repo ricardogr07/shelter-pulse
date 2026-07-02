@@ -46,13 +46,44 @@ export async function simulateCustom(s: CustomScenarioParams): Promise<Evaluatio
 
 export interface AsyncJobResponse { job_id: string; status: string }
 
-export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, reps = 32): Promise<EvaluationResult[] | AsyncJobResponse> {
-  const r = await fetch(`${API}/optimize/builder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, n_candidates: nCandidates, n_replications: reps }) });
+export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, reps = 32, consent?: { consent_storage: boolean; is_test_data: boolean }): Promise<EvaluationResult[] | AsyncJobResponse> {
+  const r = await fetch(`${API}/optimize/builder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, n_candidates: nCandidates, n_replications: reps, ...(consent || {}) }) });
   if (!r.ok) throw new Error(await r.text());
   const data = await r.json();
   // 202 = async dispatch, returns {job_id, status}
   if (r.status === 202 || data.job_id) return data as AsyncJobResponse;
   return data as EvaluationResult[];
+}
+
+export interface PreviousRun {
+  job_id: string;
+  created_at: string;
+  scenario_name: string;
+  duration_days: number;
+  housing_capacity: number;
+  isolation_slots: number;
+  intervention_budget: number;
+  mean_intake_per_day: number;
+  winner_foster_support: number;
+  winner_clinic_hours: number;
+  winner_temporary_isolation: number;
+  winner_adoption_events: number;
+  winner_mean_overflow: number;
+  winner_is_feasible: boolean;
+  n_candidates: number;
+  n_replications: number;
+}
+
+export async function fetchRecentRuns(name: string, housingCapacity: number, isolationSlots: number, interventionBudget: number): Promise<PreviousRun[]> {
+  const params = new URLSearchParams({
+    name,
+    housing_capacity: String(housingCapacity),
+    isolation_slots: String(isolationSlots),
+    intervention_budget: String(interventionBudget),
+  });
+  const r = await fetch(`${API}/runs/recent?${params}`);
+  if (!r.ok) return [];
+  return r.json();
 }
 
 export interface CompareResult { winner: EvaluationResult; baselines: Record<string, EvaluationResult> }
