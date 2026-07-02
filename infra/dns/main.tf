@@ -123,6 +123,30 @@ data "aws_lb_listener" "https" {
 }
 
 # ---------------------------------------------------------------------------
+# HTTP listener - redirect all traffic to HTTPS
+# ---------------------------------------------------------------------------
+
+resource "aws_lb_listener" "http_redirect" {
+  load_balancer_arn = data.aws_lb.express.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+  tags = {
+    Project = "shelterpulse"
+  }
+}
+
+# ---------------------------------------------------------------------------
 # Attach custom certificate to the HTTPS listener
 # ---------------------------------------------------------------------------
 
