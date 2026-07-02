@@ -8,6 +8,7 @@ import SensitivityChart from "@/components/SensitivityChart";
 import TimelineChart from "@/components/TimelineChart";
 import CIBadge from "@/components/CIBadge";
 import ComparisonTable from "@/components/ComparisonTable";
+import ParetoChart from "@/components/ParetoChart";
 import { RunHistoryPanel } from "./RunHistoryPanel";
 import { WhatIfPanel } from "./WhatIfPanel";
 import ProgressStream from "@/components/ProgressStream";
@@ -442,6 +443,14 @@ export default function SimulateClient({ lang }: { lang: string }) {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {optResults && optResults.length > 0 && (
+          <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Pareto Frontier</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Cost vs overflow trade-off. Points on the frontier (indigo) cannot be improved on one axis without worsening the other.</p>
+            <ParetoChart results={optResults} />
           </div>
         )}
 
