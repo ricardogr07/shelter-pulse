@@ -42,6 +42,27 @@ curl http://localhost:8000/optimize/<job_id>/results
 # Returns: [{...}, ...]
 ```
 
+```mermaid
+sequenceDiagram
+    participant UI
+    participant API as api container
+    participant MQ as rabbitmq
+    participant W as worker container
+
+    UI->>API: POST /optimize/builder
+    API->>MQ: publish job
+    API-->>UI: 202 {job_id, status: queued}
+    MQ->>W: consume job
+    W->>W: run_optimization_sweep()
+    W->>API: POST /internal/jobs/{id}/complete (X-Internal-Key)
+    UI->>API: GET /optimize/{id}/status (poll)
+    API-->>UI: {status: completed}
+    UI->>API: GET /optimize/{id}/results
+    API-->>UI: [EvaluationOut, ...]
+```
+
+If the worker never calls back (crashed, bad `INTERNAL_KEY`, network issue), the job doesn't hang forever: `JobStore.sweep_stale()` fails it out after 5 minutes and notifies any open SSE stream. See [architecture/async-workers.md](architecture/async-workers.md#job-lifecycle).
+
 ## Running Tests
 
 ### Unit + E2E (no Docker needed)

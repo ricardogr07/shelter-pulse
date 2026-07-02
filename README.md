@@ -31,25 +31,25 @@ Requirements: runs in under 5 minutes, compares against honest baselines, quanti
 
 ShelterPulse stacks four layers:
 
-### Discrete-event simulation (`shelterpulse/core/engine.py`)
+### Discrete-event simulation
 
 SimPy models the complete cat lifecycle: intake assessment, isolation (if needed), medical clearance, housing, foster placement, adoption. Intake follows a non-homogeneous Poisson process with configurable seasonal spikes (kitten season). Each run is fully seeded and reproducible.
 
-### Common Random Numbers (`shelterpulse/core/montecarlo.py`)
+### Common Random Numbers
 
 Every candidate allocation is evaluated with the *same* seed set across all replications. Without CRN, Monte Carlo variance swamps the allocation signal and you would need ~10x more replications to distinguish two strategies. With CRN, outcome differences are attributable to the allocation, not luck. This is the mathematical foundation that makes the optimizer trustworthy.
 
-### Bayesian Optimization (`shelterpulse/optimize/jaxbo_optimizer.py`)
+### Bayesian Optimization
 
-GP + Expected Improvement (jaxbo primary, scipy fallback) searches the 4-simplex of budget shares. Finds better allocations with fewer function evaluations than random or grid search. All five named baselines (equal split, all-in foster, all-in events, domain heuristic, zero) are evaluated alongside BO candidates for honest comparison.
+GP + Expected Improvement searches the 4-simplex of budget shares. Finds better allocations with fewer function evaluations than random or grid search. All five named baselines (equal split, all-in foster, all-in events, domain heuristic, zero) are evaluated alongside BO candidates for honest comparison.
 
-### Web UI + REST API (`ui/` + `shelterpulse/api/app.py`)
+### Web UI + REST API
 
 Next.js + Tailwind frontend calling FastAPI. Sensitivity tornado chart, day-by-day housing timeline, ranked optimizer results. Zero chart library dependencies: bars are Tailwind `width: X%` divs.
 
 **Deployment:** nginx + uvicorn in one ECS Fargate task. One ALB, one HTTPS URL, no CORS. Auto-deploys on `v*` tag via GitHub Actions + ECR.
 
-**Async workers:** BO sweeps dispatch to background workers via a queue abstraction. RabbitMQ in docker-compose (horizontal scaling demo), SQS+Lambda in production (zero cost). Feature flag `QUEUE_BACKEND` selects the backend.
+**Async workers:** BO sweeps dispatch to background workers via a queue abstraction. RabbitMQ in docker-compose (horizontal scaling demo), SQS+Lambda in production. Feature flag `QUEUE_BACKEND` selects the backend. In-memory job state self-heals: jobs stuck for 5 minutes are TTL-expired so the UI never hangs forever on a lost worker callback.
 
 ---
 
@@ -75,7 +75,7 @@ Full rationale: [docs/design-decisions.md](docs/design-decisions.md) and [docs/a
 | Common Random Numbers | Without CRN, replication variance swamps allocation signal |
 | GP+EI over random search | Finds better allocations with fewer evaluations; scipy fallback keeps jax optional |
 | Consolidated container | One URL for demo; nginx+uvicorn in one ECS task eliminates CORS |
-| RabbitMQ local, SQS+Lambda prod | Demonstrates horizontal scaling locally; zero cost in prod via free tier |
+| RabbitMQ local, SQS+Lambda prod | Demonstrates horizontal scaling locally; SQS+Lambda invocation is free-tier $0 in prod |
 | DuckDB over ClickHouse | Embedded OLAP, no server needed; same EFS persistence story at $0/month |
 | Domain heuristic excludes clinic hours | Extra vet FTE worsened overflow in Whisker Haven (creates bottleneck elsewhere) |
 
@@ -136,7 +136,8 @@ All checks run on every PR via GitHub Actions CI.
 |---|---|
 | `shelterpulse/core/` | Pure library: simulation, Monte Carlo, schema. Zero I/O. |
 | `shelterpulse/optimize/` | Sweep orchestrator, Bayesian optimizer, baselines |
-| `shelterpulse/queue/` | Async job dispatch: queue abstraction, RabbitMQ/SQS backends, worker |
+| `shelterpulse/queue/` | Async job dispatch: queue abstraction, RabbitMQ/SQS backends, worker, in-memory job store |
+| `shelterpulse/store/` | Optional DuckDB persistence (run history, consent log, analytics) |
 | `shelterpulse/api/` | FastAPI REST adapter |
 | `shelterpulse/cli/` | Typer CLI adapter |
 | `lambda/` | AWS Lambda worker (lean container image for SQS-triggered BO sweeps) |
@@ -147,7 +148,7 @@ All checks run on every PR via GitHub Actions CI.
 
 The core invariant: `shelterpulse/core/` imports nothing from `shelterpulse.api`, `shelterpulse.cli`, or `shelterpulse.optimize`. Enforced by `tests/unit/test_no_cross_imports.py` on every CI run.
 
-See [docs/architecture/](docs/architecture/) for diagrams and [docs/adr/](docs/adr/) for all 12 decision records.
+See [docs/architecture/](docs/architecture/) for diagrams and [docs/adr/](docs/adr/) for all 14 decision records.
 
 ## License
 
