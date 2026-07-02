@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -67,6 +69,105 @@ class TestJobStore:
         store.update_progress("missing", 1, 10)
         store.complete("missing", [])
         store.fail("missing", "error")
+
+
+class TestSweepStale:
+    """Unit tests for JobStore.sweep_stale() TTL expiry."""
+
+    def _age(self, store: JobStore, job_id: str, seconds: int) -> None:
+        """Backdate a job's updated_at to simulate elapsed time."""
+        job = store.get(job_id)
+        assert job is not None
+        job.updated_at = datetime.now(timezone.utc) - timedelta(seconds=seconds)
+
+    def test_expires_stale_queued_job(self):
+        store = JobStore()
+        store.create("stale-queued")
+        self._age(store, "stale-queued", 301)
+
+        expired = store.sweep_stale(ttl_seconds=300)
+
+        assert expired == 1
+        job = store.get("stale-queued")
+        assert job is not None
+        assert job.status == JobStatus.FAILED
+        assert job.error == "Job timed out"
+
+    def test_expires_stale_running_job(self):
+        store = JobStore()
+        store.create("stale-running")
+        store.update_progress("stale-running", 1, 5)
+        self._age(store, "stale-running", 301)
+
+        expired = store.sweep_stale(ttl_seconds=300)
+
+        assert expired == 1
+        assert store.get("stale-running").status == JobStatus.FAILED
+
+    def test_leaves_recent_jobs_alone(self):
+        """Jobs updated within the TTL window are untouched."""
+        store = JobStore()
+        store.create("fresh-job")
+        self._age(store, "fresh-job", 60)
+
+        expired = store.sweep_stale(ttl_seconds=300)
+
+        assert expired == 0
+        assert store.get("fresh-job").status == JobStatus.QUEUED
+
+    def test_leaves_completed_and_failed_jobs_alone(self):
+        """Sweep only targets queued/running - terminal states are untouched."""
+        store = JobStore()
+        store.create("done-job")
+        store.complete("done-job", [{"ok": True}])
+        self._age(store, "done-job", 301)
+
+        expired = store.sweep_stale(ttl_seconds=300)
+
+        assert expired == 0
+        assert store.get("done-job").status == JobStatus.COMPLETED
+
+    def test_purges_old_completed_jobs(self):
+        """Completed/failed jobs older than the retention window are dropped."""
+        store = JobStore()
+        store.create("old-completed")
+        store.complete("old-completed", [{"ok": True}])
+        self._age(store, "old-completed", 1801)
+
+        store.sweep_stale()
+
+        assert store.get("old-completed") is None
+
+    def test_active_count_drops_after_sweep(self):
+        """count_active_by_ip no longer counts jobs that timed out."""
+        store = JobStore()
+        store.create("stuck-job", client_ip="1.2.3.4")
+        self._age(store, "stuck-job", 301)
+
+        assert store.count_active_by_ip("1.2.3.4") == 0
+
+    def test_create_triggers_lazy_sweep(self):
+        """Calling create() sweeps existing stale jobs first."""
+        store = JobStore()
+        store.create("old-stuck")
+        self._age(store, "old-stuck", 301)
+
+        store.create("new-job")
+
+        assert store.get("old-stuck").status == JobStatus.FAILED
+
+    def test_sweep_notifies_sse_subscribers(self):
+        """A subscriber on a timed-out job receives an error event."""
+        store = JobStore()
+        store.create("sse-timeout-job")
+        queue = store.subscribe("sse-timeout-job")
+        self._age(store, "sse-timeout-job", 301)
+
+        store.sweep_stale(ttl_seconds=300)
+
+        event = queue.get_nowait()
+        assert event["event"] == "error"
+        assert event["message"] == "Job timed out"
 
 
 # ── API endpoint tests (sync mode - default) ─────────────────────────────────

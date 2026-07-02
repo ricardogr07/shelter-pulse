@@ -130,11 +130,13 @@ app target   → python:3.12-slim + nginx:alpine + /out + nginx.conf
 - In-process sweep is 30s - acceptable for a blocking request, but poor UX. Async dispatch returns 202 instantly.
 - Temporal was evaluated but adds $100/month (Cloud) or complex self-hosting. Our workload is short-lived (~30s) and doesn't need durable replay.
 - RabbitMQ locally demonstrates horizontal scaling to judges (`docker compose up --scale worker=4`)
-- SQS+Lambda in production costs $0 (free tier: 1M requests + 1M invocations/month)
+- SQS+Lambda in production costs $0 at the free-tier request/invocation volume (1M requests + 1M invocations/month)
 
 **Feature flag ensures safety:**
 - `QUEUE_BACKEND=sync` preserves all existing behavior - CI uses this
 - Adding a new backend is one class implementing `QueuePublisher` protocol + factory entry
+
+**Cost caveat discovered post-launch:** the "$0" claim covers SQS + Lambda invocation only. Lambda's webhook callback to the API requires internet egress, and Lambda is VPC-attached (for its EFS/DuckDB mount), so real internet access needs a NAT Gateway (~$32-35/month) — the one component of this design that isn't actually free. See [ADR-014](adr/014-async-worker-production-hardening.md).
 
 **Revisit when:** Workload requires durable multi-step workflows (retry, compensation, human-in-the-loop approval), or sweep time exceeds Lambda's 15-min timeout.
 

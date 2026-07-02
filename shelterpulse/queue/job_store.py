@@ -42,6 +42,10 @@ class Job:
     client_ip: str = ""
 
 
+_JOB_TTL_SECONDS = 300  # 5 min: queued/running jobs older than this are presumed stuck
+_JOB_RETENTION_SECONDS = 1800  # 30 min: completed/failed jobs older than this are purged
+
+
 class JobStore:
     """Thread-safe in-memory job state store with async pub/sub for SSE.
 
@@ -57,6 +61,7 @@ class JobStore:
 
     def create(self, job_id: str, total: int = 0, client_ip: str = "") -> Job:
         """Register a new job as queued."""
+        self.sweep_stale()
         job = Job(job_id=job_id, progress_total=total, client_ip=client_ip)
         with self._lock:
             self._jobs[job_id] = job
@@ -69,12 +74,45 @@ class JobStore:
 
     def count_active_by_ip(self, client_ip: str) -> int:
         """Count jobs in queued/running state for a given client IP."""
+        self.sweep_stale()
         with self._lock:
             return sum(
                 1 for job in self._jobs.values()
                 if job.client_ip == client_ip
                 and job.status in (JobStatus.QUEUED, JobStatus.RUNNING)
             )
+
+    def sweep_stale(self, ttl_seconds: int = _JOB_TTL_SECONDS) -> int:
+        """Fail queued/running jobs that haven't been updated within ttl_seconds.
+
+        Guards against jobs stuck forever when a worker's webhook callback never
+        arrives (wrong URL, auth mismatch, crash). Also purges old completed/failed
+        jobs so the in-memory dict doesn't grow unbounded. Safe to call frequently -
+        it's called lazily from create() and count_active_by_ip() rather than on a
+        background timer.
+        """
+        now = datetime.now(timezone.utc)
+        timed_out: list[str] = []
+        with self._lock:
+            for job in self._jobs.values():
+                if job.status in (JobStatus.QUEUED, JobStatus.RUNNING):
+                    if (now - job.updated_at).total_seconds() > ttl_seconds:
+                        job.status = JobStatus.FAILED
+                        job.error = "Job timed out"
+                        job.updated_at = now
+                        timed_out.append(job.job_id)
+            stale_ids = [
+                job_id for job_id, job in self._jobs.items()
+                if job.status in (JobStatus.COMPLETED, JobStatus.FAILED)
+                and (now - job.updated_at).total_seconds() > _JOB_RETENTION_SECONDS
+            ]
+            for job_id in stale_ids:
+                del self._jobs[job_id]
+
+        for job_id in timed_out:
+            self._notify(job_id, {"event": "error", "message": "Job timed out"})
+
+        return len(timed_out)
 
     def update_progress(self, job_id: str, done: int, total: int) -> None:
         """Update progress counters for a running job."""
