@@ -306,3 +306,78 @@ def log_consent(
                 is_test,
             ],
         )
+
+
+def get_recent_runs(
+    limit: int = 10,
+    path: str | None = None,
+) -> list[dict[str, Any]]:
+    """Fetch the most recent optimization runs (all shelters, consented only).
+
+    Returns anonymized data (no shelter name) newest-first, up to `limit` rows.
+    """
+    with get_connection(path) as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                job_id, created_at,
+                housing_capacity, isolation_slots, intervention_budget,
+                winner_foster_support, winner_clinic_hours,
+                winner_temporary_isolation, winner_adoption_events,
+                winner_mean_overflow, winner_mean_cost, winner_is_feasible,
+                is_test_data
+            FROM optimization_runs
+            WHERE consent_given = true
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            [limit],
+        ).fetchall()
+
+        columns = [
+            "job_id", "created_at",
+            "housing_capacity", "isolation_slots", "intervention_budget",
+            "winner_foster_support", "winner_clinic_hours",
+            "winner_temporary_isolation", "winner_adoption_events",
+            "winner_mean_overflow", "winner_mean_cost", "winner_is_feasible",
+            "is_test_data",
+        ]
+        return [dict(zip(columns, row)) for row in rows]
+
+
+def get_analytics(path: str | None = None) -> dict[str, Any]:
+    """Aggregate statistics across all consented, non-test runs.
+
+    Returns empty dict if no qualifying runs exist.
+    """
+    with get_connection(path) as conn:
+        row = conn.execute(
+            """
+            SELECT
+                COUNT(*) as total_runs,
+                AVG(winner_mean_overflow) as avg_overflow,
+                MIN(winner_mean_overflow) as best_overflow,
+                AVG(winner_foster_support) as avg_foster,
+                AVG(winner_clinic_hours) as avg_clinic,
+                AVG(winner_temporary_isolation) as avg_isolation,
+                AVG(winner_adoption_events) as avg_events
+            FROM optimization_runs
+            WHERE consent_given = true
+              AND is_test_data = false
+            """,
+        ).fetchone()
+
+        if not row or row[0] == 0:
+            return {}
+
+        return {
+            "total_runs": row[0],
+            "avg_overflow": round(row[1], 2) if row[1] is not None else 0,
+            "best_overflow": round(row[2], 2) if row[2] is not None else 0,
+            "avg_allocation": {
+                "foster_support": round(row[3], 3) if row[3] is not None else 0,
+                "clinic_hours": round(row[4], 3) if row[4] is not None else 0,
+                "temporary_isolation": round(row[5], 3) if row[5] is not None else 0,
+                "adoption_events": round(row[6], 3) if row[6] is not None else 0,
+            },
+        }

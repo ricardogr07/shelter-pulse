@@ -11,8 +11,10 @@ import pytest
 duckdb = pytest.importorskip("duckdb", reason="duckdb not installed (store extra)")
 
 from shelterpulse.store.duckdb_store import (
+    get_analytics,
     get_candidates_for_run,
     get_connection,
+    get_recent_runs,
     get_runs_for_shelter,
     init_schema,
     log_consent,
@@ -348,3 +350,106 @@ class TestConsentGating:
             candidates = conn.execute("SELECT count(*) FROM optimization_candidates").fetchone()[0]
         assert runs == 1
         assert candidates == 2
+
+
+
+class TestGetRecentRuns:
+    """Test global recent runs query (all shelters)."""
+
+    def test_empty_db_returns_empty_list(self, db_path: str):
+        """No runs stored returns empty list."""
+        runs = get_recent_runs(path=db_path)
+        assert runs == []
+
+    def test_returns_consented_runs_only(self, db_path: str):
+        """Only runs with consent_given=True are returned."""
+        save_run("consented-1", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=False, path=db_path)
+        save_run("no-consent-1", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=False, is_test=False, path=db_path)
+
+        runs = get_recent_runs(path=db_path)
+        assert len(runs) == 1
+        assert runs[0]["job_id"] == "consented-1"
+
+    def test_includes_test_data_runs(self, db_path: str):
+        """Test data runs are included (they have consent, just flagged as test)."""
+        save_run("real-1", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=False, path=db_path)
+        save_run("test-1", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=True, path=db_path)
+
+        runs = get_recent_runs(path=db_path)
+        assert len(runs) == 2
+
+    def test_respects_limit(self, db_path: str):
+        """Limit parameter constrains number of results."""
+        for i in range(5):
+            save_run(f"run-{i}", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=False, path=db_path)
+
+        runs = get_recent_runs(limit=3, path=db_path)
+        assert len(runs) == 3
+
+    def test_returns_expected_fields(self, db_path: str):
+        """Response includes all expected fields."""
+        save_run("fields-test", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=False, path=db_path)
+
+        runs = get_recent_runs(path=db_path)
+        assert len(runs) == 1
+        run = runs[0]
+        assert run["job_id"] == "fields-test"
+        assert run["housing_capacity"] == 20
+        assert run["winner_foster_support"] == 0.4
+        assert run["winner_mean_overflow"] == 5.2
+        assert run["winner_is_feasible"] is True
+        assert run["is_test_data"] is False
+        assert "created_at" in run
+        # scenario_name is NOT included (anonymized)
+        assert "scenario_name" not in run
+
+    def test_ordered_newest_first(self, db_path: str):
+        """Results are ordered by created_at descending."""
+        import time
+        save_run("older", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=False, path=db_path)
+        time.sleep(0.01)
+        save_run("newer", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=False, path=db_path)
+
+        runs = get_recent_runs(path=db_path)
+        assert runs[0]["job_id"] == "newer"
+        assert runs[1]["job_id"] == "older"
+
+
+class TestGetAnalytics:
+    """Test OLAP aggregation query."""
+
+    def test_empty_db_returns_empty_dict(self, db_path: str):
+        """No runs returns empty dict."""
+        result = get_analytics(path=db_path)
+        assert result == {}
+
+    def test_excludes_test_data(self, db_path: str):
+        """Analytics excludes test data runs."""
+        save_run("test-only", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=True, path=db_path)
+
+        result = get_analytics(path=db_path)
+        assert result == {}
+
+    def test_returns_aggregate_stats(self, db_path: str):
+        """With real runs, returns aggregate statistics."""
+        save_run("run-1", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=False, path=db_path)
+        save_run("run-2", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=False, path=db_path)
+
+        result = get_analytics(path=db_path)
+        assert result["total_runs"] == 2
+        assert result["avg_overflow"] == 5.2  # Both runs have same winner
+        assert result["best_overflow"] == 5.2
+        assert "avg_allocation" in result
+        assert result["avg_allocation"]["foster_support"] == 0.4
+        assert result["avg_allocation"]["clinic_hours"] == 0.1
+        assert result["avg_allocation"]["temporary_isolation"] == 0.2
+        assert result["avg_allocation"]["adoption_events"] == 0.3
+
+    def test_mixed_real_and_test_data(self, db_path: str):
+        """Only non-test runs contribute to analytics."""
+        save_run("real-1", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=False, path=db_path)
+        save_run("test-1", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=True, is_test=True, path=db_path)
+        save_run("no-consent", SAMPLE_SCENARIO, SAMPLE_RESULTS, consent=False, is_test=False, path=db_path)
+
+        result = get_analytics(path=db_path)
+        assert result["total_runs"] == 1  # Only real-1 qualifies
