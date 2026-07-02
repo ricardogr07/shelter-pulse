@@ -292,6 +292,128 @@ resource "aws_iam_role_policy" "lambda_app" {
   })
 }
 
+# --- IAM Role for ECS Task (API side - publishes jobs to SQS) ---
+# Express Mode never assigned a task role, so the API container has no AWS
+# credentials for boto3. Attach via `--task-role-arn` on the Express service.
+
+resource "aws_iam_role" "ecs_task" {
+  name = "shelterpulse-ecs-task"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = {
+    Project = "shelterpulse"
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_task_sqs" {
+  name = "shelterpulse-ecs-task-sqs"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "SQSPublish"
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage", "sqs:GetQueueAttributes"]
+        Resource = aws_sqs_queue.jobs.arn
+      }
+    ]
+  })
+}
+
+# --- Lambda internet egress (NAT Gateway) ---
+# Lambda needs both the VPC/EFS attachment (DuckDB) and internet access (webhook
+# callback) at once - Lambda ENIs never get public IPs, so a NAT Gateway is the
+# only way to give a VPC-attached Lambda outbound internet access. Dedicated
+# subnets + route table here so this never touches the subnets/routing that
+# ECS Express Mode and the ALB depend on (see ADR-014).
+#
+# TEMPORARY for the hackathon judging window: built 2026-07-02, intended to be
+# torn down (terraform destroy -target on these resources, or revert this
+# block) after judging concludes ~2026-07-15. ~$32-35/month while running.
+
+resource "aws_subnet" "lambda_a" {
+  vpc_id            = var.vpc_id
+  cidr_block        = "172.31.96.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name    = "shelterpulse-lambda-egress-a"
+    Project = "shelterpulse"
+    Purpose = "lambda-nat-egress-temporary"
+  }
+}
+
+resource "aws_subnet" "lambda_b" {
+  vpc_id            = var.vpc_id
+  cidr_block        = "172.31.97.0/24"
+  availability_zone = "us-east-1b"
+
+  tags = {
+    Name    = "shelterpulse-lambda-egress-b"
+    Project = "shelterpulse"
+    Purpose = "lambda-nat-egress-temporary"
+  }
+}
+
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name    = "shelterpulse-lambda-nat"
+    Project = "shelterpulse"
+    Purpose = "lambda-nat-egress-temporary"
+  }
+}
+
+# Placed in an existing public subnet (already has the default VPC's IGW route)
+# so it doesn't touch ECS/ALB's routing at all - only the two new subnets above
+# route through it.
+resource "aws_nat_gateway" "lambda" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = var.subnet_ids[0] # us-east-1a public subnet
+
+  tags = {
+    Name    = "shelterpulse-lambda-nat"
+    Project = "shelterpulse"
+    Purpose = "lambda-nat-egress-temporary"
+  }
+}
+
+resource "aws_route_table" "lambda_egress" {
+  vpc_id = var.vpc_id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.lambda.id
+  }
+
+  tags = {
+    Name    = "shelterpulse-lambda-egress"
+    Project = "shelterpulse"
+    Purpose = "lambda-nat-egress-temporary"
+  }
+}
+
+resource "aws_route_table_association" "lambda_a" {
+  subnet_id      = aws_subnet.lambda_a.id
+  route_table_id = aws_route_table.lambda_egress.id
+}
+
+resource "aws_route_table_association" "lambda_b" {
+  subnet_id      = aws_subnet.lambda_b.id
+  route_table_id = aws_route_table.lambda_egress.id
+}
+
 # --- Lambda Function ---
 
 resource "aws_lambda_function" "worker" {
@@ -303,7 +425,11 @@ resource "aws_lambda_function" "worker" {
   memory_size   = 1024 # 1 GB (BO + SimPy need headroom)
 
   vpc_config {
-    subnet_ids         = var.subnet_ids
+    # Dedicated NAT-routed subnets (see above), not var.subnet_ids - those are
+    # ECS/ALB's public subnets and have no route back for Lambda's private-only
+    # ENIs. EFS mount targets stay in var.subnet_ids; VPC-local routing reaches
+    # them fine regardless of which subnet Lambda's ENI lands in.
+    subnet_ids         = [aws_subnet.lambda_a.id, aws_subnet.lambda_b.id]
     security_group_ids = [aws_security_group.lambda.id]
   }
 

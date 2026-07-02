@@ -37,3 +37,18 @@ output "efs_access_point_arn" {
   description = "EFS access point ARN"
   value       = aws_efs_access_point.shelterpulse.arn
 }
+
+output "ecs_task_role_arn" {
+  description = "IAM role for the ECS task (API side) - attach via --task-role-arn"
+  value       = aws_iam_role.ecs_task.arn
+}
+
+output "lambda_nat_gateway_id" {
+  description = "Temporary NAT Gateway for Lambda internet egress - tear down after judging (~2026-07-15)"
+  value       = aws_nat_gateway.lambda.id
+}
+
+output "lambda_nat_eip" {
+  description = "Elastic IP attached to the temporary Lambda NAT Gateway"
+  value       = aws_eip.nat.public_ip
+}
