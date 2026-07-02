@@ -225,3 +225,4 @@ jobs:
           working-directory: ui
           spec: cypress/e2e/smoke.cy.ts
           config: baseUrl=${{ vars.DEPLOY_URL }}
+          env: liveSmoke=true

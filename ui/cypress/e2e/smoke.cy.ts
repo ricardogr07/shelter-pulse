@@ -21,10 +21,13 @@ describe("ShelterPulse smoke", () => {
 });
 
 // Live-data checks: exercise the two data-dependent pages against a real
-// backend, not just DOM-shell presence. Run against local dev by default;
-// pass --config baseUrl=https://shelter-pulse.com to point at live prod
-// (see .github/workflows/deploy.yml's smoke-test-ui job).
-describe("ShelterPulse smoke - live data", () => {
+// backend, not just DOM-shell presence. Skipped by default - ci.yml's
+// per-PR "UI checks" job runs this whole spec file against a local static
+// build with no backend (npx serve, no API), so these must stay off there.
+// Only deploy.yml's smoke-test-ui job passes --env liveSmoke=true, pointed
+// at --config baseUrl=https://shelter-pulse.com (a real deployed backend).
+const liveSmoke = Cypress.env("liveSmoke") === true || Cypress.env("liveSmoke") === "true";
+(liveSmoke ? describe : describe.skip)("ShelterPulse smoke - live data", () => {
   it("demo wizard: baseline -> optimize renders real computed results", () => {
     cy.visit("/en/demo");
     // Step 1 configure -> baseline (POST /simulate, sync/fast)
