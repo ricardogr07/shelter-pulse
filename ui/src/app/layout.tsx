@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws";
+const SITE_URL = "https://shelter-pulse.com";
 
 export const metadata: Metadata = {
   title: {

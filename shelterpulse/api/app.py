@@ -35,7 +35,7 @@ from shelterpulse.api.rate_limit import (
 )
 
 _ALLOWED_ORIGINS = [
-    "https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws",
+    "https://shelter-pulse.com",
     "http://localhost:3000",
     "http://localhost:8000",
 ]

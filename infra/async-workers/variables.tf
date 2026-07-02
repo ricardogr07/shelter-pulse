@@ -26,7 +26,7 @@ variable "subnet_ids" {
 variable "api_url" {
   description = "Base URL of the API for webhook callbacks (ECS Express Mode ALB URL)"
   type        = string
-  default     = "https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws"
+  default     = "https://shelter-pulse.com"
 }
 
 variable "internal_key" {

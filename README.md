@@ -57,8 +57,8 @@ Next.js + Tailwind frontend calling FastAPI. Sensitivity tornado chart, day-by-d
 
 | | |
 |---|---|
-| **Live app** | https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en |
-| **API docs** | https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/api/docs |
+| **Live app** | https://shelter-pulse.com/en |
+| **API docs** | https://shelter-pulse.com/api/docs |
 | **Sweep speed** | 20 candidates x 32 replications in < 30 s |
 | **Baselines** | 5 named strategies compared per sweep |
 | **Whisker Haven demo** | BO reduces overflow from 234 to 0 cat-days |
