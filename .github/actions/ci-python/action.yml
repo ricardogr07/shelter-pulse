@@ -10,7 +10,7 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: uv sync --all-groups
+      run: uv sync --all-groups --extra store
 
     - name: Lint (pyrefly)
       shell: bash

@@ -1,0 +1,53 @@
+# ShelterPulse
+
+> Simulation and optimization lab for cat-shelter resource allocation under uncertainty.
+
+## What it does
+
+ShelterPulse uses discrete-event simulation (SimPy) and Bayesian optimization to find
+the best budget allocation for cat shelters during kitten season. It minimizes overflow
+cat-days across four interventions: foster support, extra clinic hours, temporary
+isolation capacity, and adoption events.
+
+## Key results
+
+- Whisker Haven demo: BO reduces overflow from 234 to 0 cat-days
+- 20 candidates x 32 replications in < 30 seconds
+- 5 named baseline strategies compared per sweep
+- Common Random Numbers ensure fair comparison between candidates
+
+## Architecture
+
+- **Simulation engine**: SimPy discrete-event model of complete cat lifecycle
+- **Optimizer**: Gaussian Process + Expected Improvement (jaxbo primary, scipy fallback)
+- **API**: FastAPI REST (Python 3.12)
+- **Frontend**: Next.js 16 + React + TypeScript + Tailwind CSS (static export)
+- **Deployment**: nginx + uvicorn in one ECS Fargate container
+
+## API
+
+Base URL: /api
+
+| Method | Endpoint      | Description                                    |
+|--------|---------------|------------------------------------------------|
+| GET    | /health       | Health check                                   |
+| POST   | /simulate     | Run simulation with a given budget allocation  |
+| POST   | /optimize     | Run Bayesian optimization sweep                |
+| GET    | /baselines    | Get named baseline strategies                  |
+| POST   | /export       | Download full results as ZIP                   |
+| GET    | /docs         | OpenAPI interactive documentation              |
+
+## Pages
+
+| Path             | Description                                  |
+|------------------|----------------------------------------------|
+| /en              | Landing page (English)                       |
+| /es              | Landing page (Spanish)                       |
+| /en/demo         | Interactive demo with Whisker Haven scenario |
+| /en/how-it-works | Technical explainer of the simulation        |
+| /en/simulate     | Custom scenario builder                      |
+
+## Source code
+
+Repository: https://github.com/ricardogr07/shelter-pulse
+License: Apache-2.0

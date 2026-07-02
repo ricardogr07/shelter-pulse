@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es"/>
+  </url>
+  <url>
+    <loc>https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en/demo</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en/demo"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es/demo"/>
+  </url>
+  <url>
+    <loc>https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en/how-it-works</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en/how-it-works"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es/how-it-works"/>
+  </url>
+  <url>
+    <loc>https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en/simulate</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en/simulate"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es/simulate"/>
+  </url>
+  <url>
+    <loc>https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es"/>
+  </url>
+  <url>
+    <loc>https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es/demo</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en/demo"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es/demo"/>
+  </url>
+  <url>
+    <loc>https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es/how-it-works</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en/how-it-works"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es/how-it-works"/>
+  </url>
+  <url>
+    <loc>https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es/simulate</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/en/simulate"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws/es/simulate"/>
+  </url>
+</urlset>

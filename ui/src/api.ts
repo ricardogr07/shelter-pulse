@@ -33,7 +33,7 @@ export function exportUrl(): string {
   return `${API}/export`;
 }
 
-// Stubs comment removed — these are real now
+// Stubs comment removed - these are real now
 export interface SensitivityResult { parameter: string; low_overflow: number; base_overflow: number; high_overflow: number; }
 export interface DailySnapshot { day: number; housing_used: number; overflow: number; }
 export interface CustomScenarioParams { name: string; duration_days: number; housing_capacity: number; isolation_slots: number; vet_tech_fte: number; intervention_budget: number; mean_intake_per_day: number; kitten_fraction: number; base_adoption_rate: number; }
@@ -44,13 +44,91 @@ export async function simulateCustom(s: CustomScenarioParams): Promise<Evaluatio
   return r.json();
 }
 
-export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, reps = 32): Promise<EvaluationResult[]> {
-  const r = await fetch(`${API}/optimize/builder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, n_candidates: nCandidates, n_replications: reps }) });
+export async function simulateWhatIf(s: CustomScenarioParams, allocation: { foster_support: number; clinic_hours: number; temporary_isolation: number; adoption_events: number }): Promise<EvaluationResult> {
+  const r = await fetch(`${API}/simulate/builder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, allocation, n_replications: 4 }) });
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
 
-/** GET /sensitivity/builder — 6 points (3 params × high/low) merged into 3 tornado rows */
+export interface AsyncJobResponse { job_id: string; status: string }
+
+export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, reps = 32, consent?: { consent_storage: boolean; is_test_data: boolean }): Promise<EvaluationResult[] | AsyncJobResponse> {
+  const r = await fetch(`${API}/optimize/builder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, n_candidates: nCandidates, n_replications: reps, ...(consent || {}) }) });
+  if (!r.ok) throw new Error(await r.text());
+  const data = await r.json();
+  // 202 = async dispatch, returns {job_id, status}
+  if (r.status === 202 || data.job_id) return data as AsyncJobResponse;
+  return data as EvaluationResult[];
+}
+
+export interface PreviousRun {
+  job_id: string;
+  created_at: string;
+  scenario_name: string;
+  duration_days: number;
+  housing_capacity: number;
+  isolation_slots: number;
+  intervention_budget: number;
+  mean_intake_per_day: number;
+  winner_foster_support: number;
+  winner_clinic_hours: number;
+  winner_temporary_isolation: number;
+  winner_adoption_events: number;
+  winner_mean_overflow: number;
+  winner_mean_cost: number;
+  winner_is_feasible: boolean;
+  n_candidates: number;
+  n_replications: number;
+  is_test_data: boolean;
+}
+
+export async function fetchRecentRuns(name: string, housingCapacity: number, isolationSlots: number, interventionBudget: number): Promise<PreviousRun[]> {
+  const params = new URLSearchParams({
+    name,
+    housing_capacity: String(housingCapacity),
+    isolation_slots: String(isolationSlots),
+    intervention_budget: String(interventionBudget),
+  });
+  const r = await fetch(`${API}/runs/recent?${params}`);
+  if (!r.ok) return [];
+  return r.json();
+}
+
+export async function fetchRunHistory(limit = 10): Promise<PreviousRun[]> {
+  const r = await fetch(`${API}/runs/recent?limit=${limit}`);
+  if (!r.ok) return [];
+  return r.json();
+}
+
+export interface AnalyticsData {
+  total_runs: number;
+  avg_overflow: number;
+  best_overflow: number;
+  avg_allocation: {
+    foster_support: number;
+    clinic_hours: number;
+    temporary_isolation: number;
+    adoption_events: number;
+  };
+}
+
+export async function fetchAnalytics(): Promise<AnalyticsData | null> {
+  const r = await fetch(`${API}/runs/analytics`);
+  if (!r.ok) return null;
+  const data = await r.json();
+  if (!data || !data.total_runs) return null;
+  return data;
+}
+
+export interface CompareResult { winner: EvaluationResult; baselines: Record<string, EvaluationResult> }
+
+export async function optimizeBuilderCompare(s: CustomScenarioParams, reps = 16): Promise<CompareResult> {
+  const r = await fetch(`${API}/optimize/builder/compare`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, n_replications: reps }) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+/** GET /sensitivity/builder - 6 points (3 params x high/low) merged into 3 tornado rows */
 export async function getSensitivity(s: CustomScenarioParams): Promise<SensitivityResult[]> {
   const r = await fetch(`${API}/sensitivity/builder`, {
     method: "POST",
@@ -74,13 +152,24 @@ export async function getSensitivity(s: CustomScenarioParams): Promise<Sensitivi
   }));
 }
 
-/** POST /simulate/timeline/builder — daily housing usage for the user's custom scenario */
-export async function getTimeline(s: CustomScenarioParams): Promise<DailySnapshot[]> {
+/** POST /simulate/timeline/builder - daily housing usage for the user's custom scenario */
+export async function getTimeline(s: CustomScenarioParams, allocation?: { foster_support: number; clinic_hours: number; temporary_isolation: number; adoption_events: number }): Promise<DailySnapshot[]> {
   const r = await fetch(`${API}/simulate/timeline/builder`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...s, n_replications: 1 }),
+    body: JSON.stringify({ ...s, allocation, n_replications: 1 }),
   });
   if (!r.ok) return [];
+  return r.json();
+}
+
+/** POST /simulate/timeline/builder/compare - before (zero alloc) vs after (given alloc) */
+export async function getTimelineCompare(s: CustomScenarioParams, allocation: { foster_support: number; clinic_hours: number; temporary_isolation: number; adoption_events: number }): Promise<{ before: DailySnapshot[]; after: DailySnapshot[] }> {
+  const r = await fetch(`${API}/simulate/timeline/builder/compare`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...s, allocation, n_replications: 1 }),
+  });
+  if (!r.ok) return { before: [], after: [] };
   return r.json();
 }

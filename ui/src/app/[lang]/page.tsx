@@ -1,12 +1,26 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getDictionary } from "@/i18n/dictionaries";
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const descriptions: Record<string, string> = {
+    en: "Simulate your cat shelter's capacity under uncertainty and optimize budget allocation during kitten season.",
+    es: "Simula la capacidad de tu refugio de gatos bajo incertidumbre y optimiza la asignación de presupuesto durante la temporada de gatitos.",
+  };
+  return {
+    title: "Home",
+    description: descriptions[lang] ?? descriptions.en,
+    openGraph: { title: "ShelterPulse - Kitten Season Resource Optimizer" },
+  };
+}
 
 export default async function LandingPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const t = getDictionary(lang);
 
   return (
-    <main className="bg-zinc-50 dark:bg-zinc-950">
+    <div className="bg-zinc-50 dark:bg-zinc-950">
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-4 py-24 text-center">
         <h1 className="text-5xl font-bold text-zinc-900 dark:text-zinc-50 leading-tight whitespace-pre-line">
@@ -69,6 +83,6 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
           </a>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }

@@ -61,7 +61,7 @@ desktop.ini
 *.swo
 
 # Precomputed caches (regenerate with scripts/precompute_demo.py)
-scenarios/*.pkl
+# scenarios/whisker_haven_cache.json is committed for instant demo serving
 
 # Terraform
 .terraform/

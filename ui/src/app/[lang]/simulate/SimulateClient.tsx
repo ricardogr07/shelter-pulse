@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { simulateCustom, optimizeCustom, getSensitivity, getTimeline, type SensitivityResult, type DailySnapshot } from "@/api";
+import { simulateCustom, optimizeCustom, optimizeBuilderCompare, getSensitivity, getTimeline, getTimelineCompare, fetchRecentRuns, type SensitivityResult, type DailySnapshot, type CompareResult, type AsyncJobResponse, type PreviousRun } from "@/api";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { EvaluationResult, CustomScenario } from "@/types";
 import SensitivityChart from "@/components/SensitivityChart";
 import TimelineChart from "@/components/TimelineChart";
 import CIBadge from "@/components/CIBadge";
+import ComparisonTable from "@/components/ComparisonTable";
+import ParetoChart from "@/components/ParetoChart";
+import { RunHistoryPanel } from "./RunHistoryPanel";
+import { WhatIfPanel } from "./WhatIfPanel";
+import ProgressStream from "@/components/ProgressStream";
 
 const DEFAULTS: CustomScenario = {
   name: "My Shelter",
@@ -46,12 +51,21 @@ export default function SimulateClient({ lang }: { lang: string }) {
   const [form, setForm] = useState<CustomScenario>(DEFAULTS);
   const [simResult, setSimResult] = useState<EvaluationResult | null>(null);
   const [optResults, setOptResults] = useState<EvaluationResult[] | null>(null);
+  const [compareData, setCompareData] = useState<CompareResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [asyncJobId, setAsyncJobId] = useState<string | null>(null);
+  const [consentStorage, setConsentStorage] = useState(false);
+  const [isTestData, setIsTestData] = useState(false);
+  const [previousRuns, setPreviousRuns] = useState<PreviousRun[] | null>(null);
+  const [previousRunsOpen, setPreviousRunsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'timeline' | 'sensitivity'>('timeline');
   const [timeline, setTimeline] = useState<DailySnapshot[] | null>(null);
+  const [timelineBaseline, setTimelineBaseline] = useState<DailySnapshot[] | null>(null);
   const [sensitivity, setSensitivity] = useState<SensitivityResult[] | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   function set(field: keyof CustomScenario) {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,8 +74,32 @@ export default function SimulateClient({ lang }: { lang: string }) {
     };
   }
 
+  // Fetch previous runs for shelter matching (debounced on key param changes)
+  const fetchTimeoutRef = { current: null as ReturnType<typeof setTimeout> | null };
+  function checkPreviousRuns() {
+    if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+    fetchTimeoutRef.current = setTimeout(async () => {
+      if (!form.name || form.name.length < 2) { setPreviousRuns(null); return; }
+      try {
+        const runs = await fetchRecentRuns(form.name, form.housing_capacity, form.isolation_slots, form.intervention_budget);
+        setPreviousRuns(runs.length > 0 ? runs : []);
+      } catch { setPreviousRuns(null); }
+    }, 600);
+  }
+
+  function loadFromRun(run: PreviousRun) {
+    setForm((f) => ({
+      ...f,
+      duration_days: run.duration_days,
+      housing_capacity: run.housing_capacity,
+      isolation_slots: run.isolation_slots,
+      intervention_budget: run.intervention_budget,
+      mean_intake_per_day: run.mean_intake_per_day,
+    }));
+  }
+
   async function runSimulate() {
-    setLoading(true); setError(null); setOptResults(null);
+    setLoading(true); setError(null); setOptResults(null); setTimelineBaseline(null);
     try {
       const result = await simulateCustom(form);
       setSimResult(result);
@@ -86,10 +124,57 @@ export default function SimulateClient({ lang }: { lang: string }) {
   }
 
   async function runOptimize() {
-    setLoading(true); setError(null); setSimResult(null);
-    try { setOptResults(await optimizeCustom(form, 15, 16)); }
+    setLoading(true); setError(null); setSimResult(null); setTimelineBaseline(null); setCompareData(null); setAsyncJobId(null);
+    try {
+      const response = await optimizeCustom(form, 15, 16, { consent_storage: consentStorage, is_test_data: isTestData });
+
+      // Check if async dispatch (202 with job_id)
+      if ("job_id" in response) {
+        setAsyncJobId((response as AsyncJobResponse).job_id);
+        setLoading(false);
+        return;
+      }
+
+      // Sync path: results returned directly
+      const results = response as EvaluationResult[];
+      await handleOptResults(results);
+    }
     catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
     finally { setLoading(false); }
+  }
+
+  async function handleOptResults(results: EvaluationResult[]) {
+    setOptResults(results);
+    setAsyncJobId(null);
+    // Refresh run history panel to show new run
+    if (consentStorage) setHistoryRefreshKey((k) => k + 1);
+    // Fetch before/after timeline with winner allocation
+    if (results.length > 0) {
+      const winner = results[0];
+      const alloc = { foster_support: winner.foster_support, clinic_hours: winner.clinic_hours, temporary_isolation: winner.temporary_isolation, adoption_events: winner.adoption_events };
+      const compare = await getTimelineCompare(form, alloc);
+      setTimelineBaseline(compare.before);
+      setTimeline(compare.after);
+    }
+  }
+
+  function handleStreamComplete(results: EvaluationResult[]) {
+    handleOptResults(results);
+  }
+
+  function handleStreamError(message: string) {
+    setAsyncJobId(null);
+    setError(message);
+  }
+
+  async function runCompare() {
+    setCompareLoading(true); setError(null);
+    try {
+      const result = await optimizeBuilderCompare(form, 16);
+      setCompareData(result);
+    }
+    catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
+    finally { setCompareLoading(false); }
   }
 
   const fields: { field: keyof CustomScenario; type?: string; min?: number; max?: number; step?: number }[] = [
@@ -104,13 +189,13 @@ export default function SimulateClient({ lang }: { lang: string }) {
   ];
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t.simulate.title}</h1>
         <p className="text-zinc-600 dark:text-zinc-400 mb-8">{t.simulate.subtitle}</p>
 
         <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800 space-y-6">
-          <Input label={t.simulate.labels.name} tooltip={t.simulate.tooltips.name} name="name" type="text" value={form.name} onChange={set("name")} />
+          <Input label={t.simulate.labels.name} tooltip={t.simulate.tooltips.name} name="name" type="text" value={form.name} onChange={set("name")} onBlur={checkPreviousRuns} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {fields.map(({ field, ...rest }) => (
               <Input
@@ -124,6 +209,36 @@ export default function SimulateClient({ lang }: { lang: string }) {
               />
             ))}
           </div>
+          {/* Consent checkboxes */}
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-2">
+              Data &amp; Privacy
+            </h3>
+            <label className="flex items-start gap-2 mb-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consentStorage}
+                onChange={(e) => setConsentStorage(e.target.checked)}
+                className="mt-0.5 rounded border-zinc-300"
+              />
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                I consent to storing my optimization inputs and results for run history.{" "}
+                <a href={`/${lang}/legal/privacy`} className="text-amber-600 underline">Privacy Policy</a>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isTestData}
+                onChange={(e) => setIsTestData(e.target.checked)}
+                className="mt-0.5 rounded border-zinc-300"
+              />
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                This is test/demo data (no real shelter information).
+              </span>
+            </label>
+          </div>
+
           <div className="flex gap-4 pt-2">
             <button onClick={runSimulate} disabled={loading}
               className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors">
@@ -137,6 +252,84 @@ export default function SimulateClient({ lang }: { lang: string }) {
         </div>
 
         {error && <p className="mt-4 text-red-500">{error}</p>}
+
+        {/* Previous runs for this shelter */}
+        {previousRuns !== null && (
+          <div className="mt-4 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            {previousRuns.length === 0 ? (
+              <div className="p-4 text-sm text-zinc-500 dark:text-zinc-400">
+                No previous runs for &quot;{form.name}&quot; with these parameters. Run your first optimization below.
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => setPreviousRunsOpen(!previousRunsOpen)}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                >
+                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                    Previous runs for &quot;{form.name}&quot; ({previousRuns.length})
+                  </span>
+                  <span className={`text-zinc-400 transition-transform ${previousRunsOpen ? "rotate-180" : ""}`}>
+                    &#9660;
+                  </span>
+                </button>
+                {previousRunsOpen && (
+                  <div className="px-4 pb-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700">
+                            <th className="pb-2">Date</th>
+                            <th className="pb-2">Overflow</th>
+                            <th className="pb-2">Allocation</th>
+                            <th className="pb-2"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previousRuns.map((run) => (
+                            <tr key={run.job_id} className="border-b border-zinc-100 dark:border-zinc-700/50">
+                              <td className="py-2 text-zinc-600 dark:text-zinc-400">
+                                {new Date(run.created_at).toLocaleDateString()}
+                              </td>
+                              <td className="py-2 font-semibold">
+                                {run.winner_mean_overflow != null ? fmt(run.winner_mean_overflow) : "-"}
+                              </td>
+                              <td className="py-2 text-zinc-500 text-xs">
+                                F:{((run.winner_foster_support ?? 0) * 100).toFixed(0)}%
+                                {" "}C:{((run.winner_clinic_hours ?? 0) * 100).toFixed(0)}%
+                                {" "}I:{((run.winner_temporary_isolation ?? 0) * 100).toFixed(0)}%
+                                {" "}A:{((run.winner_adoption_events ?? 0) * 100).toFixed(0)}%
+                              </td>
+                              <td className="py-2">
+                                <button
+                                  onClick={() => loadFromRun(run)}
+                                  className="text-xs text-amber-600 hover:text-amber-500 underline"
+                                >
+                                  Load config
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {asyncJobId && (
+          <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-3">Optimizing...</h2>
+            <ProgressStream
+              jobId={asyncJobId}
+              onComplete={handleStreamComplete}
+              onError={handleStreamError}
+            />
+          </div>
+        )}
 
         {simResult && (
           <div className="mt-8 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
@@ -165,7 +358,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
           </div>
         )}
 
-        {simResult && (
+        {(simResult || (optResults && timeline)) && (
           <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
             <div className="flex gap-4 mb-4 border-b border-zinc-200 dark:border-zinc-700">
               <button
@@ -183,7 +376,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
             </div>
             {analyticsLoading && <p className="text-sm text-zinc-500">{t.common.loading}</p>}
             {activeTab === 'timeline' && timeline && (
-              <TimelineChart data={timeline} capacity={form.housing_capacity} />
+              <TimelineChart data={timeline} capacity={form.housing_capacity} baseline={timelineBaseline ?? undefined} />
             )}
             {activeTab === 'sensitivity' && sensitivity && (
               <SensitivityChart data={sensitivity} />
@@ -194,7 +387,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
         {optResults && (
           <div className="mt-8 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">{t.simulate.optResultTitle}</h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">Budget: ${fmt(form.intervention_budget)} — showing how to split it across 4 intervention strategies to minimize overflow.</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">Budget: ${fmt(form.intervention_budget)} - showing how to split it across 4 intervention strategies to minimize overflow.</p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -223,9 +416,59 @@ export default function SimulateClient({ lang }: { lang: string }) {
                 </tbody>
               </table>
             </div>
+            <button onClick={runCompare} disabled={compareLoading}
+              className="mt-4 px-5 py-2 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors">
+              {compareLoading ? "Comparing…" : "Compare against baselines →"}
+            </button>
           </div>
         )}
+
+        {compareData && (
+          <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">BO Winner vs Baselines</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">Ranked by overflow cat-days. The optimizer&apos;s best allocation compared against 5 named strategies.</p>
+            <ComparisonTable winner={compareData.winner} baselines={compareData.baselines} />
+
+            {compareData.winner.clinic_hours < 0.05 && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-1.5">
+                  <span>💡</span> Non-obvious insight: clinic hours excluded
+                </h4>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1.5 leading-relaxed">
+                  The optimizer consistently allocates near-zero budget to extra clinic hours.
+                  This is counter-intuitive but validated by simulation: adding vet-tech FTE speeds
+                  medical clearance, but creates a downstream bottleneck in housing. Cats clear isolation
+                  faster but pile up in already-full housing, increasing overflow. Foster support and
+                  adoption events reduce overflow by removing cats from the system entirely.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {optResults && optResults.length > 0 && (
+          <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Pareto Frontier</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Cost vs overflow trade-off. Points on the frontier (indigo) cannot be improved on one axis without worsening the other.</p>
+            <ParetoChart results={optResults} />
+          </div>
+        )}
+
+        {optResults && optResults.length > 0 && (
+          <WhatIfPanel
+            scenario={form}
+            winnerAllocation={{
+              foster_support: optResults[0].foster_support,
+              clinic_hours: optResults[0].clinic_hours,
+              temporary_isolation: optResults[0].temporary_isolation,
+              adoption_events: optResults[0].adoption_events,
+            }}
+            originalOverflow={optResults[0].mean_overflow_cat_days}
+          />
+        )}
+
+        <RunHistoryPanel refreshKey={historyRefreshKey} />
       </div>
-    </main>
+    </div>
   );
 }

@@ -95,6 +95,16 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = "*"
       },
       {
+        Sid    = "LambdaDeploy"
+        Effect = "Allow"
+        Action = [
+          "lambda:GetFunction",
+          "lambda:UpdateFunctionCode",
+          "lambda:UpdateFunctionConfiguration"
+        ]
+        Resource = "arn:aws:lambda:us-east-1:${data.aws_caller_identity.current.account_id}:function:shelterpulse-worker"
+      },
+      {
         Sid    = "PassExpressRoles"
         Effect = "Allow"
         Action = ["iam:PassRole"]

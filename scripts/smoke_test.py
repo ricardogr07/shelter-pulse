@@ -1,8 +1,9 @@
 """Smoke test for ShelterPulse -- auto-detects running services, validates health + functionality.
 
 Usage:
-    uv run python scripts/smoke_test.py          # full test suite
-    uv run python scripts/smoke_test.py --quick  # health checks only (< 5s)
+    uv run python scripts/smoke_test.py                              # full test suite (local)
+    uv run python scripts/smoke_test.py --quick                      # health checks only (< 5s)
+    uv run python scripts/smoke_test.py --url=https://example.com    # test remote deployment
 """
 import json
 import sys
@@ -59,7 +60,7 @@ def probe(port: int) -> bool:
         return False
 
 
-def http(method: str, url: str, body: dict | None = None, timeout: int = 30) -> tuple[int, any]:
+def http(method: str, url: str, body: dict | None = None, timeout: int = 30) -> tuple[int, object]:
     """Make an HTTP request, return (status_code, parsed_json_or_None)."""
     data = json.dumps(body).encode() if body else None
     req = urllib.request.Request(url, data=data, method=method)
@@ -103,33 +104,45 @@ def main() -> int:
     quick = "--quick" in sys.argv
     results = Results()
 
-    # Auto-detect
-    consolidated = probe(CONSOLIDATED_PORT)
-    api_up = probe(API_PORT)
-    ui_up = probe(UI_PORT)
+    # Check for explicit --url flag (for CD pipeline use)
+    remote_url: str | None = None
+    for arg in sys.argv[1:]:
+        if arg.startswith("--url="):
+            remote_url = arg.split("=", 1)[1].rstrip("/")
+            break
 
-    if not consolidated and not api_up and not ui_up:
-        print("\033[31mNo services detected.\033[0m")
-        print("Start one of:")
-        print("  docker compose up              (API:8000 + UI:3000)")
-        print("  docker run -p 8080:8080 ...    (consolidated:8080)")
-        print("  uv run uvicorn ...             (API:8000)")
-        return 1
-
-    # Report detected mode
-    if consolidated:
-        print(f"\033[36mDetected: consolidated container on :{CONSOLIDATED_PORT}\033[0m")
-        api_base = f"http://localhost:{CONSOLIDATED_PORT}/api"
-        ui_base = f"http://localhost:{CONSOLIDATED_PORT}"
+    if remote_url:
+        print(f"\033[36mTarget: {remote_url}\033[0m")
+        api_base = f"{remote_url}/api"
+        ui_base = remote_url
     else:
-        parts = []
-        if api_up:
-            parts.append(f"API:{API_PORT}")
-        if ui_up:
-            parts.append(f"UI:{UI_PORT}")
-        print(f"\033[36mDetected: {' + '.join(parts)}\033[0m")
-        api_base = f"http://localhost:{API_PORT}" if api_up else None
-        ui_base = f"http://localhost:{UI_PORT}" if ui_up else None
+        # Auto-detect local services
+        consolidated = probe(CONSOLIDATED_PORT)
+        api_up = probe(API_PORT)
+        ui_up = probe(UI_PORT)
+
+        if not consolidated and not api_up and not ui_up:
+            print("\033[31mNo services detected.\033[0m")
+            print("Start one of:")
+            print("  docker compose up              (API:8000 + UI:3000)")
+            print("  docker run -p 8080:8080 ...    (consolidated:8080)")
+            print("  uv run uvicorn ...             (API:8000)")
+            return 1
+
+        # Report detected mode
+        if consolidated:
+            print(f"\033[36mDetected: consolidated container on :{CONSOLIDATED_PORT}\033[0m")
+            api_base = f"http://localhost:{CONSOLIDATED_PORT}/api"
+            ui_base = f"http://localhost:{CONSOLIDATED_PORT}"
+        else:
+            parts = []
+            if api_up:
+                parts.append(f"API:{API_PORT}")
+            if ui_up:
+                parts.append(f"UI:{UI_PORT}")
+            print(f"\033[36mDetected: {' + '.join(parts)}\033[0m")
+            api_base = f"http://localhost:{API_PORT}" if api_up else None
+            ui_base = f"http://localhost:{UI_PORT}" if ui_up else None
 
     # --- Quick checks ---
     print("\n[Health Checks]")

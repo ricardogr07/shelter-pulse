@@ -1,58 +1,50 @@
-﻿# Deployment Architecture
+# Deployment Architecture
 
 ## Local development (docker compose up)
 
-```mermaid
-graph TB
-  subgraph host["Developer Machine / Judge Laptop"]
-    subgraph compose["docker compose"]
-      nextjs["nextjs\n:3000\nNext.js production build"]
-      fastapi["fastapi\n:8000\nUvicorn + FastAPI"]
-      temporal_svc["temporal\n:7233\nTemporal dev server\n(profile: temporal: disabled by default)"]
-      temporal_ui["temporal-ui\n:8080\nTemporal Web UI\n(profile: temporal)"]
-    end
-    browser["Browser"] -->|http://localhost:3000| nextjs
-    browser -->|http://localhost:8000/docs| fastapi
-    nextjs -->|HTTP /api/*| fastapi
-    fastapi -->|gRPC| temporal_svc
-    temporal_ui -->|gRPC| temporal_svc
-  end
+```
+docker compose up --build -d
 ```
 
-Enable Temporal services:
-```bash
-docker compose --profile temporal up
-```
+Starts 4 services:
+- **rabbitmq** (port 5672): Message broker for async optimization jobs
+- **api** (port 8000): FastAPI with QUEUE_BACKEND=rabbitmq, publishes to RabbitMQ
+- **worker**: Consumes jobs from RabbitMQ, runs BO sweep, calls API webhook
+- **ui** (port 3000): Next.js static export served by nginx
 
-## Cloud deployment (Phase 3)
+Flow: UI -> API -> RabbitMQ -> Worker -> API webhook -> UI polls results
 
-```mermaid
-graph LR
-  subgraph internet["Public Internet"]
-    judge["Judge Browser"]
-  end
+## Production (AWS ECS Express Mode)
 
-  subgraph cloud["Cloud Host\n(Render / Railway / Fly.io)"]
-    cdn["CDN / Edge\n(Next.js static export\nor SSR service)"]
-    api_svc["FastAPI service\n(containerized)"]
-  end
+Single consolidated container (nginx + uvicorn) deployed via ECS Express Mode:
+- nginx serves static Next.js export at /
+- nginx proxies /api/* to uvicorn at :8000
+- One ALB, one HTTPS URL, no CORS
 
-  judge -->|HTTPS :443| cdn
-  cdn -->|internal| api_svc
-```
+Async workers in production:
+- API publishes to SQS FIFO queue
+- Lambda function consumes from SQS
+- Lambda runs in VPC with EFS mount (for DuckDB)
+- Lambda calls webhook on API with results
 
-**Deployment strategy:**
-- FastAPI container built from `Dockerfile` (Python 3.12-slim base)
-- Next.js either: (a) built as static export served from FastAPI's static files, or
-  (b) deployed as a separate service on the same host
-- Choice made at deployment time (Phase 3) based on host friction
-- No secrets beyond a deploy token: synthetic data only, no auth
+## Deploy pipeline
+
+1. Push to develop: CI runs (lint + tests + Docker build)
+2. PR develop -> main: promote workflow (full e2e + GHCR push)
+3. Tag v*: release workflow triggers deploy workflow
+4. Deploy: Build image, push to ECR, update ECS Express service
+5. Rollback: Redeploy previous image tag
 
 ## Dockerfile targets
 
-```mermaid
-graph LR
-  base["python:3.12-slim\n(base)"] --> api_img["api target\nuv install + uvicorn"]
-  node_base["node:20-alpine\n(build stage)"] --> ui_build["npm ci + next build"]
-  ui_build --> ui_img["ui target\nnginx:alpine + static export"]
-```
+| Target | Purpose | Used by |
+|--------|---------|--------|
+| api | Python + uvicorn + optimize deps | docker-compose (api + worker) |
+| ui | nginx + Next.js static export | docker-compose (ui) |
+| app | nginx + uvicorn consolidated | ECS production |
+
+## Infrastructure (no Terraform)
+
+AWS resources are managed via CLI/console (hackathon scope).
+See docs/aws-async-infra.md for production resources needed.
+Future: IaC with CDK or Terraform when the project matures beyond hackathon.

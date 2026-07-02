@@ -24,6 +24,16 @@ shelterpulse/optimize/workflow.py    run_optimization_sweep(): baselines + BO ca
 shelterpulse/optimize/baselines.py   5 named allocations: equal, all_in_foster, all_in_events, domain_heuristic, zero
 shelterpulse/optimize/jaxbo_optimizer.py  GP+EI (jax primary, scipy fallback); simplex→cube projection
 
+shelterpulse/queue/__init__.py       Factory: get_publisher() selects backend via QUEUE_BACKEND env var
+shelterpulse/queue/interface.py      Protocol: QueuePublisher, ProgressListener
+shelterpulse/queue/sync_backend.py   In-process (default): no queue, existing behavior preserved
+shelterpulse/queue/rabbitmq_backend.py  aio-pika: publish to RabbitMQ (docker-compose)
+shelterpulse/queue/sqs_backend.py    boto3: publish to SQS FIFO queue (production Lambda)
+shelterpulse/queue/job_store.py      In-memory job state: queued/running/completed/failed lifecycle
+shelterpulse/queue/rabbitmq_worker.py  Standalone consumer: connects to RabbitMQ, runs sweep, webhooks results
+
+lambda/handler.py                    SQS event handler: processes records, runs BO sweep, webhooks results
+
 shelterpulse/api/app.py              FastAPI: /simulate, /optimize, /simulate/builder, /optimize/builder,
                                      /sensitivity, /simulate/timeline, /export, /baselines
 shelterpulse/cli/main.py             Typer: simulate, optimize, baselines, export commands
@@ -50,7 +60,7 @@ Reason: a simulation sweep evaluates many candidates against the same `Scenario`
 
 **4. Single evaluation seam**
 All optimizers call `evaluate_candidate(allocation, scenario, seed_set)` in `interface.py`. No optimizer calls `run_simulation()` directly.
-Reason: one place to change replication logic, CRN behavior, and cost accumulation. Also maps 1:1 to a Temporal activity: flip `TEMPORAL_ENABLED` and the same interface dispatches to a durable worker.
+Reason: one place to change replication logic, CRN behavior, and cost accumulation. The queue abstraction (`shelterpulse/queue/`) dispatches jobs to workers via the same interface - whether sync, RabbitMQ, or SQS.
 
 ---
 
@@ -101,6 +111,16 @@ def my_baseline() -> CandidateAllocation:
 
 # Add to ALL_BASELINES dict in baselines.py
 # workflow.py imports ALL_BASELINES and evaluates every entry automatically
+```
+
+**Add a new queue backend:**
+```python
+# In queue/my_backend.py
+class MyPublisher:
+    async def publish_job(self, job_id: str, payload: dict) -> None: ...
+    async def close(self) -> None: ...
+
+# Register in queue/__init__.py get_publisher() factory
 ```
 
 **Add a new scenario:**
@@ -164,7 +184,7 @@ def my_baseline() -> CandidateAllocation:
 ## Current project status (as of Jun 28 2026)
 
 - **Phases 1–11 complete.** Core sim, BO, API endpoints, UI, ECS deployment all working.
-- **Temporal gate (ADR-004, ADR-010):** In-process path chosen. `TEMPORAL_ENABLED = False`. Sweep < 30s: no need for durable workflows.
+- **Queue backend (ADR-004, ADR-010):** `QUEUE_BACKEND=sync` (default). Sweep < 30s in-process; set `QUEUE_BACKEND=rabbitmq` for docker-compose horizontal scaling or `QUEUE_BACKEND=sqs` for production Lambda workers.
 - **Approaching submission deadline Jul 6–7.**
 
 ### Non-negotiables still to close before submission
