@@ -1,6 +1,6 @@
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
       <div className="max-w-2xl mx-auto prose prose-zinc dark:prose-invert">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-6">Privacy Policy</h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">Last updated: July 2026</p>
@@ -115,6 +115,6 @@ export default function PrivacyPage() {
           </p>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

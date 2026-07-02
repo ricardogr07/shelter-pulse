@@ -28,28 +28,28 @@ export function RunHistoryPanel({ refreshKey }: { refreshKey?: number }) {
   if (loading || !analytics) return null;
 
   return (
-    <section className="mt-8 border-t border-zinc-200 dark:border-zinc-700 pt-6">
-      <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-4">Community Statistics</h2>
+    <section className="mt-8 border-t border-zinc-200 dark:border-zinc-700 pt-6" aria-labelledby="community-stats-heading">
+      <h2 id="community-stats-heading" className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-4">Community Statistics</h2>
 
       <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl border border-amber-200 dark:border-amber-800/50">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           <div>
-            <p className="text-xs text-amber-600 dark:text-amber-400">Total Optimizations</p>
-            <p className="text-xl font-bold text-amber-900 dark:text-amber-100">{analytics.total_runs}</p>
+            <dt className="text-xs text-amber-600 dark:text-amber-400">Total Optimizations</dt>
+            <dd className="text-xl font-bold text-amber-900 dark:text-amber-100">{analytics.total_runs}</dd>
           </div>
           <div>
-            <p className="text-xs text-amber-600 dark:text-amber-400">Average Best Overflow</p>
-            <p className="text-xl font-bold text-amber-900 dark:text-amber-100">{fmt(analytics.avg_overflow)} cat-days</p>
+            <dt className="text-xs text-amber-600 dark:text-amber-400">Average Best Overflow</dt>
+            <dd className="text-xl font-bold text-amber-900 dark:text-amber-100">{fmt(analytics.avg_overflow)} cat-days</dd>
           </div>
           <div>
-            <p className="text-xs text-amber-600 dark:text-amber-400">Best Result Ever</p>
-            <p className="text-xl font-bold text-amber-900 dark:text-amber-100">{fmt(analytics.best_overflow)} cat-days</p>
+            <dt className="text-xs text-amber-600 dark:text-amber-400">Best Result Ever</dt>
+            <dd className="text-xl font-bold text-amber-900 dark:text-amber-100">{fmt(analytics.best_overflow)} cat-days</dd>
           </div>
-        </div>
+        </dl>
 
         {/* Average allocation bar */}
         <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">Average Winning Allocation</p>
-        <div className="flex h-5 rounded-md overflow-hidden">
+        <div className="flex h-5 rounded-md overflow-hidden" role="img" aria-label={`Average allocation: Foster ${(analytics.avg_allocation.foster_support * 100).toFixed(0)}%, Clinic ${(analytics.avg_allocation.clinic_hours * 100).toFixed(0)}%, Isolation ${(analytics.avg_allocation.temporary_isolation * 100).toFixed(0)}%, Adoption ${(analytics.avg_allocation.adoption_events * 100).toFixed(0)}%`}>
           <div
             className="bg-green-400 dark:bg-green-600 flex items-center justify-center text-[10px] font-medium text-white"
             style={{ width: `${(analytics.avg_allocation.foster_support * 100).toFixed(0)}%` }}
@@ -80,10 +80,10 @@ export function RunHistoryPanel({ refreshKey }: { refreshKey?: number }) {
           </div>
         </div>
         <div className="flex gap-3 mt-1 text-[10px] text-amber-700 dark:text-amber-300">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-400 dark:bg-green-600 inline-block"></span>Foster</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-blue-400 dark:bg-blue-600 inline-block"></span>Clinic</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-purple-400 dark:bg-purple-600 inline-block"></span>Isolation</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-orange-400 dark:bg-orange-600 inline-block"></span>Adoption</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-400 dark:bg-green-600 inline-block" aria-hidden="true"></span>Foster</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-blue-400 dark:bg-blue-600 inline-block" aria-hidden="true"></span>Clinic</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-purple-400 dark:bg-purple-600 inline-block" aria-hidden="true"></span>Isolation</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-orange-400 dark:bg-orange-600 inline-block" aria-hidden="true"></span>Adoption</span>
         </div>
       </div>
     </section>

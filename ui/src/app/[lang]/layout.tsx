@@ -15,8 +15,18 @@ export default async function LangLayout({
   const { lang } = await params;
   return (
     <>
-      <NavBar lang={lang} />
-      <div className="flex-1">{children}</div>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-white focus:rounded-lg focus:text-sm focus:font-semibold"
+      >
+        Skip to main content
+      </a>
+      <header>
+        <NavBar lang={lang} />
+      </header>
+      <main id="main-content" className="flex-1">
+        {children}
+      </main>
     </>
   );
 }

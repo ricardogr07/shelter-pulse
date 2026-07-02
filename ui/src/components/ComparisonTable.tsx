@@ -32,16 +32,16 @@ export default function ComparisonTable({ winner, baselines }: Props) {
 
   return (
     <div className="overflow-x-auto -mx-2">
-      <table className="w-full text-xs border-collapse">
+      <table className="w-full text-xs border-collapse" aria-label="Optimization strategy comparison ranked by overflow">
         <thead>
           <tr className="text-left text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700">
-            <th className="py-2 px-2 font-medium">Strategy</th>
-            <th className="py-2 px-2 font-medium text-right">Foster</th>
-            <th className="py-2 px-2 font-medium text-right">Clinic</th>
-            <th className="py-2 px-2 font-medium text-right">Iso</th>
-            <th className="py-2 px-2 font-medium text-right">Events</th>
-            <th className="py-2 px-2 font-medium text-right">Overflow</th>
-            <th className="py-2 px-2 font-medium text-right">CI 95%</th>
+            <th scope="col" className="py-2 px-2 font-medium">Strategy</th>
+            <th scope="col" className="py-2 px-2 font-medium text-right">Foster</th>
+            <th scope="col" className="py-2 px-2 font-medium text-right">Clinic</th>
+            <th scope="col" className="py-2 px-2 font-medium text-right">Iso</th>
+            <th scope="col" className="py-2 px-2 font-medium text-right">Events</th>
+            <th scope="col" className="py-2 px-2 font-medium text-right">Overflow</th>
+            <th scope="col" className="py-2 px-2 font-medium text-right">CI 95%</th>
           </tr>
         </thead>
         <tbody>
@@ -54,7 +54,7 @@ export default function ComparisonTable({ winner, baselines }: Props) {
                 className={`border-b border-zinc-100 dark:border-zinc-800 ${row.isWinner ? "bg-green-50 dark:bg-green-950" : ""}`}
               >
                 <td className="py-2 px-2 font-medium text-zinc-900 dark:text-zinc-50">
-                  {row.isWinner && <span className="mr-1">🏆</span>}
+                  {row.isWinner && <span className="mr-1" role="img" aria-label="Winner">🏆</span>}
                   {row.label}
                 </td>
                 <td className="py-2 px-2 text-right text-zinc-600 dark:text-zinc-400">{pct(row.result.foster_support)}</td>
