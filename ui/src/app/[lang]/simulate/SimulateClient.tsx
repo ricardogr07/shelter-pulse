@@ -8,6 +8,7 @@ import SensitivityChart from "@/components/SensitivityChart";
 import TimelineChart from "@/components/TimelineChart";
 import CIBadge from "@/components/CIBadge";
 import ComparisonTable from "@/components/ComparisonTable";
+import { RunHistoryPanel } from "./RunHistoryPanel";
 import ProgressStream from "@/components/ProgressStream";
 
 const DEFAULTS: CustomScenario = {
@@ -62,6 +63,7 @@ export default function SimulateClient({ lang }: { lang: string }) {
   const [timelineBaseline, setTimelineBaseline] = useState<DailySnapshot[] | null>(null);
   const [sensitivity, setSensitivity] = useState<SensitivityResult[] | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   function set(field: keyof CustomScenario) {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,6 +144,8 @@ export default function SimulateClient({ lang }: { lang: string }) {
   async function handleOptResults(results: EvaluationResult[]) {
     setOptResults(results);
     setAsyncJobId(null);
+    // Refresh run history panel to show new run
+    if (consentStorage) setHistoryRefreshKey((k) => k + 1);
     // Fetch before/after timeline with winner allocation
     if (results.length > 0) {
       const winner = results[0];
@@ -424,6 +428,8 @@ export default function SimulateClient({ lang }: { lang: string }) {
             <ComparisonTable winner={compareData.winner} baselines={compareData.baselines} />
           </div>
         )}
+
+        <RunHistoryPanel refreshKey={historyRefreshKey} />
       </div>
     </main>
   );

@@ -69,9 +69,11 @@ export interface PreviousRun {
   winner_temporary_isolation: number;
   winner_adoption_events: number;
   winner_mean_overflow: number;
+  winner_mean_cost: number;
   winner_is_feasible: boolean;
   n_candidates: number;
   n_replications: number;
+  is_test_data: boolean;
 }
 
 export async function fetchRecentRuns(name: string, housingCapacity: number, isolationSlots: number, interventionBudget: number): Promise<PreviousRun[]> {
@@ -84,6 +86,32 @@ export async function fetchRecentRuns(name: string, housingCapacity: number, iso
   const r = await fetch(`${API}/runs/recent?${params}`);
   if (!r.ok) return [];
   return r.json();
+}
+
+export async function fetchRunHistory(limit = 10): Promise<PreviousRun[]> {
+  const r = await fetch(`${API}/runs/recent?limit=${limit}`);
+  if (!r.ok) return [];
+  return r.json();
+}
+
+export interface AnalyticsData {
+  total_runs: number;
+  avg_overflow: number;
+  best_overflow: number;
+  avg_allocation: {
+    foster_support: number;
+    clinic_hours: number;
+    temporary_isolation: number;
+    adoption_events: number;
+  };
+}
+
+export async function fetchAnalytics(): Promise<AnalyticsData | null> {
+  const r = await fetch(`${API}/runs/analytics`);
+  if (!r.ok) return null;
+  const data = await r.json();
+  if (!data || !data.total_runs) return null;
+  return data;
 }
 
 export interface CompareResult { winner: EvaluationResult; baselines: Record<string, EvaluationResult> }

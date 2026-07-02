@@ -388,26 +388,47 @@ def get_job_results(job_id: str):
 
 
 @app.get("/runs/recent")
-def get_recent_runs(
-    name: str = fastapi.Query(..., description="Shelter name to match"),
-    housing_capacity: int = fastapi.Query(..., description="Housing capacity"),
-    isolation_slots: int = fastapi.Query(..., description="Isolation slots"),
-    intervention_budget: float = fastapi.Query(..., description="Budget"),
+def get_recent_runs_endpoint(
+    name: str | None = fastapi.Query(None, description="Shelter name to match"),
+    housing_capacity: int | None = fastapi.Query(None, description="Housing capacity"),
+    isolation_slots: int | None = fastapi.Query(None, description="Isolation slots"),
+    intervention_budget: float | None = fastapi.Query(None, description="Budget"),
     limit: int = fastapi.Query(10, ge=1, le=50),
 ):
-    """Fetch recent optimization runs matching a shelter by name + key params."""
-    runs = get_runs_for_shelter(
-        name=name,
-        housing_capacity=housing_capacity,
-        isolation_slots=isolation_slots,
-        intervention_budget=intervention_budget,
-        limit=limit,
-    )
+    """Fetch recent optimization runs.
+
+    If name + params are provided, filters to matching shelter.
+    If no params, returns all recent consented runs (global history).
+    """
+    try:
+        if name and housing_capacity is not None and isolation_slots is not None and intervention_budget is not None:
+            runs = get_runs_for_shelter(
+                name=name,
+                housing_capacity=housing_capacity,
+                isolation_slots=isolation_slots,
+                intervention_budget=intervention_budget,
+                limit=limit,
+            )
+        else:
+            from shelterpulse.store import get_recent_runs
+            runs = get_recent_runs(limit=limit)
+    except Exception:
+        runs = []
     # Convert datetime objects to ISO strings for JSON serialization
     for run in runs:
         if run.get("created_at"):
             run["created_at"] = run["created_at"].isoformat()
     return runs
+
+
+@app.get("/runs/analytics")
+def get_run_analytics():
+    """Aggregate statistics across all consented, non-test runs."""
+    try:
+        from shelterpulse.store import get_analytics
+        return get_analytics()
+    except Exception:
+        return {}
 
 
 # ── SSE progress streaming ────────────────────────────────────────────────────

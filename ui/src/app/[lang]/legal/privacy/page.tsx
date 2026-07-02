@@ -52,8 +52,14 @@ export default function PrivacyPage() {
           <ul className="list-disc pl-6 text-zinc-600 dark:text-zinc-400 space-y-1">
             <li>Enabling run history so you can reference previous optimization results</li>
             <li>Matching your shelter to show past runs when you return</li>
-            <li>Aggregate analytics to improve the optimization algorithms</li>
+            <li>Displaying anonymized community aggregate statistics (total runs, average overflow, average allocation) to all visitors</li>
+            <li>Improving the optimization algorithms based on aggregate patterns</li>
           </ul>
+          <p className="text-zinc-600 dark:text-zinc-400 mt-3">
+            <strong>Note:</strong> Community statistics are computed from aggregate data only.
+            Individual run details (shelter name, specific configurations) are never exposed
+            publicly. Only you can see your own past runs via the shelter matching feature.
+          </p>
         </section>
 
         <section className="mb-8">
