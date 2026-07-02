@@ -1,6 +1,6 @@
 # Built with Kiro
 
-ShelterPulse was developed entirely with [Kiro](https://kiro.dev), an AI-powered development environment. Kiro served as pair programmer across every phase — from architecture design through production deployment — while the human developer made all design decisions and validated every output.
+ShelterPulse was developed with help from [Kiro](https://kiro.dev), an AI-powered development environment. Kiro served as pair programmer across different phases — from architecture integration into AWS through production deployment — while I made all design decisions and validated every output.
 
 ## Development phases
 
@@ -15,15 +15,14 @@ Kiro assisted with:
 ### Phase 3: Optimization layer
 
 - Implementing Common Random Numbers (CRN) for variance reduction
-- Writing the GP+EI Bayesian Optimization loop using jaxbo
-- Adding scipy fallback for environments without JAX
-- Defining the 5 named baselines and the evaluation interface
+- Writing the GP+EI Bayesian Optimization loop, which was later introduced with jaxbo
+- Defining the baselines and the evaluation interface based on the simulation engine I proposed
 
 ### Phase 4: API + frontend
 
 - Structuring the FastAPI REST adapter with Pydantic models
-- Building the Next.js 15 + TypeScript + Tailwind frontend
-- Creating the 6-step demo wizard and custom builder form
+- Building the Next.js 15 + TypeScript + Tailwind frontend boilerplate
+- Creating the 6-step demo wizard and custom builder form boilerplate
 - Implementing zero-dependency charts (Tailwind `width: X%` bars)
 
 ### Phase 5: CI/CD pipeline
@@ -41,7 +40,7 @@ Kiro assisted with:
 
 ### Phase 7: Infrastructure
 
-- Writing the multi-stage Dockerfile (nginx + uvicorn in one container)
+- Writing the multi-stage Dockerfile (nginx + uvicorn in one container) for local testing
 - Configuring ECS Fargate Express Mode deployment
 - Setting up the release workflow (v* tag → ECR push → ECS deploy)
 - Debugging the rolling deployment (container port change, ALB health checks)
@@ -63,7 +62,7 @@ Kiro assisted with:
 | Debugging | SimPy race conditions, ECS deployment issues, CI failures |
 | Infrastructure | Dockerfile, nginx.conf, GitHub Actions, AWS CLI |
 | Security | Aikido finding remediation, input validation |
-| Documentation | ADRs, README, design decisions, this write-up |
+| Documentation | ADRs, README, design decisions|
 
 ## What worked well
 
@@ -86,5 +85,5 @@ Every AI-generated change was validated through:
 1. **Local tests** — `pytest` (unit + e2e) and `npx cypress run` before every commit
 2. **CI pipeline** — GitHub Actions runs lint, security, tests, type-check, and Docker build on every PR
 3. **Build verification** — `npm run build` confirms static export succeeds (catches missing pages, bad imports)
-4. **Live verification** — After deployment, curl against the live URL to confirm API 200 and UI 200
-5. **Manual review** — HTML output inspected for correct metadata, SEO tags, and redirect behavior
+4. **Live verification** — After deployment, curl against the live URL to confirm API 200 and UI 200, run smoke tests, and e2e tests against the live site
+5. **Manual review** — HTML output inspected for correct metadata, SEO tags, and redirect behavior, and a general correctness review of the UI and API responses
