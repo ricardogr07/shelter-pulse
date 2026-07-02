@@ -142,25 +142,25 @@ jobs:
           fi
 
 
-  smoke-test:
-    name: Post-deploy smoke test
+  smoke-test-api:
+    name: Post-deploy smoke test (API)
     needs: deploy
     if: vars.ECS_EXPRESS_SERVICE_ARN != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
           python-version: "3.12"
 
-      - name: Wait for deployment to stabilize
-        run: sleep 30
+      - name: Install dependencies
+        run: uv sync --all-groups
 
-      - name: Run smoke test against production
+      - name: Poll until healthy
         env:
           DEPLOY_URL: ${{ vars.DEPLOY_URL }}
         run: |
@@ -168,4 +168,60 @@ jobs:
             echo "::warning::DEPLOY_URL not set, skipping smoke test"
             exit 0
           fi
-          python scripts/smoke_test.py --quick --url="$DEPLOY_URL"
+          for i in $(seq 1 30); do
+            curl -fsS "$DEPLOY_URL/api/health" && exit 0
+            sleep 5
+          done
+          echo "::error::API never became healthy after 150s"
+          exit 1
+
+      # Fast synchronous layer: every endpoint that doesn't require job polling,
+      # with real response-shape assertions (not just 200 status).
+      - name: Fast smoke checks
+        if: vars.DEPLOY_URL != ''
+        run: uv run python scripts/smoke_test.py --url="${{ vars.DEPLOY_URL }}"
+
+      # Async job lifecycle: POST /optimize/builder -> SQS -> Lambda -> webhook
+      # -> results. This is the exact chain that broke in production (see
+      # docs/adr/014-async-worker-production-hardening.md) and that the fast
+      # layer above cannot exercise (it's always 202+job_id in prod).
+      - name: Async job lifecycle
+        if: vars.DEPLOY_URL != ''
+        env:
+          SMOKE_BASE_URL: ${{ vars.DEPLOY_URL }}
+        run: uv run pytest tests/e2e/test_prod_smoke.py -v
+        timeout-minutes: 6
+
+      - name: Rollback instructions
+        if: failure()
+        run: |
+          {
+            echo "### :rotating_light: Production smoke test failed"
+            echo ""
+            echo "The deploy succeeded but post-deploy validation failed against \`${{ vars.DEPLOY_URL }}\`."
+            echo "To roll back to the previous image (fill in the previous version tag):"
+            echo '```bash'
+            echo 'aws ecs update-express-gateway-service \'
+            echo '  --service-arn $SERVICE_ARN \'
+            echo '  --primary-container "{\"image\":\"$ECR_REPO:v$PREV_VERSION\",\"containerPort\":8080}"'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  smoke-test-ui:
+    name: Post-deploy smoke test (UI, live)
+    needs: deploy
+    if: vars.ECS_EXPRESS_SERVICE_ARN != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Cypress against live prod
+        if: vars.DEPLOY_URL != ''
+        uses: cypress-io/github-action@f790eee7a50d9505912f50c2095510be7de06aa7 # v6
+        with:
+          working-directory: ui
+          spec: cypress/e2e/smoke.cy.ts
+          config: baseUrl=${{ vars.DEPLOY_URL }}

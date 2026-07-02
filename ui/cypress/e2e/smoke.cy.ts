@@ -19,3 +19,35 @@ describe("ShelterPulse smoke", () => {
     cy.contains("Discrete-Event Simulation").should("exist");
   });
 });
+
+// Live-data checks: exercise the two data-dependent pages against a real
+// backend, not just DOM-shell presence. Run against local dev by default;
+// pass --config baseUrl=https://shelter-pulse.com to point at live prod
+// (see .github/workflows/deploy.yml's smoke-test-ui job).
+describe("ShelterPulse smoke - live data", () => {
+  it("demo wizard: baseline -> optimize renders real computed results", () => {
+    cy.visit("/en/demo");
+    // Step 1 configure -> baseline (POST /simulate, sync/fast)
+    cy.contains("button", "Run Baseline").click();
+    cy.contains("Overflow Cat-Days", { timeout: 15000 }).should("be.visible");
+    // Step 2 baseline -> bottleneck (no API call)
+    cy.contains("button", "See bottlenecks").click();
+    // Step 3 bottleneck -> optimize (POST /optimize, cached for demo params, fast)
+    cy.contains("button", "Optimize Budget").click();
+    // Step 4: real BO winner rendered, not stuck on "Optimizing..."
+    cy.contains("Optimized Allocation", { timeout: 30000 }).should("be.visible");
+    cy.contains("Overflow Cat-Days").should("be.visible");
+  });
+
+  it("custom builder: optimize dispatches the async job and renders real results", () => {
+    cy.visit("/en/simulate");
+    // Default form values are fine - triggers POST /optimize/builder, which is
+    // always async (202 + job_id) in production. The UI's own SSE-driven
+    // ProgressStream must resolve to real results within the same window
+    // prod sweeps take (~30s-3min, see docs/architecture/async-workers.md).
+    cy.contains("button", "Optimize").click();
+    cy.contains("Optimization Results", { timeout: 240000 }).should("be.visible");
+    // First result row has a real (non-empty) overflow number, not a placeholder
+    cy.get("table tbody tr").first().find("td").eq(5).invoke("text").should("match", /\d/);
+  });
+});
