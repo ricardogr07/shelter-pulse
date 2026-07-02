@@ -9,6 +9,7 @@ import TimelineChart from "@/components/TimelineChart";
 import CIBadge from "@/components/CIBadge";
 import ComparisonTable from "@/components/ComparisonTable";
 import { RunHistoryPanel } from "./RunHistoryPanel";
+import { WhatIfPanel } from "./WhatIfPanel";
 import ProgressStream from "@/components/ProgressStream";
 
 const DEFAULTS: CustomScenario = {
@@ -442,6 +443,19 @@ export default function SimulateClient({ lang }: { lang: string }) {
               </div>
             )}
           </div>
+        )}
+
+        {optResults && optResults.length > 0 && (
+          <WhatIfPanel
+            scenario={form}
+            winnerAllocation={{
+              foster_support: optResults[0].foster_support,
+              clinic_hours: optResults[0].clinic_hours,
+              temporary_isolation: optResults[0].temporary_isolation,
+              adoption_events: optResults[0].adoption_events,
+            }}
+            originalOverflow={optResults[0].mean_overflow_cat_days}
+          />
         )}
 
         <RunHistoryPanel refreshKey={historyRefreshKey} />

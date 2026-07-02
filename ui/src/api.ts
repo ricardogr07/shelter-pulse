@@ -44,6 +44,12 @@ export async function simulateCustom(s: CustomScenarioParams): Promise<Evaluatio
   return r.json();
 }
 
+export async function simulateWhatIf(s: CustomScenarioParams, allocation: { foster_support: number; clinic_hours: number; temporary_isolation: number; adoption_events: number }): Promise<EvaluationResult> {
+  const r = await fetch(`${API}/simulate/builder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, allocation, n_replications: 4 }) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
 export interface AsyncJobResponse { job_id: string; status: string }
 
 export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, reps = 32, consent?: { consent_storage: boolean; is_test_data: boolean }): Promise<EvaluationResult[] | AsyncJobResponse> {

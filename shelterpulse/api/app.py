@@ -302,7 +302,7 @@ def baselines() -> dict:
 def simulate_builder(req: BuilderRequest, request: fastapi.Request) -> EvaluationOut:
     check_rate_limit(simulate_limiter, request)
     scenario = _builder_to_scenario(req)
-    alloc = CandidateAllocation(0.25, 0.25, 0.25, 0.25)
+    alloc = CandidateAllocation(**(req.allocation.model_dump() if req.allocation else {"foster_support": 0.25, "clinic_hours": 0.25, "temporary_isolation": 0.25, "adoption_events": 0.25}))
     seeds = make_seed_set(scenario.seed, req.n_replications)
     return _er_to_out(evaluate_candidate(alloc, scenario, seeds))
 
