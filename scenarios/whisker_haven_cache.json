@@ -1,0 +1,242 @@
+[
+  {
+    "allocation": {
+      "foster_support": 0.0,
+      "clinic_hours": 0.0,
+      "temporary_isolation": 0.0,
+      "adoption_events": 1.0
+    },
+    "mean_overflow_cat_days": 0.0,
+    "std_overflow_cat_days": 0.0,
+    "mean_total_cost": 62529.55210223366,
+    "is_feasible": true,
+    "ci95_overflow_low": 0.0,
+    "ci95_overflow_high": 0.0,
+    "ci95_cost_low": 61650.87064156076,
+    "ci95_cost_high": 63408.233562906564
+  },
+  {
+    "allocation": {
+      "foster_support": 0.4,
+      "clinic_hours": 0.0,
+      "temporary_isolation": 0.2,
+      "adoption_events": 0.4
+    },
+    "mean_overflow_cat_days": 2.0,
+    "std_overflow_cat_days": 6.0,
+    "mean_total_cost": 68407.02726534396,
+    "is_feasible": true,
+    "ci95_overflow_low": 0.0,
+    "ci95_overflow_high": 4.9399999999999995,
+    "ci95_cost_low": 67146.9351509611,
+    "ci95_cost_high": 69667.11937972682
+  },
+  {
+    "allocation": {
+      "foster_support": 1.0,
+      "clinic_hours": 0.0,
+      "temporary_isolation": 0.0,
+      "adoption_events": 0.0
+    },
+    "mean_overflow_cat_days": 233.75,
+    "std_overflow_cat_days": 279.59066060939875,
+    "mean_total_cost": 74129.4786873381,
+    "is_feasible": true,
+    "ci95_overflow_low": 96.7505763013946,
+    "ci95_overflow_high": 370.74942369860537,
+    "ci95_cost_low": 72539.83183908403,
+    "ci95_cost_high": 75719.12553559216
+  },
+  {
+    "allocation": {
+      "foster_support": 0.0,
+      "clinic_hours": 0.0,
+      "temporary_isolation": 0.0,
+      "adoption_events": 0.0
+    },
+    "mean_overflow_cat_days": 233.75,
+    "std_overflow_cat_days": 279.59066060939875,
+    "mean_total_cost": 74129.4786873381,
+    "is_feasible": true,
+    "ci95_overflow_low": 96.7505763013946,
+    "ci95_overflow_high": 370.74942369860537,
+    "ci95_cost_low": 72539.83183908403,
+    "ci95_cost_high": 75719.12553559216
+  },
+  {
+    "allocation": {
+      "foster_support": 0.2470541217969117,
+      "clinic_hours": 0.11530218267507421,
+      "temporary_isolation": 0.026807601686501644,
+      "adoption_events": 0.6108360938415125
+    },
+    "mean_overflow_cat_days": 1111.9375,
+    "std_overflow_cat_days": 351.7231632886154,
+    "mean_total_cost": 93804.7121843079,
+    "is_feasible": true,
+    "ci95_overflow_low": 939.5931499885785,
+    "ci95_overflow_high": 1284.2818500114215,
+    "ci95_cost_low": 92590.40962657693,
+    "ci95_cost_high": 95019.01474203885
+  },
+  {
+    "allocation": {
+      "foster_support": 0.059740792885660386,
+      "clinic_hours": 0.19484948538477878,
+      "temporary_isolation": 0.24274993548431872,
+      "adoption_events": 0.5026597862452421
+    },
+    "mean_overflow_cat_days": 1501.5625,
+    "std_overflow_cat_days": 269.3090624055381,
+    "mean_total_cost": 94437.76056783448,
+    "is_feasible": true,
+    "ci95_overflow_low": 1369.6010594212862,
+    "ci95_overflow_high": 1633.5239405787138,
+    "ci95_cost_low": 93315.717672538,
+    "ci95_cost_high": 95559.80346313097
+  },
+  {
+    "allocation": {
+      "foster_support": 0.18082890397024817,
+      "clinic_hours": 0.22980864248678443,
+      "temporary_isolation": 0.08729112368200935,
+      "adoption_events": 0.502071329860958
+    },
+    "mean_overflow_cat_days": 1501.5625,
+    "std_overflow_cat_days": 269.3090624055381,
+    "mean_total_cost": 94437.76056783448,
+    "is_feasible": true,
+    "ci95_overflow_low": 1369.6010594212862,
+    "ci95_overflow_high": 1633.5239405787138,
+    "ci95_cost_low": 93315.717672538,
+    "ci95_cost_high": 95559.80346313097
+  },
+  {
+    "allocation": {
+      "foster_support": 0.15925578549348796,
+      "clinic_hours": 0.3418895515298291,
+      "temporary_isolation": 0.04557724202447224,
+      "adoption_events": 0.4532774209522108
+    },
+    "mean_overflow_cat_days": 1501.5625,
+    "std_overflow_cat_days": 269.3090624055381,
+    "mean_total_cost": 94437.76056783448,
+    "is_feasible": true,
+    "ci95_overflow_low": 1369.6010594212862,
+    "ci95_overflow_high": 1633.5239405787138,
+    "ci95_cost_low": 93315.717672538,
+    "ci95_cost_high": 95559.80346313097
+  },
+  {
+    "allocation": {
+      "foster_support": 0.5158350243679086,
+      "clinic_hours": 0.022638405400143505,
+      "temporary_isolation": 0.04128211699652383,
+      "adoption_events": 0.42024445323542403
+    },
+    "mean_overflow_cat_days": 1501.5625,
+    "std_overflow_cat_days": 269.3090624055381,
+    "mean_total_cost": 94437.76056783448,
+    "is_feasible": true,
+    "ci95_overflow_low": 1369.6010594212862,
+    "ci95_overflow_high": 1633.5239405787138,
+    "ci95_cost_low": 93315.717672538,
+    "ci95_cost_high": 95559.80346313097
+  },
+  {
+    "allocation": {
+      "foster_support": 0.25,
+      "clinic_hours": 0.25,
+      "temporary_isolation": 0.25,
+      "adoption_events": 0.25
+    },
+    "mean_overflow_cat_days": 1629.25,
+    "std_overflow_cat_days": 158.58337712383351,
+    "mean_total_cost": 94735.51264203415,
+    "is_feasible": true,
+    "ci95_overflow_low": 1551.5441452093216,
+    "ci95_overflow_high": 1706.9558547906784,
+    "ci95_cost_low": 93522.2664367796,
+    "ci95_cost_high": 95948.75884728871
+  },
+  {
+    "allocation": {
+      "foster_support": 0.2503371008352274,
+      "clinic_hours": 0.17527628842381204,
+      "temporary_isolation": 0.294626724286065,
+      "adoption_events": 0.2797598864548956
+    },
+    "mean_overflow_cat_days": 1629.25,
+    "std_overflow_cat_days": 158.58337712383351,
+    "mean_total_cost": 94735.51264203415,
+    "is_feasible": true,
+    "ci95_overflow_low": 1551.5441452093216,
+    "ci95_overflow_high": 1706.9558547906784,
+    "ci95_cost_low": 93522.2664367796,
+    "ci95_cost_high": 95948.75884728871
+  },
+  {
+    "allocation": {
+      "foster_support": 0.3712099818370193,
+      "clinic_hours": 0.2069897499215949,
+      "temporary_isolation": 0.292704952220431,
+      "adoption_events": 0.1290953160209547
+    },
+    "mean_overflow_cat_days": 1768.375,
+    "std_overflow_cat_days": 73.1726340580958,
+    "mean_total_cost": 96394.5351975322,
+    "is_feasible": true,
+    "ci95_overflow_low": 1732.520409311533,
+    "ci95_overflow_high": 1804.229590688467,
+    "ci95_cost_low": 95257.84666591503,
+    "ci95_cost_high": 97531.22372914937
+  },
+  {
+    "allocation": {
+      "foster_support": 0.08669155457117744,
+      "clinic_hours": 0.6971352248597461,
+      "temporary_isolation": 0.17838923966804215,
+      "adoption_events": 0.0377839809010343
+    },
+    "mean_overflow_cat_days": 1768.375,
+    "std_overflow_cat_days": 73.1726340580958,
+    "mean_total_cost": 96394.5351975322,
+    "is_feasible": true,
+    "ci95_overflow_low": 1732.520409311533,
+    "ci95_overflow_high": 1804.229590688467,
+    "ci95_cost_low": 95257.84666591503,
+    "ci95_cost_high": 97531.22372914937
+  },
+  {
+    "allocation": {
+      "foster_support": 0.7166314254494717,
+      "clinic_hours": 0.06346510626188957,
+      "temporary_isolation": 0.11563753646537595,
+      "adoption_events": 0.10426593182326283
+    },
+    "mean_overflow_cat_days": 1768.375,
+    "std_overflow_cat_days": 73.1726340580958,
+    "mean_total_cost": 96394.5351975322,
+    "is_feasible": true,
+    "ci95_overflow_low": 1732.520409311533,
+    "ci95_overflow_high": 1804.229590688467,
+    "ci95_cost_low": 95257.84666591503,
+    "ci95_cost_high": 97531.22372914937
+  },
+  {
+    "allocation": {
+      "foster_support": 0.08355062595565327,
+      "clinic_hours": 0.24998202518832488,
+      "temporary_isolation": 0.5663428948476088,
+      "adoption_events": 0.10012445400841308
+    },
+    "mean_overflow_cat_days": 1768.375,
+    "std_overflow_cat_days": 73.1726340580958,
+    "mean_total_cost": 96182.0437465889,
+    "is_feasible": true,
+    "ci95_overflow_low": 1732.520409311533,
+    "ci95_overflow_high": 1804.229590688467,
+    "ci95_cost_low": 95129.62084268485,
+    "ci95_cost_high": 97234.46665049295
+  }
+]
