@@ -88,6 +88,8 @@ resource "aws_iam_role_policy" "deploy" {
         Effect = "Allow"
         Action = [
           "ecs:*ExpressGatewayService",
+          "ecs:RegisterTaskDefinition",
+          "ecs:DescribeTaskDefinition",
           "ecs:ListServices",
           "ecs:DescribeServices",
           "ecs:TagResource"
