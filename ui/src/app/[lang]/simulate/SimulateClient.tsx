@@ -426,6 +426,21 @@ export default function SimulateClient({ lang }: { lang: string }) {
             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">BO Winner vs Baselines</h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">Ranked by overflow cat-days. The optimizer&apos;s best allocation compared against 5 named strategies.</p>
             <ComparisonTable winner={compareData.winner} baselines={compareData.baselines} />
+
+            {compareData.winner.clinic_hours < 0.05 && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-1.5">
+                  <span>💡</span> Non-obvious insight: clinic hours excluded
+                </h4>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1.5 leading-relaxed">
+                  The optimizer consistently allocates near-zero budget to extra clinic hours.
+                  This is counter-intuitive but validated by simulation: adding vet-tech FTE speeds
+                  medical clearance, but creates a downstream bottleneck in housing. Cats clear isolation
+                  faster but pile up in already-full housing, increasing overflow. Foster support and
+                  adoption events reduce overflow by removing cats from the system entirely.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
