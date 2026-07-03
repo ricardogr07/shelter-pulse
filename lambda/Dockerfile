@@ -18,8 +18,10 @@ COPY pyproject.toml uv.lock ./
 # Install only optimize deps (core simulation + BO engine) + store for DuckDB on EFS
 RUN uv sync --no-dev --no-install-project --extra optimize --extra store
 
-# pyDOE shim (same as main Dockerfile)
-RUN python -c "import site; sp=[p for p in site.getsitepackages() if 'site-packages' in p][0]; open(sp+'/pyDOE.py','w').write('from pydoe import *\nfrom pydoe import lhs\n')"
+# pyDOE shim (same as main Dockerfile). Must use .venv's python, not the system
+# one - uv installs into .venv, and the shim has to land in that same
+# site-packages or it's invisible at runtime.
+RUN .venv/bin/python -c "import site; sp=[p for p in site.getsitepackages() if 'site-packages' in p][0]; open(sp+'/pyDOE.py','w').write('from pydoe import *\nfrom pydoe import lhs\n')"
 
 # Fix jaxbo compat with JAX 0.10+
 RUN find /app/.venv -path '*/jaxbo/*.py' \
