@@ -11,11 +11,14 @@ When progress/complete/fail is called, events are pushed to all subscribers.
 from __future__ import annotations
 
 import asyncio
+import logging
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class JobStatus(str, Enum):
@@ -65,6 +68,7 @@ class JobStore:
         job = Job(job_id=job_id, progress_total=total, client_ip=client_ip)
         with self._lock:
             self._jobs[job_id] = job
+        logger.info("Created job %s (total=%d)", job_id, total)
         return job
 
     def get(self, job_id: str) -> Job | None:
@@ -110,6 +114,7 @@ class JobStore:
                 del self._jobs[job_id]
 
         for job_id in timed_out:
+            logger.warning("Job %s timed out (no update within %ds)", job_id, ttl_seconds)
             self._notify(job_id, {"event": "error", "message": "Job timed out"})
 
         return len(timed_out)
@@ -123,6 +128,8 @@ class JobStore:
                 job.progress_done = done
                 job.progress_total = total
                 job.updated_at = datetime.now(timezone.utc)
+        if not job:
+            logger.warning("update_progress for unknown job %s (done=%d, total=%d)", job_id, done, total)
         self._notify(job_id, {"event": "progress", "done": done, "total": total})
 
     def complete(self, job_id: str, results: list[dict[str, Any]]) -> None:
@@ -133,6 +140,7 @@ class JobStore:
                 job.status = JobStatus.COMPLETED
                 job.results = results
                 job.updated_at = datetime.now(timezone.utc)
+        logger.info("Completed job %s (%d results, found=%s)", job_id, len(results), job is not None)
         self._notify(job_id, {"event": "complete", "results": results})
 
     def fail(self, job_id: str, error: str) -> None:
@@ -143,6 +151,7 @@ class JobStore:
                 job.status = JobStatus.FAILED
                 job.error = error
                 job.updated_at = datetime.now(timezone.utc)
+        logger.warning("Failed job %s: %s (found=%s)", job_id, error, job is not None)
         self._notify(job_id, {"event": "error", "message": error})
 
     # ── Pub/sub for SSE ───────────────────────────────────────────────────────
