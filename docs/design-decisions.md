@@ -59,7 +59,7 @@ Positive covariance can reduce comparison variance, but reusing only an initial 
 - The allocation space is a 4-simplex (shares summing ≤ 1). Random Dirichlet search is unbiased but sample-inefficient: it doesn't use information from prior evaluations.
 - GP+EI builds a probabilistic surrogate after each evaluation and uses Expected Improvement to trade off exploration and exploitation.
 - Five named baselines warm-start the GP and remain explicitly labeled in the returned ranking. A baseline may outperform every BO candidate.
-- A recorded 20-candidate, 32-replication development sweep took 117.7 seconds. Runtime thresholds require repeated final-commit evidence.
+- A recorded 20-candidate, 32-replication development sweep took 243.2 seconds. Runtime thresholds require repeated final-commit evidence.
 
 **Why jaxbo as primary:**
 - jaxbo provides the Matérn-5/2 GP path used by this project.

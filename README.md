@@ -59,7 +59,7 @@ Next.js + Tailwind frontend calling FastAPI. Sensitivity tornado chart, day-by-d
 |---|---|
 | **Live app** | https://shelter-pulse.com/en |
 | **API docs** | https://shelter-pulse.com/api/docs |
-| **Measured sweep** | 5 baselines + 20 BO candidates x 32 replications in 117.7 s on the recorded development environment |
+| **Measured sweep** | 5 baselines + 20 BO candidates x 32 replications in 243.2 s on the recorded development environment |
 | **Baselines** | 5 named strategies compared per sweep |
 | **Whisker Haven evidence** | All-events baseline: 50.2 mean overflow cat-days; best BO candidate: 82.1; equal allocation: 874.4 |
 

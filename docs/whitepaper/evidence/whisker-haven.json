@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-07-03T16:55:30.435977+00:00",
-  "git_commit": "6134c681d5b496f3119155c0ac8a061f65ae8549",
+  "generated_at_utc": "2026-07-03T17:42:45.341482+00:00",
+  "git_commit": "d10abd001f9fb9b285ff9b135adc0575404c06b1",
   "source_sha256": {
     "scenarios/whisker_haven.yaml": "8d3d5fe6a93490d186c7aec893095564b13ff3a963b4a824ce56c7c984a745df",
     "shelterpulse/core/engine.py": "14ba15fca07ea5af1141c4fada561977d5324f27f6ecabca39fdaddf8cddc25e",
@@ -69,7 +69,7 @@
     "replications_per_allocation": 32,
     "total_intervention_budget": 5000.0
   },
-  "elapsed_seconds": 117.7347450000234,
+  "elapsed_seconds": 243.158532499976,
   "results": [
     {
       "allocation": {

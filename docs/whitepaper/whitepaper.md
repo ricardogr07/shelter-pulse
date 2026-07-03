@@ -155,7 +155,7 @@ Zero intervention & 0 / 0 / 0 / 0 & 2038.3 & 1718.7--2357.9 & \$93,675 \\
 
 The best BO candidate reduced mean overflow by approximately 91% relative to equal allocation and 96% relative to zero intervention. It did not beat all-in-events, though its converged allocation (91% adoption events) moved toward the same strategy the best baseline identifies, consistent with the GP learning from baseline warm-start observations. The strongest conclusion supported by this run is therefore that an event-heavy allocation performs well under the scenario assumptions; it is not evidence that BO universally outperforms simple strategies.
 
-The run took 117.7 seconds on the recorded Windows/Python environment. This is one development measurement, not a cross-platform performance guarantee. Release materials should report a threshold only after repeated final-commit benchmarks.
+The run took 243.2 seconds on the recorded Windows/Python environment. This is one development measurement, not a cross-platform performance guarantee. Release materials should report a threshold only after repeated final-commit benchmarks.
 
 # Limitations
 
