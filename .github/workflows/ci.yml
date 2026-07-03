@@ -12,6 +12,7 @@ jobs:
       python: ${{ steps.check.outputs.python }}
       ui: ${{ steps.check.outputs.ui }}
       docker: ${{ steps.check.outputs.docker }}
+      whitepaper: ${{ steps.check.outputs.whitepaper }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
@@ -26,7 +27,7 @@ jobs:
           CHANGED=$(git diff --name-only "$BASE" "$GITHUB_SHA")
           echo "$CHANGED"
 
-          python=false; ui=false; docker=false
+          python=false; ui=false; docker=false; whitepaper=false
 
           while IFS= read -r f; do
             case "$f" in
@@ -37,11 +38,16 @@ jobs:
               Dockerfile|docker-compose.yml|.github/actions/ci-docker/*)
                 docker=true ;;
             esac
+            case "$f" in
+              docs/whitepaper/*|tox.ini|.github/actions/ci-whitepaper/*)
+                whitepaper=true ;;
+            esac
           done <<< "$CHANGED"
 
           echo "python=$python" >> "$GITHUB_OUTPUT"
           echo "ui=$ui"        >> "$GITHUB_OUTPUT"
           echo "docker=$docker" >> "$GITHUB_OUTPUT"
+          echo "whitepaper=$whitepaper" >> "$GITHUB_OUTPUT"
 
   python:
     name: Python checks
@@ -64,6 +70,17 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/ci-ui
+
+  whitepaper:
+    name: Whitepaper build
+    needs: detect
+    if: needs.detect.outputs.whitepaper == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci-whitepaper
 
   docker:
     name: Docker build (no push)

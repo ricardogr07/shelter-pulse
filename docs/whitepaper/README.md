@@ -37,7 +37,7 @@ pandoc whitepaper.md --citeproc --bibliography=references.bib --csl=ieee.csl --p
 Pop-Location
 ```
 
-The `Whitepaper` GitHub Actions workflow runs the tox environment on relevant pull requests and pushes. It validates the build but does not commit or push generated files.
+The `Whitepaper build` job in `ci.yml` runs the tox environment on pull requests that touch `docs/whitepaper/**` or `tox.ini` (see the `detect` job's path filter). It validates the build but does not commit or push generated files.
 
 ## Files
 
