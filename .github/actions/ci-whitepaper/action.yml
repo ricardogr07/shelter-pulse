@@ -16,7 +16,8 @@ runs:
           pandoc \
           texlive-latex-base \
           texlive-latex-extra \
-          texlive-fonts-recommended
+          texlive-fonts-recommended \
+          lmodern
         pandoc --version | head -n 2
         pdflatex --version | head -n 1
 
