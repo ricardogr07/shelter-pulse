@@ -12,6 +12,7 @@
 [![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![AWS ECS](https://img.shields.io/badge/AWS_ECS-Express_Mode-FF9900?logo=amazonwebservices&logoColor=white)](https://aws.amazon.com/ecs/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21173654.svg)](https://doi.org/10.5281/zenodo.21173654)
 
 ---
 
