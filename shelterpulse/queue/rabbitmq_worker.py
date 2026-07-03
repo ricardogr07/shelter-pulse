@@ -42,6 +42,7 @@ def _post_json(url: str, data: dict) -> None:
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             resp.read()
+            logger.info("Webhook POST %s -> %d", url, resp.status)
     except Exception as e:
         logger.warning("Webhook POST to %s failed: %s", url, e)
 

@@ -9,8 +9,11 @@ Requires: aio-pika (install with `uv sync --extra worker`)
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any, AsyncIterator
+
+logger = logging.getLogger(__name__)
 
 
 class RabbitMQPublisher:
@@ -40,6 +43,7 @@ class RabbitMQPublisher:
             ),
             routing_key="jobs",
         )
+        logger.info("Published job %s to RabbitMQ (routing_key=jobs)", job_id)
 
     async def close(self) -> None:
         """Close the RabbitMQ connection."""
