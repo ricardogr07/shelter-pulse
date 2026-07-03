@@ -449,6 +449,7 @@ def get_run_analytics():
 # ── SSE progress streaming ────────────────────────────────────────────────────
 
 _SSE_TIMEOUT_SECONDS = 300  # 5 minutes
+_SSE_HEARTBEAT_SECONDS = 15  # keep the connection alive through intermediary idle-timeouts (e.g. ALB)
 
 
 @app.get("/optimize/{job_id}/stream")
@@ -478,16 +479,28 @@ async def stream_job_progress(job_id: str):
                 if current_job.status == JobStatus.FAILED:
                     yield f"event: error\ndata: {json.dumps({'message': current_job.error or 'Job failed'})}\n\n"
                     return
-                if current_job.progress_done > 0:
+                if current_job.progress_total > 0:
                     yield f"event: progress\ndata: {json.dumps({'done': current_job.progress_done, 'total': current_job.progress_total})}\n\n"
 
-            # Stream events as they arrive
+            # Stream events as they arrive. Poll on a short interval and send a
+            # comment (ignored by EventSource) when idle, so a long gap between
+            # progress ticks - e.g. Lambda cold start or first-candidate JIT
+            # compile - doesn't sit long enough for the ALB to drop the
+            # connection as idle; a dropped connection makes EventSource
+            # silently reconnect and only replay current state, losing every
+            # tick that happened while disconnected.
+            idle_seconds = 0.0
             while True:
                 try:
-                    event = await asyncio.wait_for(queue.get(), timeout=_SSE_TIMEOUT_SECONDS)
+                    event = await asyncio.wait_for(queue.get(), timeout=_SSE_HEARTBEAT_SECONDS)
                 except asyncio.TimeoutError:
-                    yield f"event: error\ndata: {json.dumps({'message': 'Stream timeout'})}\n\n"
-                    return
+                    idle_seconds += _SSE_HEARTBEAT_SECONDS
+                    if idle_seconds >= _SSE_TIMEOUT_SECONDS:
+                        yield f"event: error\ndata: {json.dumps({'message': 'Stream timeout'})}\n\n"
+                        return
+                    yield ": keep-alive\n\n"
+                    continue
+                idle_seconds = 0.0
 
                 event_type = event.get("event", "progress")
                 if event_type == "progress":
