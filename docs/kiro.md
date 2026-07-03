@@ -21,7 +21,7 @@ Kiro assisted with:
 ### Phase 4: API + frontend
 
 - Structuring the FastAPI REST adapter with Pydantic models
-- Building the Next.js 15 + TypeScript + Tailwind frontend boilerplate
+- Building the Next.js 16 + TypeScript + Tailwind frontend boilerplate
 - Creating the 6-step demo wizard and custom builder form boilerplate
 - Implementing zero-dependency charts (Tailwind `width: X%` bars)
 
@@ -68,16 +68,16 @@ Kiro assisted with:
 
 1. **Rapid iteration** — Changes that would take 30–60 minutes to write manually were produced in seconds and verified against the test suite immediately.
 2. **Cross-stack coherence** — Kiro maintained context across Python backend, TypeScript frontend, Docker config, and CI workflows in the same session.
-3. **Test-first approach** — Writing tests alongside implementation caught regressions immediately (e.g., the warm-start test revealed the optimizer returns warm-start + new results, not just n_candidates).
+3. **Test-first approach** — Writing tests alongside implementation exposed scientific-contract defects in overflow units, foster capacity, random-stream alignment, and optimizer result labeling.
 4. **Infrastructure debugging** — Multi-step deployment issues (ECS rolling update, nginx proxy, port mapping) were diagnosed systematically rather than through trial-and-error.
 
 ## What required human judgment
 
-- **Domain modeling** — Whether clinic hours should be excluded from the domain heuristic (it worsened overflow in testing)
+- **Domain modeling** — How to distinguish modeled queue effects from claims requiring real-shelter calibration
 - **UX decisions** — Step ordering in the demo wizard, which metrics to surface prominently
 - **Architecture choices** — Consolidated container vs. microservices, Temporal deferral decision
 - **Prioritization** — Rubric weighting drove task ordering (Innovation 20% items first)
-- **Validation** — Every claim about "overflow reduced to 0" was verified by actually running the simulation
+- **Validation** — Stale `234 → 0` and sub-30-second claims were removed after the corrected 20×32 evidence run did not reproduce them
 
 ## Verification approach
 

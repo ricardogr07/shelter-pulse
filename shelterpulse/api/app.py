@@ -7,7 +7,6 @@ import io
 import json
 import logging
 import os
-import json
 import tempfile
 import time
 import zipfile
@@ -108,6 +107,7 @@ def _load_demo_cache() -> list | None:
                 ci95_overflow_high=row.get("ci95_overflow_high", 0.0),
                 ci95_cost_low=row.get("ci95_cost_low", 0.0),
                 ci95_cost_high=row.get("ci95_cost_high", 0.0),
+                source=row.get("source", "candidate"),
             )
             for row in rows
         ]
@@ -170,6 +170,7 @@ class EvaluationOut(BaseModel):
     ci95_overflow_high: float = 0.0
     ci95_cost_low: float = 0.0
     ci95_cost_high: float = 0.0
+    source: str = "candidate"
 
 
 class BuilderRequest(BaseModel):
@@ -238,6 +239,7 @@ def _er_to_out(r) -> EvaluationOut:
         ci95_overflow_high=r.ci95_overflow_high,
         ci95_cost_low=r.ci95_cost_low,
         ci95_cost_high=r.ci95_cost_high,
+        source=r.source,
     )
 
 
@@ -673,7 +675,12 @@ def _run_timeline(scenario, alloc: CandidateAllocation) -> list[TimelinePoint]:
     """
     import simpy
 
-    from shelterpulse.core.engine import _Counters, _intake_generator
+    from shelterpulse.core.engine import (
+        _Counters,
+        _build_resources,
+        _generate_arrivals,
+        _intake_generator,
+    )
     from shelterpulse.core.interventions import resolve_intervention
 
     intervention = resolve_intervention(
@@ -681,27 +688,10 @@ def _run_timeline(scenario, alloc: CandidateAllocation) -> list[TimelinePoint]:
         alloc.temporary_isolation, alloc.adoption_events, scenario,
     )
 
-    rng = np.random.default_rng(scenario.seed)
     env = simpy.Environment()
-    isolation_cap = scenario.isolation_capacity
-    extra_isolation = intervention.extra_isolation_slots
-    extra_foster = intervention.extra_foster_slots
-    vet_cap = max(1, int(sum(w.fte for w in scenario.workforce if w.role.value == "vet_tech")))
-    if intervention.extra_vet_tech_fte > 0:
-        vet_cap += max(1, round(intervention.extra_vet_tech_fte))
-
-    resources = {
-        "vet_tech": simpy.Resource(env, capacity=vet_cap),
-        "animal_care": simpy.Resource(env, capacity=max(1, int(
-            sum(w.fte for w in scenario.workforce if w.role.value == "animal_care")))),
-        "foster_coordinator": simpy.Resource(env, capacity=max(1, int(
-            sum(w.fte for w in scenario.workforce if w.role.value == "foster_coordinator")))),
-        "housing": simpy.Resource(env, capacity=scenario.housing_capacity),
-        "isolation": simpy.Resource(env, capacity=isolation_cap + extra_isolation),
-        "foster": simpy.Resource(env, capacity=scenario.foster_network.capacity + extra_foster),
-    }
-
+    resources = _build_resources(env, scenario, intervention)
     counters = _Counters()
+    arrivals = _generate_arrivals(scenario, scenario.seed)
     daily_snapshots: list[dict] = []
 
     def _daily_sampler():
@@ -713,8 +703,12 @@ def _run_timeline(scenario, alloc: CandidateAllocation) -> list[TimelinePoint]:
                 "overflow": len(resources["housing"].queue),
             })
 
-    env.process(_intake_generator(env, scenario, resources, counters, rng,
-                                  intervention.adoption_wait_multiplier))
+    env.process(_intake_generator(
+        env, scenario, resources, counters, arrivals, scenario.seed,
+        intervention.adoption_wait_multiplier,
+        intervention.vet_service_time_multiplier,
+        intervention.foster_coordination_time_multiplier,
+    ))
     env.process(_daily_sampler())
     # +1h past the last 24h boundary: SimPy does not run events scheduled exactly at
     # `until`, so without this the final daily sample (at day*24) is dropped — a 1-day

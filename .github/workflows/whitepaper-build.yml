@@ -1,0 +1,52 @@
+name: Whitepaper
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - "docs/whitepaper/**"
+      - "tox.ini"
+      - ".github/workflows/whitepaper-build.yml"
+  pull_request:
+    branches: [develop]
+    paths:
+      - "docs/whitepaper/**"
+      - "tox.ini"
+      - ".github/workflows/whitepaper-build.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: whitepaper-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build whitepaper PDF
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install document toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pandoc \
+            texlive-latex-base \
+            texlive-latex-extra \
+            texlive-fonts-recommended
+          pandoc --version | head -n 2
+          pdflatex --version | head -n 1
+
+      - name: Build PDF
+        run: uv run tox -e whitepaper
+
+      - name: Verify output
+        run: test -s docs/whitepaper/shelterpulse-whitepaper.pdf

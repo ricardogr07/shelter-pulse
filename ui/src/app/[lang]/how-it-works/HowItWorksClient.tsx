@@ -120,7 +120,7 @@ total_intervention_budget: 5000`}</pre>
           <p>By using the <strong>same random seeds</strong> for each candidate allocation, differences in overflow are due to the allocation - not random noise.</p>
           <p><strong>Confidence intervals</strong> (95%):</p>
           <MathBlock>{String.raw`\text{CI}_{95} = \bar{Y} \pm 1.96 \cdot \frac{\sigma}{\sqrt{N}}`}</MathBlock>
-          <p>With <Tex>{String.raw`N=32`}</Tex> replications, a result of <Tex>{String.raw`234 \pm 18`}</Tex> overflow cat-days means we{"'"}re 95% confident the true expected value is in <Tex>{String.raw`[216, 252]`}</Tex>.</p>
+          <p>With <Tex>{String.raw`N=32`}</Tex> replications, the current best BO candidate has a mean of <Tex>{String.raw`82.1`}</Tex> modeled overflow cat-days and a 95% Monte Carlo interval of <Tex>{String.raw`[44.4, 119.7]`}</Tex>. This interval quantifies simulation noise, not real-world model accuracy.</p>
         </div>
       )
     },
