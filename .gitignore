@@ -76,3 +76,7 @@ tfplan*
 .env.local
 .env.*.local
 *.pem
+
+# Local runtime data (DuckDB store, etc.)
+/data/
+*.duckdb

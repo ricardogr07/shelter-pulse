@@ -8,6 +8,7 @@ Never calls run_simulation() directly — always via evaluate_candidate().
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from typing import Any
 
@@ -16,14 +17,18 @@ import numpy as np
 from shelterpulse.core.schema import Scenario
 from shelterpulse.optimize.workflow import CandidateAllocation, EvaluationResult
 
+logger = logging.getLogger(__name__)
+
 try:
     import jax  # type: ignore[import-untyped]
     import jax.numpy as jnp  # type: ignore[import-untyped]
     from jaxbo import acquisitions, input_priors  # type: ignore[import-untyped]
     from jaxbo.models import GP  # type: ignore[import-untyped]
     _HAS_JAX = True
-except ImportError:
+    logger.info("jax/jaxbo import succeeded - real GP+EI optimization available")
+except ImportError as exc:
     _HAS_JAX = False
+    logger.warning("jax/jaxbo import failed, using random-search fallback: %s", exc)
 
 
 # ── Simplex ↔ cube helpers ────────────────────────────────────────────────────
@@ -200,5 +205,7 @@ def optimize_jaxbo(
             candidate evaluation.
     """
     if _HAS_JAX:
+        logger.info("optimize_jaxbo: using GP+EI (n_candidates=%d)", n_candidates)
         return _jaxbo_gp_ei(scenario, seed_set, n_candidates, warm_start, on_progress=on_progress)
+    logger.info("optimize_jaxbo: using random-search fallback (n_candidates=%d)", n_candidates)
     return _random_search(scenario, seed_set, n_candidates, warm_start, on_progress=on_progress)

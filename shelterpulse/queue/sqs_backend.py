@@ -9,8 +9,11 @@ Requires: boto3 (install with `uv sync --extra aws`)
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class SQSPublisher:
@@ -27,11 +30,15 @@ class SQSPublisher:
 
     async def publish_job(self, job_id: str, payload: dict[str, Any]) -> None:
         """Send job to SQS FIFO queue."""
-        self._sqs.send_message(
+        resp = self._sqs.send_message(
             QueueUrl=self._queue_url,
             MessageBody=json.dumps({"job_id": job_id, **payload}),
             MessageGroupId="optimization",
             MessageDeduplicationId=job_id,
+        )
+        logger.info(
+            "Published job %s to SQS (message_id=%s)",
+            job_id, resp.get("MessageId", "unknown"),
         )
 
     async def close(self) -> None:

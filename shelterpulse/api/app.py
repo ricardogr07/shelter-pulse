@@ -5,9 +5,11 @@ import asyncio
 import dataclasses
 import io
 import json
+import logging
 import os
 import json
 import tempfile
+import time
 import zipfile
 from pathlib import Path
 from uuid import uuid4
@@ -17,6 +19,8 @@ import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, model_validator
+
+logger = logging.getLogger(__name__)
 
 from shelterpulse.core.montecarlo import make_seed_set
 from shelterpulse.core.schema import Scenario, load_scenario
@@ -47,6 +51,24 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
+
+@app.middleware("http")
+async def _log_requests(request: fastapi.Request, call_next):
+    """Single point of request/response logging for every route.
+
+    Cheaper than annotating each handler individually - covers current and
+    future endpoints alike. Never logs headers/body (may contain
+    X-Internal-Key or scenario data).
+    """
+    start = time.monotonic()
+    response = await call_next(request)
+    elapsed_ms = (time.monotonic() - start) * 1000
+    logger.info(
+        "%s %s -> %d (%.1fms)",
+        request.method, request.url.path, response.status_code, elapsed_ms,
+    )
+    return response
 
 
 @app.on_event("startup")
@@ -534,7 +556,9 @@ _INTERNAL_KEY = os.getenv("INTERNAL_KEY", "dev-key-123")
 def receive_job_progress(job_id: str, request: fastapi.Request, payload: dict):
     """Worker reports progress for a running job."""
     _validate_internal_key(request)
-    job_store.update_progress(job_id, payload.get("done", 0), payload.get("total", 0))
+    done, total = payload.get("done", 0), payload.get("total", 0)
+    job_store.update_progress(job_id, done, total)
+    logger.info("Received progress for job %s: %d/%d", job_id, done, total)
     return {"ok": True}
 
 
@@ -542,7 +566,9 @@ def receive_job_progress(job_id: str, request: fastapi.Request, payload: dict):
 def receive_job_complete(job_id: str, request: fastapi.Request, payload: dict):
     """Worker reports job completion with results."""
     _validate_internal_key(request)
-    job_store.complete(job_id, payload.get("results", []))
+    results = payload.get("results", [])
+    job_store.complete(job_id, results)
+    logger.info("Received completion for job %s: %d results", job_id, len(results))
     return {"ok": True}
 
 
@@ -550,7 +576,9 @@ def receive_job_complete(job_id: str, request: fastapi.Request, payload: dict):
 def receive_job_fail(job_id: str, request: fastapi.Request, payload: dict):
     """Worker reports job failure."""
     _validate_internal_key(request)
-    job_store.fail(job_id, payload.get("error", "Unknown error"))
+    error = payload.get("error", "Unknown error")
+    job_store.fail(job_id, error)
+    logger.warning("Received failure for job %s: %s", job_id, error)
     return {"ok": True}
 
 
@@ -558,6 +586,11 @@ def _validate_internal_key(request: fastapi.Request) -> None:
     """Check X-Internal-Key header matches expected value."""
     key = request.headers.get("X-Internal-Key", "")
     if key != _INTERNAL_KEY:
+        # Log lengths only - never the key values themselves.
+        logger.warning(
+            "Rejected internal webhook call to %s: key mismatch (got %d chars, expected %d)",
+            request.url.path, len(key), len(_INTERNAL_KEY),
+        )
         raise fastapi.HTTPException(status_code=403, detail="Invalid internal key")
 
 

@@ -21,6 +21,13 @@ logger.setLevel(logging.INFO)
 API_URL = os.getenv("API_URL", "")
 INTERNAL_KEY = os.getenv("INTERNAL_KEY", "")
 
+# Runs once per cold start (module import) - never on warm container reuse.
+# Logs config presence only, never the key value itself.
+logger.info(
+    "Cold start: API_URL=%r INTERNAL_KEY=%s",
+    API_URL, f"<{len(INTERNAL_KEY)} chars>" if INTERNAL_KEY else "<unset>",
+)
+
 
 def _post_json(url: str, data: dict) -> None:
     """POST JSON to the API webhook endpoint."""
@@ -35,6 +42,7 @@ def _post_json(url: str, data: dict) -> None:
     )
     with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
         resp.read()
+        logger.info("Webhook POST %s -> %d", url, resp.status)
 
 
 def _validate_payload(payload: dict) -> None:
