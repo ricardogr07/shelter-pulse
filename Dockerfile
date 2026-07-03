@@ -11,7 +11,9 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev --no-install-project --extra optimize --extra worker --extra store --extra aws
 
 # pyDOE shim: jaxbo imports `pyDOE` (old name); installed package is `pydoe` (new name)
-RUN python -c "import site; sp=[p for p in site.getsitepackages() if 'site-packages' in p][0]; open(sp+'/pyDOE.py','w').write('from pydoe import *\nfrom pydoe import lhs\n')"
+# Must use .venv's python, not the system one - uv installs into .venv, and the
+# shim has to land in that same site-packages or it's invisible at runtime.
+RUN .venv/bin/python -c "import site; sp=[p for p in site.getsitepackages() if 'site-packages' in p][0]; open(sp+'/pyDOE.py','w').write('from pydoe import *\nfrom pydoe import lhs\n')"
 
 # Fix jaxbo compat with JAX 0.10+: jnp.clip(x, a_min=0) -> jnp.clip(x, 0, None)
 RUN find /app/.venv -path '*/jaxbo/*.py' \
