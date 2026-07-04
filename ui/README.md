@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ShelterPulse UI
 
-## Getting Started
+Next.js (App Router) + React + TypeScript + Tailwind CSS frontend for
+ShelterPulse. A thin adapter over the FastAPI backend; no business logic
+lives here (see the root [README](../README.md) and
+[`docs/architecture/`](../docs/architecture/) for the full system).
 
-First, run the development server:
+## Pages
+
+- `/[lang]` - landing page (`en`/`es`)
+- `/[lang]/demo` - guided Whisker Haven walkthrough: baseline, bottleneck
+  analysis, optimize, compare
+- `/[lang]/how-it-works` - the model explained end to end (intake through
+  optimization), with a "Download Whitepaper (PDF)" button linking to
+  `public/shelterpulse-whitepaper.pdf`
+- `/[lang]/simulate` - custom scenario builder and run history
+- `/[lang]/legal/privacy` - privacy policy
+
+## Getting started
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Requires the API
+running separately (`docker compose up` from the repo root is the easiest
+way to get API + RabbitMQ + worker running alongside this UI - see the root
+README's reproducibility steps).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build        # production build (static export, served by nginx in the deployed image)
+npm run type-check    # tsc --noEmit
+npm run lint          # eslint
+npm run cy:run         # Cypress e2e (headless)
+npm run cy:open        # Cypress e2e (interactive)
+```
 
-## Learn More
+## i18n
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Locale strings live in `src/i18n/dictionaries.ts` (`en`/`es`). Add new UI
+copy there, not inline, so both locales stay in sync.
