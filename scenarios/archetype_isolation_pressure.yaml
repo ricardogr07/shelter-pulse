@@ -1,0 +1,108 @@
+# Archetype: Isolation Pressure — a copy of Whisker Haven with two
+# deliberate, related changes: isolation_capacity cut (5 -> 3) AND the
+# intake profile re-weighted toward higher medical_hold/isolation_required
+# shares (from 42% to 65% of intake needing isolation-adjacent care), the
+# combination modeling a disease-outbreak-like surge in isolation demand
+# rather than a plain capacity cut. Isolation-capacity pressure and its
+# link to shelter medical/health outcomes is directly documented
+# [@karsten2017capacity].
+
+name: "Archetype: Isolation Pressure"
+version: "0.1"
+description: >
+  Whisker Haven with isolation_capacity cut to 3 (from 5) and the intake
+  profile re-weighted toward medical_hold/isolation_required cats (65% of
+  intake vs. 42% in Whisker Haven). Models a disease-outbreak-like surge in
+  isolation demand, not just less isolation space.
+
+duration_days: 90
+seed: 42
+n_replications: 64
+
+intake_rate_per_day: 3.8
+
+intake_profiles:
+  - age_class: neonatal
+    health_status: medical_hold
+    weight: 0.30            # up from 0.20
+  - age_class: weaned_kitten
+    health_status: healthy
+    weight: 0.15            # down from 0.25
+  - age_class: weaned_kitten
+    health_status: medical_hold
+    weight: 0.20            # up from 0.14
+  - age_class: juvenile
+    health_status: healthy
+    weight: 0.10            # down from 0.18
+  - age_class: adult
+    health_status: healthy
+    weight: 0.10            # down from 0.15
+  - age_class: adult
+    health_status: isolation_required
+    weight: 0.15            # up from 0.08
+
+housing_capacity: 35
+isolation_capacity: 3        # cut from Whisker Haven's 5 — the deliberate change
+
+workforce:
+  - role: vet_tech
+    fte: 1.5
+    hours_per_day: 8.0
+    skills: [medical_assessment, vaccination, treatment]
+
+  - role: animal_care
+    fte: 3.0
+    hours_per_day: 8.0
+    skills: [feeding, cleaning, socialization, neonatal_care]
+
+  - role: foster_coordinator
+    fte: 0.5
+    hours_per_day: 4.0
+    skills: [foster_placement, foster_support, adoption_counseling]
+
+foster_network:
+  capacity: 8
+  coordinator_hours_per_week: 20.0
+  supply_cost_per_cat_day: 2.50
+
+cost_model:
+  fixed_per_day: 350.00
+  variable_per_cat_day: 8.50
+  medical_event_cost: 85.00
+  adoption_event_cost: 250.00
+
+seasonal_events:
+  - name: "Kitten Season Peak"
+    start_day: 14
+    duration_days: 42
+    intake_multiplier: 2.5
+
+  - name: "Vet Tech Absence"
+    start_day: 55
+    duration_days: 5
+    intake_multiplier: 1.0
+
+interventions:
+  - type: foster_support
+    budget_share: 0.25
+    effect_params:
+      capacity_increase_per_dollar: 0.002
+      coordinator_hours_per_dollar: 0.001
+
+  - type: extra_clinic_hours
+    budget_share: 0.25
+    effect_params:
+      vet_hours_per_dollar: 0.005
+      clearance_speed_multiplier: 1.0
+
+  - type: temporary_isolation
+    budget_share: 0.25
+    effect_params:
+      slots_per_dollar: 0.0008
+
+  - type: adoption_events
+    budget_share: 0.25
+    effect_params:
+      adoption_rate_multiplier_per_dollar: 0.0001
+
+total_intervention_budget: 5000.00
