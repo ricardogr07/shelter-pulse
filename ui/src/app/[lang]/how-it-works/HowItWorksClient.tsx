@@ -173,7 +173,14 @@ total_intervention_budget: 5000`}</pre>
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t.howItWorks.title}</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 mb-8">{t.howItWorks.subtitle}</p>
+        <p className="text-zinc-500 dark:text-zinc-400 mb-4">{t.howItWorks.subtitle}</p>
+        <a
+          href="/shelterpulse-whitepaper.pdf"
+          download
+          className="inline-flex items-center gap-2 mb-8 px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 font-semibold rounded-lg text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        >
+          {t.howItWorks.downloadWhitepaper}
+        </a>
         <div className="space-y-3">
           {sections.map((s, i) => (
             <div key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
