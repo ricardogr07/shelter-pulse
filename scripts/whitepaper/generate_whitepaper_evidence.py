@@ -24,7 +24,7 @@ from shelterpulse.optimize.baselines import ALL_BASELINES
 from shelterpulse.optimize.workflow import run_optimization_sweep
 
 
-REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
+REPOSITORY_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_SCENARIO = REPOSITORY_ROOT / "scenarios" / "whisker_haven.yaml"
 DEFAULT_OUTPUT = (
     REPOSITORY_ROOT

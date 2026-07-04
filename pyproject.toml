@@ -45,6 +45,7 @@ dev = [
     "tox>=4",
     "tox-uv>=1",
     "hatchling",
+    "matplotlib>=3.9",
 ]
 
 [tool.hatch.build.targets.wheel]
