@@ -1,0 +1,910 @@
+{
+  "scenario": "Whisker Haven",
+  "total_intervention_budget": 5000.0,
+  "n_candidates_per_weight": 12,
+  "n_replications": 8,
+  "weights": [
+    0.0,
+    0.1667,
+    0.3333,
+    0.5,
+    0.6667,
+    0.8333,
+    1.0
+  ],
+  "per_weight_summary": [
+    {
+      "weight": 0.0,
+      "best_spend": 1998.5166391370863,
+      "best_overflow": 1857.1041666666652,
+      "best_allocation": {
+        "foster_support": 0.07558084198263176,
+        "clinic_hours": 0.011422348604264321,
+        "temporary_isolation": 0.278291631709399,
+        "adoption_events": 0.03440850553112214
+      },
+      "elapsed_seconds": 19.67318240000168
+    },
+    {
+      "weight": 0.1667,
+      "best_spend": 2477.8497834878153,
+      "best_overflow": 1283.1927083333333,
+      "best_allocation": {
+        "foster_support": 0.009629426054569788,
+        "clinic_hours": 0.10739847104920422,
+        "temporary_isolation": 0.13029032486338107,
+        "adoption_events": 0.248251734730408
+      },
+      "elapsed_seconds": 21.69813159998739
+    },
+    {
+      "weight": 0.3333,
+      "best_spend": 1516.0389447330806,
+      "best_overflow": 1184.78125,
+      "best_allocation": {
+        "foster_support": 0.0008960378117365876,
+        "clinic_hours": 0.008528272233055079,
+        "temporary_isolation": 0.022132797331313243,
+        "adoption_events": 0.2716506815705112
+      },
+      "elapsed_seconds": 20.95265480002854
+    },
+    {
+      "weight": 0.5,
+      "best_spend": 1612.338942155716,
+      "best_overflow": 1205.8489583333326,
+      "best_allocation": {
+        "foster_support": 0.00284545265352096,
+        "clinic_hours": 0.013461160475942554,
+        "temporary_isolation": 0.04608897921823665,
+        "adoption_events": 0.26007219608344306
+      },
+      "elapsed_seconds": 20.741628199990373
+    },
+    {
+      "weight": 0.6667,
+      "best_spend": 3937.63048734112,
+      "best_overflow": 313.9479166666674,
+      "best_allocation": {
+        "foster_support": 0.1295007909446981,
+        "clinic_hours": 0.0068928791713153735,
+        "temporary_isolation": 0.03336220821820466,
+        "adoption_events": 0.6177702191340059
+      },
+      "elapsed_seconds": 25.384435999963898
+    },
+    {
+      "weight": 0.8333,
+      "best_spend": 4678.140947033167,
+      "best_overflow": 160.95833333333357,
+      "best_allocation": {
+        "foster_support": 0.03140893002747053,
+        "clinic_hours": 0.012946355009970463,
+        "temporary_isolation": 0.0631936030321466,
+        "adoption_events": 0.8280793013370458
+      },
+      "elapsed_seconds": 22.985611699987203
+    },
+    {
+      "weight": 1.0,
+      "best_spend": 4958.734590136088,
+      "best_overflow": 150.0364583333332,
+      "best_allocation": {
+        "foster_support": 0.16010608813530913,
+        "clinic_hours": 0.014661373251540093,
+        "temporary_isolation": 0.04407378885578557,
+        "adoption_events": 0.7729056677845828
+      },
+      "elapsed_seconds": 22.307105700019747
+    }
+  ],
+  "pooled_points": [
+    {
+      "source": "baseline:equal",
+      "spend": 5000.0,
+      "overflow": 920.8385416666667,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:all_in_foster",
+      "spend": 5000.0,
+      "overflow": 551.5729166666662,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:all_in_events",
+      "spend": 5000.0,
+      "overflow": 64.0677083333333,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:domain_heuristic",
+      "spend": 5000.0,
+      "overflow": 370.9687500000001,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:zero",
+      "spend": 0.0,
+      "overflow": 2081.921874999998,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 4929.70476267102,
+      "overflow": 773.2968749999997,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 4539.919579775329,
+      "overflow": 1277.895833333332,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 2477.8497834878153,
+      "overflow": 1283.1927083333333,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 2706.683786939836,
+      "overflow": 1349.8437500000002,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 3196.4692434530557,
+      "overflow": 1409.4166666666663,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 4965.942276721607,
+      "overflow": 1569.7760416666665,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 4139.612864121978,
+      "overflow": 1699.8229166666695,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 3605.9624316615386,
+      "overflow": 1810.0833333333321,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 1998.5166391370863,
+      "overflow": 1857.1041666666652,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 3949.670776795613,
+      "overflow": 1860.734375000001,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 3943.6853029947606,
+      "overflow": 1976.510416666665,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.000",
+      "spend": 4723.508715681177,
+      "overflow": 2040.6510416666702,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 4816.8662651681825,
+      "overflow": 473.8333333333338,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 3650.4568752414903,
+      "overflow": 947.473958333334,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 4539.919579775329,
+      "overflow": 1277.895833333332,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 2477.8497834878153,
+      "overflow": 1283.1927083333333,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 2706.683786939836,
+      "overflow": 1349.8437500000002,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 3196.4692434530557,
+      "overflow": 1409.4166666666663,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 4139.612864121978,
+      "overflow": 1699.8229166666695,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 3956.010939408661,
+      "overflow": 1794.5677083333344,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 3605.9624316615386,
+      "overflow": 1810.0833333333321,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 3949.670776795613,
+      "overflow": 1860.734375000001,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 3943.6853029947606,
+      "overflow": 1976.510416666665,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.167",
+      "spend": 4723.508715681177,
+      "overflow": 2040.6510416666702,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 4557.62549062447,
+      "overflow": 361.88020833333354,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 1516.0389447330806,
+      "overflow": 1184.78125,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 1612.338942155716,
+      "overflow": 1205.8489583333326,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 4813.073017606389,
+      "overflow": 1249.9322916666652,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 4539.919579775329,
+      "overflow": 1277.895833333332,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 3196.4692434530557,
+      "overflow": 1409.4166666666663,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 1338.6520331512297,
+      "overflow": 1720.3645833333326,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 902.9248459493696,
+      "overflow": 1739.2656250000011,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 3605.9624316615386,
+      "overflow": 1810.0833333333321,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 1998.5166391370863,
+      "overflow": 1857.1041666666652,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 3949.670776795613,
+      "overflow": 1860.734375000001,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.333",
+      "spend": 3943.6853029947606,
+      "overflow": 1976.510416666665,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 4442.541122195507,
+      "overflow": 228.34895833333343,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 4239.613033608987,
+      "overflow": 368.41666666666674,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 3170.9010144196786,
+      "overflow": 629.7083333333331,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 3143.0180644853313,
+      "overflow": 662.1979166666658,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 3200.9787594858262,
+      "overflow": 730.4375000000009,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 2575.6799715870143,
+      "overflow": 794.4166666666662,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 2433.3468599365665,
+      "overflow": 827.0572916666656,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 1612.338942155716,
+      "overflow": 1205.8489583333326,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 3993.2019543557085,
+      "overflow": 1385.322916666667,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 3785.2689830951617,
+      "overflow": 1392.1093749999986,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 4946.254110178178,
+      "overflow": 1956.25,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.500",
+      "spend": 4769.65847671601,
+      "overflow": 2264.906250000002,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4958.734590136088,
+      "overflow": 150.0364583333332,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4488.189474709692,
+      "overflow": 161.2031249999999,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4390.76274846316,
+      "overflow": 210.71354166666623,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4560.930909254333,
+      "overflow": 218.08854166666643,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4635.994275549135,
+      "overflow": 238.61979166666643,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4871.925629816933,
+      "overflow": 286.53645833333337,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 3937.63048734112,
+      "overflow": 313.9479166666674,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4925.340437543339,
+      "overflow": 573.1718749999998,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4569.216644914253,
+      "overflow": 899.4322916666654,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4784.762774763902,
+      "overflow": 1537.6927083333317,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 3966.318001182604,
+      "overflow": 1583.4010416666674,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.667",
+      "spend": 4600.720208080271,
+      "overflow": 2272.6927083333353,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4958.734590136088,
+      "overflow": 150.0364583333332,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4678.140947033167,
+      "overflow": 160.95833333333357,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4843.1215960508325,
+      "overflow": 171.3750000000001,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4692.834436374609,
+      "overflow": 177.6718750000005,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4927.806956343243,
+      "overflow": 180.55208333333286,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4973.418318949122,
+      "overflow": 203.60416666666652,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4391.227503235791,
+      "overflow": 224.72916666666663,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4952.779050703021,
+      "overflow": 224.97395833333343,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4750.0075682521965,
+      "overflow": 233.76562500000043,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4854.703749782832,
+      "overflow": 253.8281249999999,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4972.739771641418,
+      "overflow": 305.5833333333334,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=0.833",
+      "spend": 4691.322151091044,
+      "overflow": 464.25,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4958.734590136088,
+      "overflow": 150.0364583333332,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4678.140947033167,
+      "overflow": 160.95833333333357,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4843.1215960508325,
+      "overflow": 171.3750000000001,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4692.834436374609,
+      "overflow": 177.6718750000005,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4973.418318949122,
+      "overflow": 203.60416666666652,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4952.779050703021,
+      "overflow": 224.97395833333343,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4871.925629816933,
+      "overflow": 286.53645833333337,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4949.081636297587,
+      "overflow": 297.3125000000001,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4959.185335507564,
+      "overflow": 359.59895833333394,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4929.70476267102,
+      "overflow": 773.2968749999997,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4569.216644914253,
+      "overflow": 899.4322916666654,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo-mo w=1.000",
+      "spend": 4648.795871273981,
+      "overflow": 1903.8593749999989,
+      "pareto_optimal": false
+    },
+    {
+      "source": "all_in_events @ 10% budget",
+      "spend": 500.0,
+      "overflow": 1676.1393229166674,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 20% budget",
+      "spend": 1000.0,
+      "overflow": 1349.0546875000002,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 30% budget",
+      "spend": 1500.0,
+      "overflow": 1046.7421875,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 40% budget",
+      "spend": 2000.0,
+      "overflow": 787.8046875000002,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 50% budget",
+      "spend": 2500.0,
+      "overflow": 565.3723958333335,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 60% budget",
+      "spend": 3000.0,
+      "overflow": 381.60677083333366,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 70% budget",
+      "spend": 3500.0,
+      "overflow": 239.20182291666663,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 80% budget",
+      "spend": 4000.0,
+      "overflow": 143.2890625,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 90% budget",
+      "spend": 4500.0,
+      "overflow": 84.38802083333334,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 100% budget",
+      "spend": 5000.0,
+      "overflow": 50.208333333333336,
+      "pareto_optimal": true
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 82.08203124999997,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 85.40625000000006,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 90.74739583333331,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 97.6640624999999,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 104.93229166666659,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 106.09765625000003,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 108.26432291666666,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 118.00260416666674,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 118.61067708333334,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 124.85156250000006,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 126.92838541666664,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.000000000001,
+      "overflow": 142.50130208333346,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 144.73046875,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 205.63020833333331,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 285.24739583333337,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:domain_heuristic",
+      "spend": 5000.0,
+      "overflow": 314.68098958333326,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 526.5716145833331,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:all_in_foster",
+      "spend": 5000.0,
+      "overflow": 530.0104166666664,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 565.6380208333334,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:equal",
+      "spend": 5000.0,
+      "overflow": 874.3815104166661,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 949.4049479166669,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 1888.6067708333337,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:zero",
+      "spend": 0.0,
+      "overflow": 2038.291666666667,
+      "pareto_optimal": true
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 2135.658854166667,
+      "pareto_optimal": false
+    }
+  ],
+  "pareto_frontier": [
+    {
+      "source": "baseline:zero",
+      "spend": 0.0,
+      "overflow": 2038.291666666667,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 10% budget",
+      "spend": 500.0,
+      "overflow": 1676.1393229166674,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 20% budget",
+      "spend": 1000.0,
+      "overflow": 1349.0546875000002,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 30% budget",
+      "spend": 1500.0,
+      "overflow": 1046.7421875,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 40% budget",
+      "spend": 2000.0,
+      "overflow": 787.8046875000002,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 50% budget",
+      "spend": 2500.0,
+      "overflow": 565.3723958333335,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 60% budget",
+      "spend": 3000.0,
+      "overflow": 381.60677083333366,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 70% budget",
+      "spend": 3500.0,
+      "overflow": 239.20182291666663,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 80% budget",
+      "spend": 4000.0,
+      "overflow": 143.2890625,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 90% budget",
+      "spend": 4500.0,
+      "overflow": 84.38802083333334,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 100% budget",
+      "spend": 5000.0,
+      "overflow": 50.208333333333336,
+      "pareto_optimal": true
+    }
+  ],
+  "note": "Candidates sampled with a 5-component Dirichlet (4 spending shares + 1 dropped 'unspent' share) so spend genuinely varies within the search, scalarized via ParEGO-style augmented Chebyshev across 7 preference weights targeting the spend/overflow frontier directly. The shipped optimizer (shelterpulse/optimize/jaxbo_optimizer.py) is unmodified by this script. Pooled with the separate fractional-budget sweep in pareto-budget-analysis.json for the final joint frontier."
+}
