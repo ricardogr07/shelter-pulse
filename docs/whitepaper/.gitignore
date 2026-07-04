@@ -1,0 +1,18 @@
+# Intermediate LaTeX build artifacts (ignore during drafting)
+*.aux
+*.log
+*.out
+*.toc
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+
+# Intermediate Pandoc files
+*.tex
+
+# Keep the final PDF (committed for submission)
+# shelterpulse-whitepaper.pdf

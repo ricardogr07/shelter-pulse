@@ -22,7 +22,7 @@ graph TD
     subgraph optimize["shelterpulse/optimize"]
         interface["interface.py\nevaluate_candidate()\nEvaluationResult - CandidateAllocation\n-- THE evaluation seam --"]
         baselines["baselines.py\n5 named allocations:\nequal - all_in_foster - all_in_events\ndomain_heuristic - zero"]
-        jaxbo_opt["jaxbo_optimizer.py\nGP+EI (jax primary, scipy fallback)\nsimplex to cube projection"]
+        jaxbo_opt["jaxbo_optimizer.py\nGP+EI (JAX/jaxbo)\nseeded random fallback\nfour-share simplex"]
         workflow["workflow.py\nrun_optimization_sweep()\nbaselines + BO candidates to ranked list\n(queue abstraction via QUEUE_BACKEND flag)"]
 
         baselines --> workflow

@@ -30,7 +30,8 @@ def test_zero_allocation_produces_no_change(scenario):
     params = _resolve(zero_allocation(), scenario)
     assert params.extra_isolation_slots == 0
     assert params.extra_foster_slots == 0
-    assert abs(params.extra_vet_tech_fte) < 0.001
+    assert params.vet_service_time_multiplier == pytest.approx(1.0)
+    assert params.foster_coordination_time_multiplier == pytest.approx(1.0)
     assert abs(params.adoption_wait_multiplier - 1.0) < 0.001
 
 
@@ -40,10 +41,10 @@ def test_foster_support_increases_capacity(scenario):
     assert params.extra_foster_slots > 0
 
 
-def test_clinic_hours_increases_fte(scenario):
+def test_clinic_hours_increases_daily_capacity(scenario):
     alloc = CandidateAllocation(foster_support=0.0, clinic_hours=1.0, temporary_isolation=0.0, adoption_events=0.0)
     params = _resolve(alloc, scenario)
-    assert params.extra_vet_tech_fte > 0
+    assert params.vet_service_time_multiplier < 1.0
 
 
 def test_isolation_increases_slots(scenario):
@@ -64,10 +65,11 @@ def test_adoption_multiplier_clamped_at_half(scenario):
     assert params.adoption_wait_multiplier >= 0.5
 
 
-def test_vet_tech_fte_capped_at_two(scenario):
-    alloc = CandidateAllocation(foster_support=0.0, clinic_hours=1.0, temporary_isolation=0.0, adoption_events=0.0)
+def test_scenario_effect_parameters_drive_resource_deltas(scenario):
+    alloc = CandidateAllocation(foster_support=1.0, clinic_hours=0.0, temporary_isolation=0.0, adoption_events=0.0)
     params = _resolve(alloc, scenario)
-    assert params.extra_vet_tech_fte <= 2.0
+    assert params.extra_foster_slots == 10
+    assert params.foster_coordination_time_multiplier < 1.0
 
 
 def test_intervention_reduces_overflow(scenario):

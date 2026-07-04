@@ -47,11 +47,20 @@ def evaluate_candidate(
         cost_samples.append(result.total_cost)
 
     mean_overflow = float(np.mean(overflow_samples))
-    std_overflow = float(np.std(overflow_samples))
+    std_overflow = (
+        float(np.std(overflow_samples, ddof=1))
+        if len(overflow_samples) > 1
+        else 0.0
+    )
     mean_cost = float(np.mean(cost_samples))
 
-    # Budget is always respected by construction (CandidateAllocation shares ≤ 1)
-    is_feasible = True
+    allocated_intervention_spend = (
+        allocation.foster_support
+        + allocation.clinic_hours
+        + allocation.temporary_isolation
+        + allocation.adoption_events
+    ) * scenario.total_intervention_budget
+    is_feasible = allocated_intervention_spend <= scenario.total_intervention_budget + 1e-6
 
     # 95% CI — use scipy t-distribution when available, else 1.96 normal approximation
     n = len(overflow_samples)
@@ -61,7 +70,11 @@ def evaluate_candidate(
     except ImportError:
         t_crit = 1.96  # normal approximation; accurate for n >= 30
     se_overflow = std_overflow / np.sqrt(n)
-    std_cost = float(np.std(cost_samples))
+    std_cost = (
+        float(np.std(cost_samples, ddof=1))
+        if len(cost_samples) > 1
+        else 0.0
+    )
     se_cost = std_cost / np.sqrt(n)
 
     return EvaluationResult(

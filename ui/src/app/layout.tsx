@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "ShelterPulse",
     description:
-      "Simulate your shelter. Optimize your budget. Zero overflow.",
+      "Simulate shelter capacity. Compare budget allocations under uncertainty.",
   },
   robots: {
     index: true,

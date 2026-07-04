@@ -1,0 +1,41 @@
+{
+  "archetype": "archetype_minimal_budget",
+  "scenario_name": "Archetype: Minimal Budget",
+  "housing_capacity": 35,
+  "isolation_capacity": 5,
+  "foster_capacity": 8,
+  "vet_tech_fte": 1.5,
+  "animal_care_fte": 3.0,
+  "total_intervention_budget": 500.0,
+  "n_candidates": 15,
+  "n_replications": 16,
+  "elapsed_seconds": 75.24767399998382,
+  "zero_intervention_utilization": {
+    "vet_tech_utilization": 1.0,
+    "animal_care_utilization": 0.5234076730036815,
+    "foster_coordinator_utilization": 0.11416646416880254,
+    "peak_isolation_queue": 12.5625,
+    "peak_housing_occupancy": 35.0,
+    "overflow_cat_days": 2290.703125
+  },
+  "winner_utilization": {
+    "vet_tech_utilization": 1.0,
+    "animal_care_utilization": 0.5127183984436641,
+    "foster_coordinator_utilization": 0.12268695746335523,
+    "peak_isolation_queue": 12.5625,
+    "peak_housing_occupancy": 35.0,
+    "overflow_cat_days": 1932.385416666668
+  },
+  "best_baseline_source": "baseline:all_in_events",
+  "best_baseline_overflow": 1932.385416666668,
+  "best_bo_source": "bo",
+  "best_bo_overflow": 1945.234374999999,
+  "best_bo_allocation": {
+    "foster_support": 0.00644382328423574,
+    "clinic_hours": 0.02617906890677425,
+    "temporary_isolation": 0.03301126318415282,
+    "adoption_events": 0.9343658446248372
+  },
+  "absolute_difference": 12.848958333330984,
+  "outcome": "worse"
+}

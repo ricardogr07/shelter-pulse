@@ -1,31 +1,19 @@
-> **SUPERSEDED by [ADR-012](012-queue-abstraction.md).** Temporal was replaced with a queue abstraction (RabbitMQ local, SQS+Lambda prod). Kept for decision trail.
+> **SUPERSEDED by [ADR-012](012-queue-abstraction.md).** Temporal is not part of the current production or local runtime.
 
-# ADR-004: Gate Temporal Adoption to EOD June 28
+# ADR-004: Gate Temporal adoption
 
-**Status:** Superseded by ADR-012 | **Date:** 2026-06-26
+**Status:** Superseded | **Date:** 2026-06-26 | **Corrected:** 2026-07-02
 
 ## Context
 
-Temporal is well-suited to orchestrating long-running, resumable Monte Carlo + BO sweeps
-and is a hackathon sponsor (Technical Execution rubric bonus). However, adopting Temporal
-costs an estimated 8–12 h of learning curve that a solo developer at 65 net hours cannot
-spend speculatively.
+Temporal was considered for long-running, resumable optimization workflows, but adopting and operating it during the initial implementation would have expanded scope before the simulation and optimizer contracts were stable.
 
-## Decision
+## Historical decision
 
-`optimize/workflow.py` contains a `TEMPORAL_ENABLED = False` flag. The module implements
-both an in-process sweep path (`_inprocess_sweep`) and a Temporal workflow path
-(`_temporal_sweep`). The flag switches between them without touching the rest of the codebase.
+Defer Temporal and preserve a direct optimization seam that other execution adapters can call. An early flag/stub suggested Temporal could be enabled with a one-line switch; that claim was never implemented and the dead scaffold has been removed.
 
-**Gate rule (scope lock §4):** If the simulation + BO core runs end-to-end on a trusted
-baseline by EOD June 28, flip the flag to `True` and enable the Temporal service in
-`docker-compose.yml`. If the core is not working by then, leave the flag `False` and
-proceed with in-process optimization.
+## Current boundary
 
-## Consequences
-
-- Temporal adoption is a one-line change + docker-compose profile enable.
-- The scaffold (stub workflow, docker-compose service definition) is present from day one,
-  so the Jun 28 adoption is low-friction.
-- Either outcome has a clean demo narrative (see scope lock §4).
-- The core library remains pure and testable regardless of the flag value.
+- `run_optimization_sweep()` remains independent of API and queue transports.
+- Production queued execution is SQS/Lambda; local queued execution is RabbitMQ.
+- Any Temporal work is an isolated capability demonstration until a separate ADR approves production adoption.

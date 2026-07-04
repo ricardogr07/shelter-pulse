@@ -6,7 +6,7 @@
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![SimPy](https://img.shields.io/badge/SimPy-discrete--event-orange)](https://simpy.readthedocs.io/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v3-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
@@ -38,11 +38,11 @@ SimPy models the complete cat lifecycle: intake assessment, isolation (if needed
 
 ### Common Random Numbers
 
-Every candidate allocation is evaluated with the *same* seed set across all replications. Without CRN, Monte Carlo variance swamps the allocation signal and you would need ~10x more replications to distinguish two strategies. With CRN, outcome differences are attributable to the allocation, not luck. This is the mathematical foundation that makes the optimizer trustworthy.
+Every allocation is evaluated with the same seed set, a pre-generated intake schedule, and per-cat random streams separated by stochastic source. This paired-seed design aligns exogenous variation across allocations. ShelterPulse does not publish a numerical variance-reduction factor without a dedicated measurement study.
 
 ### Bayesian Optimization
 
-GP + Expected Improvement searches the 4-simplex of budget shares. Finds better allocations with fewer function evaluations than random or grid search. All five named baselines (equal split, all-in foster, all-in events, domain heuristic, zero) are evaluated alongside BO candidates for honest comparison.
+GP + Expected Improvement searches the budget-share simplex when JAX/`jaxbo` is installed; a deterministic Dirichlet random search is the fallback. All five named baselines (equal split, all-in foster, all-in events, domain heuristic, zero) are evaluated and labeled alongside candidates. A baseline may win the sweep.
 
 ### Web UI + REST API
 
@@ -60,9 +60,11 @@ Next.js + Tailwind frontend calling FastAPI. Sensitivity tornado chart, day-by-d
 |---|---|
 | **Live app** | https://shelter-pulse.com/en |
 | **API docs** | https://shelter-pulse.com/api/docs |
-| **Sweep speed** | 20 candidates x 32 replications in < 30 s |
+| **Measured sweep** | 5 baselines + 20 BO candidates x 32 replications in 243.2 s on the recorded development environment |
 | **Baselines** | 5 named strategies compared per sweep |
-| **Whisker Haven demo** | BO reduces overflow from 234 to 0 cat-days |
+| **Whisker Haven evidence** | All-events baseline: 50.2 mean overflow cat-days; best BO candidate: 82.1; equal allocation: 874.4 |
+
+These are synthetic, model-dependent development results. Configuration, seeds, source digests, confidence intervals, and the complete ranking are retained in [`docs/whitepaper/evidence/whisker-haven.json`](docs/whitepaper/evidence/whisker-haven.json). Regenerate the artifact on the final release commit before quoting it externally.
 
 ---
 
@@ -73,12 +75,12 @@ Full rationale: [docs/design-decisions.md](docs/design-decisions.md) and [docs/a
 | Decision | Why |
 |---|---|
 | SimPy for DES | Pure Python, no licenses; single-threaded engine maps naturally to shelter lifecycle |
-| Common Random Numbers | Without CRN, replication variance swamps allocation signal |
-| GP+EI over random search | Finds better allocations with fewer evaluations; scipy fallback keeps jax optional |
+| Paired random streams | Align intake and per-cat random sources across allocation comparisons |
+| GP+EI with honest fallback | JAX/`jaxbo` path uses GP+EI; missing optional dependencies fall back to seeded random search |
 | Consolidated container | One URL for demo; nginx+uvicorn in one ECS task eliminates CORS |
-| RabbitMQ local, SQS+Lambda prod | Demonstrates horizontal scaling locally; SQS+Lambda invocation is free-tier $0 in prod |
-| DuckDB over ClickHouse | Embedded OLAP, no server needed; same EFS persistence story at $0/month |
-| Domain heuristic excludes clinic hours | Extra vet FTE worsened overflow in Whisker Haven (creates bottleneck elsewhere) |
+| RabbitMQ local, SQS+Lambda prod | Keeps local and production queue adapters explicit without claiming proven automatic retry |
+| DuckDB over ClickHouse | Embedded run analytics without a separate database server; persistence limits are documented |
+| Named domain heuristic | Retained as a transparent comparator, not assumed to outperform simpler baselines |
 
 ---
 
@@ -117,19 +119,19 @@ cd ui && npm run type-check && npm run lint   # frontend
 
 ## Test suite
 
-| Suite | Tool | Count | Status |
+| Suite | Tool | Scope | Status |
 |-------|------|-------|--------|
-| Unit tests | pytest | 83 tests | ✅ All passing |
-| E2E API tests | pytest + httpx | 8 tests | ✅ All passing |
-| Integration tests | pytest + docker | 3 tests | ✅ All passing |
-| UI smoke tests | Cypress | 4 tests | ✅ All passing |
+| Unit tests | pytest | 150+ collected tests | Run by `tox -e test` |
+| E2E API tests | pytest + httpx | API contracts | Run by `tox -e e2e` |
+| Integration tests | pytest + docker | Queue/worker lifecycle | Separate Docker gate |
+| UI smoke tests | Cypress | Static and production-only specs | UI/deploy gates |
 | Type checking | TypeScript tsc | - | ✅ No errors |
 | Lint (Python) | pyrefly | - | ✅ Clean |
 | Lint (JS/TS) | ESLint | - | ✅ Clean |
 | Security | Bandit | - | ✅ No findings |
-| Coverage | pytest-cov | 76% | - |
+| Coverage | pytest-cov | Final value comes from `tox -e test` | Evidence gate |
 
-All checks run on every PR via GitHub Actions CI.
+GitHub Actions selects the relevant Python, UI, and Docker checks from changed paths on pull requests targeting `develop`.
 
 ## Project structure
 

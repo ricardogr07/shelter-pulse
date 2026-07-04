@@ -1,0 +1,30 @@
+name: CI — Whitepaper
+description: Build the whitepaper PDF via pandoc/pdflatex and verify output
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+      with:
+        python-version: "3.12"
+
+    - name: Install document toolchain
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          pandoc \
+          texlive-latex-base \
+          texlive-latex-extra \
+          texlive-fonts-recommended \
+          lmodern
+        pandoc --version | head -n 2
+        pdflatex --version | head -n 1
+
+    - name: Build PDF
+      shell: bash
+      run: uv run tox -e whitepaper
+
+    - name: Verify output
+      shell: bash
+      run: test -s docs/whitepaper/shelterpulse-whitepaper.pdf

@@ -24,6 +24,14 @@ def test_optimizer_returns_results(scenario, seeds):
     results = optimize_jaxbo(scenario, seeds, n_candidates=4)
     assert len(results) >= 1
     assert all(r.mean_overflow_cat_days >= 0 for r in results)
+    assert all(
+        r.allocation.foster_support
+        + r.allocation.clinic_hours
+        + r.allocation.temporary_isolation
+        + r.allocation.adoption_events
+        <= 1.0 + 1e-9
+        for r in results
+    )
 
 
 def test_optimizer_sorted_feasible_first(scenario, seeds):

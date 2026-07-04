@@ -1,9 +1,4 @@
-"""Optimization sweep orchestration.
-
-TEMPORAL_ENABLED = False until the Jun 28 gate check.
-Flip this flag (and enable the docker-compose temporal profile) once the core
-simulation is running end-to-end on a trusted baseline.
-"""
+"""Optimization sweep orchestration for the in-process worker boundary."""
 
 from __future__ import annotations
 
@@ -12,9 +7,6 @@ from collections.abc import Sequence
 from typing import Any
 
 from shelterpulse.core.schema import Scenario
-
-TEMPORAL_ENABLED = False
-
 
 @dataclasses.dataclass(frozen=True)
 class CandidateAllocation:
@@ -39,12 +31,13 @@ class EvaluationResult:
     mean_overflow_cat_days: float
     std_overflow_cat_days: float
     mean_total_cost: float
-    is_feasible: bool   # True if mean_total_cost ≤ scenario budget
+    is_feasible: bool   # True if allocated intervention spend is within budget
     # 95% confidence intervals (t-based)
     ci95_overflow_low: float = 0.0
     ci95_overflow_high: float = 0.0
     ci95_cost_low: float = 0.0
     ci95_cost_high: float = 0.0
+    source: str = "candidate"
 
 
 def _inprocess_sweep(
@@ -65,8 +58,11 @@ def _inprocess_sweep(
     total = len(ALL_BASELINES) + n_candidates
     done = 0
 
-    for _name, alloc in ALL_BASELINES.items():
-        results.append(evaluate_candidate(alloc, scenario, seed_list))
+    for name, alloc in ALL_BASELINES.items():
+        results.append(dataclasses.replace(
+            evaluate_candidate(alloc, scenario, seed_list),
+            source=f"baseline:{name}",
+        ))
         done += 1
         if on_progress:
             on_progress(done, total)
@@ -81,31 +77,16 @@ def _inprocess_sweep(
             temporary_isolation=float(shares[2]),
             adoption_events=float(shares[3]),
         )
-        results.append(evaluate_candidate(alloc, scenario, seed_list))
+        results.append(dataclasses.replace(
+            evaluate_candidate(alloc, scenario, seed_list),
+            source="random",
+        ))
         done += 1
         if on_progress:
             on_progress(done, total)
 
     results.sort(key=lambda r: (not r.is_feasible, r.mean_overflow_cat_days))
     return results
-
-
-def _temporal_sweep(
-    scenario: Scenario,
-    budget: float,
-    n_candidates: int,
-    seed_set: Sequence[int],
-) -> list[EvaluationResult]:
-    """Run the optimization sweep via Temporal durable workflows.
-
-    Wired in after the Jun 28 gate check passes.
-    Each candidate evaluation becomes a Temporal activity;
-    the full sweep is a durable, resumable workflow.
-    """
-    raise NotImplementedError(
-        "Temporal sweep not yet implemented — set TEMPORAL_ENABLED = False "
-        "until workflow.py is wired to a running Temporal server."
-    )
 
 
 def run_optimization_sweep(
@@ -123,7 +104,7 @@ def run_optimization_sweep(
         budget: Total intervention budget in USD.
         n_candidates: Number of candidate allocations to evaluate.
         seed_set: Replication seeds. Defaults to 64 seeds starting from scenario.seed.
-        use_bo: If True, run JAX-BO optimizer (or scipy fallback) merged with baselines.
+        use_bo: If True, run JAX-BO (or deterministic random fallback) merged with baselines.
         on_progress: Optional callback(done: int, total: int) called after each
             candidate evaluation. Used by workers to report progress.
 
@@ -133,8 +114,6 @@ def run_optimization_sweep(
     if seed_set is None:
         seed_set = list(range(scenario.seed, scenario.seed + scenario.n_replications))
 
-    if TEMPORAL_ENABLED:
-        return _temporal_sweep(scenario, budget, n_candidates, seed_set)
     if use_bo:
         from shelterpulse.optimize.jaxbo_optimizer import optimize_jaxbo
         from shelterpulse.optimize.baselines import ALL_BASELINES
@@ -148,8 +127,14 @@ def run_optimization_sweep(
             if on_progress:
                 on_progress(_counter[0], total)
 
-        bo_results = optimize_jaxbo(scenario, seed_set, n_candidates, on_progress=_unified_progress)
         baseline_results = _inprocess_sweep(scenario, budget, 0, seed_set, on_progress=_unified_progress)
+        bo_results = optimize_jaxbo(
+            scenario,
+            seed_set,
+            n_candidates,
+            warm_start=baseline_results,
+            on_progress=_unified_progress,
+        )
         combined = baseline_results + bo_results
         combined.sort(key=lambda r: (not r.is_feasible, r.mean_overflow_cat_days))
         return combined

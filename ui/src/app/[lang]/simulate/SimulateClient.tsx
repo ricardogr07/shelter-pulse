@@ -425,8 +425,8 @@ export default function SimulateClient({ lang }: { lang: string }) {
 
         {compareData && (
           <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">BO Winner vs Baselines</h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">Ranked by overflow cat-days. The optimizer&apos;s best allocation compared against 5 named strategies.</p>
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">Sweep Winner vs Baselines</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">Ranked by overflow cat-days across BO candidates and 5 named strategies.</p>
             <ComparisonTable winner={compareData.winner} baselines={compareData.baselines} />
 
             {compareData.winner.clinic_hours < 0.05 && (

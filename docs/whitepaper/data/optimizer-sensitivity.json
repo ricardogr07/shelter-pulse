@@ -1,0 +1,52 @@
+{
+  "scenario": "Whisker Haven",
+  "best_baseline_source": "baseline:all_in_events",
+  "best_baseline_overflow_cat_days": 50.208333333333336,
+  "n_candidates": 20,
+  "n_replications": 32,
+  "variants": [
+    {
+      "config": "current (Matern52 + EI)",
+      "kernel": "Matern52",
+      "acquisition": "EI",
+      "best_overflow_cat_days": 85.40625000000006,
+      "best_allocation": {
+        "foster_support": 0.2285582674484843,
+        "clinic_hours": 0.006109244560919069,
+        "temporary_isolation": 0.010613929930259282,
+        "adoption_events": 0.7547185580603374
+      },
+      "beats_best_baseline": false,
+      "elapsed_seconds": 126.94891859998461
+    },
+    {
+      "config": "RBF kernel + EI",
+      "kernel": "RBF",
+      "acquisition": "EI",
+      "best_overflow_cat_days": 82.08203124999997,
+      "best_allocation": {
+        "foster_support": 0.05254452438702626,
+        "clinic_hours": 0.037102359566606985,
+        "temporary_isolation": 0.004117994698806187,
+        "adoption_events": 0.9062351213475606
+      },
+      "beats_best_baseline": false,
+      "elapsed_seconds": 114.87423770001624
+    },
+    {
+      "config": "Matern52 + LCB",
+      "kernel": "Matern52",
+      "acquisition": "LCB",
+      "best_overflow_cat_days": 82.08203124999997,
+      "best_allocation": {
+        "foster_support": 0.05254452438702626,
+        "clinic_hours": 0.037102359566606985,
+        "temporary_isolation": 0.004117994698806187,
+        "adoption_events": 0.9062351213475606
+      },
+      "beats_best_baseline": false,
+      "elapsed_seconds": 100.08425820001867
+    }
+  ],
+  "note": "All tested variants reported regardless of outcome. The shipped optimizer (shelterpulse/optimize/jaxbo_optimizer.py) is unmodified by this ablation; it always uses the 'current' configuration."
+}
