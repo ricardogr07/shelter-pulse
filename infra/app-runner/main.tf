@@ -1,6 +1,6 @@
 # NOTE: this directory is still named `app-runner` (and the tfstate backend key is
 # "app-runner/...") for state continuity. App Runner is dead (closed to new customers —
-# see ADR-011). This module now provisions the ECR repo + the two IAM roles that ECS
+# see ADR-007). This module now provisions the ECR repo + the two IAM roles that ECS
 # Express Mode requires. The Express service itself is created/updated via the AWS CLI
 # (see deploy.yml), because its Terraform resource needs AWS provider v6 and this repo
 # is pinned to v5.

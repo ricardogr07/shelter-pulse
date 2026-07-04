@@ -41,11 +41,7 @@ flowchart LR
     style lambda fill:#f4f0e8,stroke:#7a6d2d
 ```
 
-**Resolved (2026-07-02):** the async pipeline is now verified working end-to-end in production — a real `POST /optimize/builder` job was dispatched, ran through Lambda, and returned real results via the webhook. Two things were needed beyond the earlier fixes in this ADR:
-
-1. **NAT Gateway for Lambda egress.** Lambda needs both the EFS mount (VPC-attached) and internet access (webhook callback) at once, and Lambda ENIs never get public IPs — a NAT Gateway is the only way to satisfy both. Built via dedicated subnets (`shelterpulse-lambda-egress-a`/`b`, one NAT Gateway in an existing public subnet) so it never touches the subnets/routing ECS and the ALB depend on.
-   - **This is temporary**, built for the hackathon judging window. Intended teardown after judging concludes (~2026-07-15): remove the `aws_subnet.lambda_a/b`, `aws_eip.nat`, `aws_nat_gateway.lambda`, `aws_route_table.lambda_egress` (+ associations) blocks from `infra/async-workers/main.tf` and revert `aws_lambda_function.worker.vpc_config.subnet_ids` to `var.subnet_ids`, then `terraform apply`. Saves ~$32-35/month.
-2. **`API_URL` needed the `/api` prefix.** nginx (`deploy/nginx-app.conf`) only proxies paths under `/api/*` to uvicorn; everything else falls into the static-file location block. Lambda's `API_URL` was `https://shelter-pulse.com` (bare origin), so every webhook call 404'd at the nginx layer before ever reaching FastAPI — a *different* failure mode from the NAT timeout, only visible once the NAT Gateway made the request actually land somewhere. Fixed by setting `api_url = "https://shelter-pulse.com/api"` in `infra/async-workers/variables.tf`.
+The full pipeline (API → SQS → Lambda → webhook → results) runs end-to-end in production. Lambda's webhook callback requires internet egress while also being VPC-attached (for its EFS mount), and Lambda ENIs never get public IPs — a NAT Gateway is the only way to satisfy both, hence the dedicated egress subnets in the diagram above. See [ADR-010](../adr/010-async-worker-production-hardening.md) for the full fix chain and why `API_URL` needs the `/api` prefix.
 
 ### Local (docker-compose)
 
@@ -90,7 +86,7 @@ Scale workers with `docker compose up --scale worker=4`.
 5. UI subscribes to `GET /optimize/{job_id}/stream` (SSE) or polls `GET /optimize/{job_id}/status`
 6. UI fetches `GET /optimize/{job_id}/results`
 
-If a worker never calls back (crash, network failure, bad auth), the job would hang forever without a safeguard. `JobStore.sweep_stale()` (called lazily on every `create()` and `count_active_by_ip()`) fails any `queued`/`running` job whose `updated_at` is older than 5 minutes with `error: "Job timed out"`, and notifies any SSE subscriber so the UI shows an error instead of hanging. It also purges `completed`/`failed` jobs older than 30 minutes to bound memory growth. See [ADR-014](../adr/014-async-worker-production-hardening.md).
+If a worker never calls back (crash, network failure, bad auth), the job would hang forever without a safeguard. `JobStore.sweep_stale()` (called lazily on every `create()` and `count_active_by_ip()`) fails any `queued`/`running` job whose `updated_at` is older than 5 minutes with `error: "Job timed out"`, and notifies any SSE subscriber so the UI shows an error instead of hanging. It also purges `completed`/`failed` jobs older than 30 minutes to bound memory growth. See [ADR-010](../adr/010-async-worker-production-hardening.md).
 
 ## Queue Module Structure
 
@@ -125,7 +121,7 @@ Lambda is triggered by the SQS event source mapping (`batch_size=1`, `maximum_co
 
 ## Current AWS Resources (production)
 
-All defined in `infra/async-workers/main.tf` (Terraform, applied manually — see [deployment.md](deployment.md)) except the ECS task role, which is also in that same file but attached to the ECS Express service imperatively via `--task-role-arn` (Express Mode isn't Terraform-managed, see ADR-011).
+All defined in `infra/async-workers/main.tf` (Terraform, applied manually — see [deployment.md](deployment.md)) except the ECS task role, which is also in that same file but attached to the ECS Express service imperatively via `--task-role-arn` (Express Mode isn't Terraform-managed, see ADR-007).
 
 | Resource | Name / ID | Purpose |
 |---|---|---|
@@ -147,12 +143,12 @@ Note: the ECS/API side does **not** currently have an EFS mount (no `volumes`/`m
 - Lambda: 1M invocations + 400K GB-seconds free tier ($0)
 - EFS: ~$0.01/month at current volume (< 100KB)
 - RabbitMQ: only in docker-compose (no prod cost)
-- **NAT Gateway: ~$32-35/month** — provisioned 2026-07-02, **temporary for the hackathon judging window**, intended teardown ~2026-07-15 (see the "Resolved" note above for the exact resources to remove). This is the one line item that breaks the otherwise-$0 async pipeline, and it's the reason it's scoped as temporary rather than left running indefinitely.
+- **NAT Gateway: ~$32-35/month** — temporary, intended teardown once no longer needed (see the resource table above for the exact resources to remove, and [ADR-010](../adr/010-async-worker-production-hardening.md) for why it's required). This is the one line item that breaks the otherwise-$0 async pipeline, and it's the reason it's scoped as temporary rather than left running indefinitely.
 
 ## See Also
 
-- [ADR-012: Queue Abstraction](../adr/012-queue-abstraction.md)
-- [ADR-013: DuckDB over ClickHouse](../adr/013-duckdb-over-clickhouse.md)
-- [ADR-014: Async Worker Production Hardening](../adr/014-async-worker-production-hardening.md)
+- [ADR-008: Queue Abstraction](../adr/008-queue-abstraction.md)
+- [ADR-009: DuckDB over ClickHouse](../adr/009-duckdb-over-clickhouse.md)
+- [ADR-010: Async Worker Production Hardening](../adr/010-async-worker-production-hardening.md)
 - [Docker Local Testing](../docker-local-testing.md)
 - [Deployment Architecture](deployment.md)

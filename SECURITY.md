@@ -16,11 +16,17 @@ because there is nothing sensitive to protect.
 
 ## Security scan
 
-Aikido security scan results are committed to `/security/` and linked here after Phase 4 hardening.
+Full results, per-finding remediation, and accepted-risk justifications are in
+[`security/README.md`](security/README.md).
 
 | Scan date | Tool | Result |
 |---|---|---|
-| _TBD_ | Aikido | _pending_ |
+| 2026-06-29 | Aikido | 0 critical, 4 high, 2 medium, 1 low — all resolved |
+| 2026-06-29 | pip-audit | No known vulnerabilities (80+ Python dependencies) |
+| 2026-06-29 | npm audit | 2 moderate (bundled Next.js PostCSS); accepted risk, does not apply under static export |
+
+A final scan is planned before submission to cover dependencies added after
+this date.
 
 ## Reporting a vulnerability
 

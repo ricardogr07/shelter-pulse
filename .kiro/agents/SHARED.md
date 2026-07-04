@@ -5,49 +5,34 @@ Read this before writing a single line of code.
 ## Project
 
 ShelterPulse -- simulation + optimization lab for cat-shelter resource allocation.
-Hackathon: #hackthekitty 2026. Public repo: ricardogr07/shelter-pulse.
-
-**Deadline: Jul 6 23:59 BST. No extensions.**
+Originally built for #hackthekitty 2026. Public repo: ricardogr07/shelter-pulse.
 
 Root: `c:/git/shelter-pulse`
 Python package: `shelterpulse`
 UI: `ui/` (Next.js + TypeScript + Tailwind)
-Scenarios: `scenarios/whisker_haven.yaml`
+Scenarios: `scenarios/` (Whisker Haven is the primary demo scenario; archetype variants also live here)
 
 ## Before Any Code
 
-1. Check your GitHub issue: `gh issue view <N> --repo ricardogr07/shelter-pulse`
+1. Check the relevant GitHub issue, if one exists: `gh issue view <N> --repo ricardogr07/shelter-pulse`
 2. Read your worker file (`.kiro/agents/worker-<domain>.md`)
-3. Read the phase spec: `.localagent/docs/PHASE-<N>/00-index.md`
-4. Read the relevant source files before touching them
-5. Check `.kiro/steering/` files (architecture, tech, rules -- always included by kiro)
-
-## Current Status (Jun 29 2026)
-
-**Phases 1-11 code is COMPLETE.** All Python files, UI pages, Docker config, and Terraform
-infrastructure exist. Do NOT recreate existing files.
-
-Remaining work: Phase 6 security scan, Phase 7 deploy, Phase 8-10 polish, Phase 11 submission.
+3. Read the relevant source files before touching them
+4. Check `.kiro/steering/` files (architecture, tech, rules -- always included by kiro)
 
 ## Module Boundary -- CRITICAL
 
 `shelterpulse/core/` is a pure Python library. Zero I/O, zero network, zero imports from:
 - `shelterpulse.api`
 - `shelterpulse.cli`
-- `shelterpulse.optimize`
 
-Enforced by: `tests/unit/test_no_cross_imports.py` (CI fails if violated).
+CI-enforced by `tests/unit/test_no_cross_imports.py`. As a design convention (not yet
+CI-enforced), core also should not import from `shelterpulse.optimize`.
 
 Dependency arrows:
 ```
 core  <--  optimize  <--  api/app.py  <--  ui/ (HTTP/JSON only, no Python import)
 core  <--  optimize  <--  cli/main.py
 ```
-
-## GitHub Project
-
-Project #5 (public): https://github.com/users/ricardogr07/projects/5
-33 issues (#26-58) tracking Phases 6-11. All work must reference an issue number.
 
 ## Current API Endpoints (all exist in shelterpulse/api/app.py)
 
@@ -67,7 +52,7 @@ Project #5 (public): https://github.com/users/ricardogr07/projects/5
 
 | Function | File | Purpose |
 |----------|------|---------|
-| `load_scenario()` | core/schema.py | Load whisker_haven.yaml → Scenario |
+| `load_scenario()` | core/schema.py | Load a scenario YAML → Scenario |
 | `run_simulation(scenario, seed, intervention)` | core/engine.py | One SimPy replication |
 | `resolve_intervention(scenario, allocation)` | core/interventions.py | Budget → InterventionParams |
 | `run_paired(scenario, intervention, seed_set)` | core/montecarlo.py | CRN paired replications |

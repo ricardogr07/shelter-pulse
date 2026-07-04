@@ -1,4 +1,4 @@
-# ADR-013: DuckDB over ClickHouse for Optimization Run Persistence
+# ADR-009: DuckDB over ClickHouse for Optimization Run Persistence
 
 ## Status
 

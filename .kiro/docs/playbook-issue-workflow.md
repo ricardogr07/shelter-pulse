@@ -5,18 +5,17 @@ Standard operating procedure for every code change. Start here before writing an
 ## 1. Find and read the issue
 
 ```bash
-# List open issues for a phase
-gh issue list --repo ricardogr07/shelter-pulse --label "phase:<N>" --state open
+# List open issues
+gh issue list --repo ricardogr07/shelter-pulse --state open
 
 # Read a specific issue
 gh issue view <number> --repo ricardogr07/shelter-pulse
 ```
 
-## 2. Move to In Progress in GitHub Project
+## 2. Move to In Progress in the project board
 
-GitHub Project #5: https://github.com/users/ricardogr07/projects/5
-
-Set the Status field to "In Progress" for the issue card.
+If the repo uses a GitHub Project board, set the Status field to "In Progress" for the
+issue card.
 
 ## 3. Assign to self
 
@@ -36,7 +35,7 @@ git checkout -b feat/issue-<number>-<short-slug>
 
 ## 5. Read the relevant spec
 
-- Issue body: check for source spec reference (usually `.localagent/docs/PHASE-<N>/<track>.md`)
+- Issue body: check for any linked design doc or spec
 - Worker file: `.kiro/agents/worker-<domain>.md` for your domain
 - Architecture invariants: `.kiro/steering/architecture.md`
 

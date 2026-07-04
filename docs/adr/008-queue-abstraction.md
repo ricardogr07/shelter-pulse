@@ -1,4 +1,4 @@
-# ADR-12: Queue Abstraction - RabbitMQ Local, SQS+Lambda Production
+# ADR-008: Queue Abstraction - RabbitMQ Local, SQS+Lambda Production
 
 **Status:** Accepted
 **Date:** 2026-06-30

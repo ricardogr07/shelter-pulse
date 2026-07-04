@@ -1,14 +1,13 @@
 # CI/CD Workflows
 
-> **Contributor reference**: this is CI/CD context, not the project README. For the project overview, see the [root README.md](../README.md).
-
 ## Branch Strategy
 
 ```mermaid
 graph LR
     F[feat/*] -->|PR| D[develop]
     D -->|PR| M[main]
-    M -->|tag v*| T[Deploy]
+    M -->|push| A[Auto Release]
+    A -->|tag v*| Dep[Deploy]
 ```
 
 All work flows through pull requests. No direct pushes to `develop` or `main`.
@@ -19,8 +18,9 @@ All work flows through pull requests. No direct pushes to `develop` or `main`.
 |------|---------|---------|
 | `ci.yml` | PR to `develop` | Lint, test, build (quality gate) |
 | `promote.yml` | PR to `main` / push to `main` | Full suite + GHCR image push |
-| `release.yml` | Manual (`workflow_dispatch`) on `main` | Create version tag + GitHub Release with changelog |
-| `deploy.yml` | Tag `v*` pushed (by release workflow) | Build image, push to ECR, ECS Express Mode auto-deploys |
+| `auto-release.yml` | Push to `main` | Normal release path. Auto-bumps semver from conventional commit prefixes, tags, creates a GitHub Release, calls `deploy.yml`. No manual step. |
+| `release.yml` | Manual (`workflow_dispatch`) on `main` | Manual hotfix escape hatch, kept for cases outside the automatic flow (e.g. a controlled re-release). Not used in normal operation. |
+| `deploy.yml` | Reusable (`workflow_call`), invoked by `auto-release.yml` or `release.yml` | Build + push image(s) to ECR, deploy to ECS Express Mode, run post-deploy smoke tests |
 
 ## Promotion Flow
 
@@ -30,33 +30,47 @@ sequenceDiagram
     participant F as feat/* branch
     participant D as develop
     participant M as main
-    participant R as Release workflow
+    participant AR as Auto Release
     participant ECR as ECR
     participant ECS as ECS Express Mode
 
     Dev->>F: commit work
     F->>D: PR (ci.yml runs)
-    Note over D: Python checks + UI checks + Docker build
+    Note over D: Python checks + UI checks + Whitepaper build (path-gated) + Docker build
     D->>M: PR (promote.yml runs)
     Note over M: Full test suite + e2e + GHCR push
-    Dev->>R: Manual trigger: "Create Release v0.1.0"
-    R->>M: Creates tag v0.1.0 + GitHub Release
-    Note over R: Generates changelog from merged PRs
-    M->>ECR: deploy.yml pushes image
+    M->>AR: push to main triggers auto-release.yml
+    Note over AR: Conventional-commit semver bump (feat/fix/BREAKING CHANGE), skippable via [skip release]/[no release]
+    AR->>M: Creates tag v_._._  + GitHub Release
+    AR->>ECR: calls deploy.yml
     ECR->>ECS: ECS Express Mode auto-deploys
     Note over ECS: Health check, swap or rollback
 ```
 
 ## Release Process
 
-Tags can only be created via the Release workflow (protected by tag ruleset).
-No manual `git tag` + `git push` is allowed.
+Two paths exist; only the first is normal usage.
 
-1. Ensure all work is merged to `main` via develop
-2. Go to Actions, Release, Run workflow
-3. Input version (semver, e.g., `0.1.0`)
-4. Optionally check "dry run" to preview changelog
-5. Workflow creates tag, GitHub Release with auto-changelog, triggers deploy
+### Automatic (normal path)
+
+`auto-release.yml` runs on every push to `main`:
+
+1. Reads commits since the last tag and picks a bump: `BREAKING CHANGE:`/`!:` -> major, `feat:` -> minor, `fix:` -> patch. No matching prefix -> no release.
+2. Creates the tag and GitHub Release (auto-generated changelog).
+3. Calls `deploy.yml` directly with the new version.
+
+Skip a release for a given push by including `[skip release]` or `[no release]` in the commit message.
+
+### Manual (hotfix escape hatch)
+
+`release.yml` is a manual `workflow_dispatch`, kept for cases outside the automatic flow, for example a hotfix that needs a controlled or specific version. Not used in normal operation.
+
+1. Go to Actions, Release, Run workflow
+2. Input version (semver, e.g. `0.1.0`)
+3. Optionally check "dry run" to preview the changelog
+4. Workflow creates the tag, GitHub Release, and calls `deploy.yml`
+
+Tags are only ever created by one of these two workflows (protected by tag ruleset). No manual `git tag` + `git push`.
 
 ## CI on develop (`ci.yml`)
 
@@ -67,13 +81,14 @@ graph TD
     A[PR opened/updated] --> B[Detect changed paths]
     B -->|shelterpulse/ tests/ pyproject.toml| C[Python checks]
     B -->|ui/| D[UI checks]
+    B -->|docs/whitepaper/ tox.ini| W[Whitepaper build]
     B -->|Dockerfile docker-compose.yml| E[Docker build]
     C --> E
     D --> E
 ```
 
 **Python checks** (composite action `.github/actions/ci-python/`):
-- `uv sync --all-groups`
+- `uv sync --all-groups --extra store`
 - `tox -e lint`: pyrefly type checking
 - `tox -e security`: bandit scan
 - `tox -e test`: pytest unit tests with coverage
@@ -84,6 +99,8 @@ graph TD
 - `npm run lint`
 - `npm run build`
 - Cypress smoke test against static export
+
+**Whitepaper build** (composite action `.github/actions/ci-whitepaper/`): installs pandoc + pdflatex, runs `tox -e whitepaper`, verifies the PDF was produced. Gated on changes to `docs/whitepaper/**` or `tox.ini`.
 
 **Docker build**: builds the image without pushing (validates Dockerfile is sound).
 
@@ -108,18 +125,26 @@ graph TD
 
 ## Deploy (`deploy.yml`)
 
-Triggered automatically when the Release workflow pushes a `v*` tag.
+Reusable workflow (`workflow_call`), invoked with a `version` input by either `auto-release.yml` or `release.yml`. Not triggered directly by a tag push.
 
 ```mermaid
 graph TD
-    A[Tag v1.2.3 pushed by Release workflow] --> B[Authenticate AWS via OIDC]
+    A[Called with version input] --> B[Authenticate AWS via OIDC]
     B --> C[Login to ECR]
-    C --> D[Build + push consolidated app image to ECR]
-    D --> E[ECS Express Mode detects new image]
-    E --> F{Health check passes?}
-    F -->|yes| G[Traffic shifts to new task revision]
-    F -->|no| H[Auto-rollback to previous revision]
+    C --> D[Build + push consolidated app image]
+    D --> E{lambda/ changed since last tag?}
+    E -->|yes| F[Build + push worker image]
+    E -->|no| G[Skip worker image]
+    F --> H{ECS_EXPRESS_SERVICE_ARN set?}
+    G --> H
+    H -->|yes| I[Deploy to ECS Express Mode]
+    H -->|no| J[Image pushed only, no service update]
+    I --> K[Update Lambda function code, if worker image built]
+    K --> L[Post-deploy smoke tests]
+    L -->|fail| M[Rollback instructions posted to job summary]
 ```
+
+Post-deploy smoke tests (both gated on `ECS_EXPRESS_SERVICE_ARN` being set) exercise the fast synchronous API layer, the full async job lifecycle (`POST /optimize/builder` -> SQS -> Lambda -> webhook -> results, the exact chain documented in [ADR-010](../docs/adr/010-async-worker-production-hardening.md)), and a live Cypress smoke run against the deployed UI.
 
 ## Composite Actions
 
@@ -129,20 +154,5 @@ Located in `.github/actions/`:
 |--------|---------|--------------|
 | `ci-python/` | ci.yml, promote.yml | Install uv, sync deps, run lint + security + tests |
 | `ci-ui/` | ci.yml, promote.yml | Install node, npm ci, type-check + lint + build + Cypress |
-| `ci-docker/` | promote.yml | Build and push image to GHCR |
-
-## Required Secrets and Variables
-
-| Name | Where | Purpose |
-|------|-------|---------|
-| `GITHUB_TOKEN` | Built-in | GHCR authentication |
-| `AWS_ROLE_ARN` | Repository secret | OIDC role for AWS access |
-
-No static AWS credentials stored: authentication uses GitHub OIDC, IAM role assumption.
-
-## Adding Required Status Checks
-
-After workflows have run at least once, add required status checks to branch rulesets:
-
-- **develop ruleset**: require `Python checks`, `UI checks`
-- **main ruleset**: require `Python checks`, `UI checks`, `E2E tests`
+| `ci-whitepaper/` | ci.yml | Install pandoc/pdflatex, build the whitepaper PDF, verify output |
+| `ci-docker/` | Not currently used | Reusable GHCR build+push, parameterized by token and SHA. `promote.yml`'s `ghcr` job currently inlines an equivalent login/build/push sequence directly instead of calling this action. Kept as the intended target for de-duplicating that job; migrate `promote.yml` to call it, or remove it, once that consolidation happens. |

@@ -1,70 +1,35 @@
-﻿# Director
+# Director
 
-**Role:** Strategic oversight for the submission sprint. Does NOT write code, run tests, or git.
+**Role:** Strategic oversight for the project. Does NOT write code, run tests, or git.
 
-## Current Phase Registry
+## Definition of Done
 
-| Phase | Name | Status | Gate |
-|-------|------|--------|------|
-| 1-5 | Implementation | DONE | All code exists |
-| 6 | Aikido Security Scan | TODO | Report in /security/, no unaddressed critical/high |
-| 7 | AWS Deployment | TODO | /health 200, wizard completes, no CORS errors |
-| 8 | Polish and Rubric | TODO | BO comparison visible, timeline passing, warm-start unskipped |
-| 9 | Async Workers | TODO | /optimize async, SSE streaming -- ship what you can by Jul 6 |
-| 10 | Ideas Backlog | TODO | Rubric-impact items, triage against available time |
-| 11 | Final Deliverable | TODO | Video uploaded, README live URLs, submission submitted |
+Gates Director enforces before considering a significant change (a new feature, a
+deployment change, a security-relevant change) complete:
 
-**Deadline: Jul 6 23:59 BST. No extensions.**
-
-## GitHub Project
-
-Project #5 (public): https://github.com/users/ricardogr07/projects/5
-
-33 issues (#26-58) tracking Phases 6-11. Each phase has one [Epic] issue with a task checklist.
-
-Label convention: `phase:6` through `phase:11`, `priority:P0-critical` through `priority:P3-low`,
-`type:security/infra/feature/polish/docs/submission`.
-
-## Phase Gate Criteria
-
-**Phase 6 gate (before Phase 11 allowed):**
-- Aikido scan run at app.aikido.dev
-- Report committed to `/security/aikido-report.md`
-- All critical/high findings: fixed or accepted risk documented in `/security/README.md`
-
-**Phase 7 gate (before Phase 8 and Phase 11 allowed):**
-- API `/health` returns 200 at live URL
-- UI loads at `/en`
-- Optimizer wizard completes a full run without CORS errors in browser console
-- Live URL present in README
-
-**Phase 8 gate:**
-- BO-vs-baselines comparison panel visible in demo wizard
-- `/simulate/timeline` returns daily snapshots correctly
-- Warm-start GP test passes (unskipped in CI)
-
-**Phase 11 gate (submission):**
-- Demo video < 5 min, uploaded and accessible
-- README has live URL in first 20 lines
-- Phase 6 and Phase 7 gates passed
-- Submission form filled and confirmed before Jul 6 23:59 BST
+- Relevant tests pass: `tox -e lint,security,test,e2e` and, if UI touched, `cd ui && npm run build`
+- Security: any new dependency or externally-reachable surface reviewed; critical/high
+  findings from the security scan are fixed or have a documented accepted-risk justification
+  in `security/README.md`
+- Deployment changes: `/api/health` returns 200 at the live URL, UI loads, no CORS errors in
+  the browser console, and the live URL is current in the README
+- No invariant violated (see Core Purity Invariant below)
 
 ## Architecture Authority
 
-Director owns ADR decisions. New ADRs go to `docs/adr/`. Current ADR index:
+Director owns ADR decisions. New ADRs go to `docs/adr/`. See
+[`.kiro/steering/architecture.md`](../steering/architecture.md) for the current ADR index --
+don't duplicate that list here, it drifts.
 
-- ADR-001 through ADR-006: foundational decisions (see docs/adr/)
-- ADR-007: Render deploy (SUPERSEDED by ADR-011)
-- ADR-008: App Runner (SUPERSEDED by ADR-011)
-- ADR-009: Bayesian optimization (jaxbo + scipy fallback)
-- ADR-010: Temporal gate closed (in-process sweep, `TEMPORAL_ENABLED = False`)
-- ADR-011: ECS Express Mode (current deployment, single container nginx+uvicorn)
+Superseded ADRs are deleted once their replacement lands; the replacement's own Context
+section narrates what came before, so history isn't lost, just not kept as a live file.
 
 ## Core Purity Invariant (non-negotiable)
 
-`shelterpulse/core/` imports nothing from `shelterpulse.api`, `shelterpulse.cli`, or
-`shelterpulse.optimize`. Enforced by `tests/unit/test_no_cross_imports.py` in CI.
-Any violation breaks the CI gate. Director must never approve exceptions.
+`shelterpulse/core/` imports nothing from `shelterpulse.api` or `shelterpulse.cli`
+(CI-enforced by `tests/unit/test_no_cross_imports.py`), and by convention should not import
+from `shelterpulse.optimize` either. Any CI-enforced violation breaks the build. Director
+must never approve exceptions.
 
 ## What Director Does NOT Do
 

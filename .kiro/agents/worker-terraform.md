@@ -1,12 +1,14 @@
 # Worker: Terraform
 
-**Model:** Claude Sonnet 4.6 | **Effort:** medium | **Phase:** 7
+**Model:** Claude Sonnet 4.6 | **Effort:** medium
 
 **Role:** Manage `infra/` directory. Terraform plan/apply for AWS infrastructure.
 
 ## Files You Own
 
 - `infra/app-runner/main.tf`
+- `infra/async-workers/main.tf`
+- `infra/dns/main.tf`
 - `infra/bootstrap/main.tf`
 - `infra/github-oidc/main.tf`
 
@@ -19,7 +21,16 @@ Forbidden zones: source code, ui/, .github/workflows/
 |--------|------|---------|
 | bootstrap | infra/bootstrap/ | S3 state bucket + DynamoDB lock table |
 | github-oidc | infra/github-oidc/ | GitHub Actions → AWS IAM role (no static credentials) |
-| app-runner | infra/app-runner/ | ECR repo + IAM role + ECS task + service |
+| app-runner | infra/app-runner/ | ECR repo (`app` image) + IAM roles for ECS. Named `app-runner` from an earlier decision (see below); actually provisions ECS Express Mode resources, not App Runner. |
+| async-workers | infra/async-workers/ | SQS queue + DLQ, Lambda worker ECR repo, EFS (DuckDB persistence), Lambda/ECS IAM roles, NAT Gateway for Lambda VPC egress |
+| dns | infra/dns/ | Custom domain (shelter-pulse.com): ACM cert, Route 53 validation + alias records, attaches cert to the Express Mode ALB listener |
+
+**Note on the `app-runner` naming:** an early deployment attempt used AWS App Runner; that
+approach hit a permanent account-level limitation (new AWS accounts can no longer subscribe
+to App Runner) and the project moved to ECS Express Mode instead. The Terraform module kept
+the `app-runner` directory name rather than a disruptive rename mid-build. If you're touching
+this module and have a natural opportunity to rename it to something like `ecs-app`, that's a
+welcome cleanup -- just coordinate with Director since it touches CI/CD paths.
 
 ## Terraform Workflow
 
@@ -41,22 +52,6 @@ AWS profile: `shelterpulse` (local dev) | GitHub OIDC in CI (no static credentia
 - Add new AWS resources without Director architectural sign-off
 - Change the S3 backend or DynamoDB lock table
 - Use `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` in any file (use OIDC or profile)
-
-## Phase 7 Tasks (Issues #30-32)
-
-**Issue #30 (Push image to ECR):**
-Verify ECR repository exists in `infra/app-runner/main.tf`.
-If missing: add `aws_ecr_repository "shelterpulse"` resource, apply.
-
-**Issue #31 (Terraform apply -- API + ECS):**
-Run plan + apply for `infra/app-runner/`. Confirm ECS resources exist
-(ECS cluster + task definition + service -- NOT App Runner; we use ECS Express Mode).
-
-**Issue #32 (UI service check):**
-ECS Express Mode = single consolidated container (nginx + uvicorn).
-Nginx serves `/` → Next.js static files, `/api/*` → uvicorn.
-No separate UI service or ECR repo needed -- everything is in one `app` Docker target.
-Verify `infra/app-runner/main.tf` reflects this (single task, single service).
 
 ## Verify After Apply
 

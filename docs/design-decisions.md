@@ -109,7 +109,7 @@ Positive covariance can reduce comparison variance, but reusing only an initial 
 
 **Why:**
 - Demo needs one URL. Two separate services (UI + API) require CORS headers, two ALBs, two service URLs: complexity with no benefit for a hackathon demo.
-- AWS App Runner closed to new customers 2026-04-30 (see ADR-008). ECS Fargate with a load-balanced Express service is the equivalent PaaS path on current AWS.
+- AWS App Runner closed to new customers 2026-04-30 (see [ADR-007](adr/007-ecs-express-mode.md)). ECS Fargate with a load-balanced Express service is the equivalent PaaS path on current AWS.
 - Consolidated image eliminates the `NEXT_PUBLIC_API_URL` bake-at-build-time problem: the UI's `/api/*` calls go to the same origin, so no CORS and no build-time env var needed.
 
 **What the Dockerfile does:**
@@ -138,7 +138,7 @@ app target   → python:3.12-slim + nginx:alpine + /out + nginx.conf
 - `QUEUE_BACKEND=sync` preserves all existing behavior - CI uses this
 - Adding a new backend is one class implementing `QueuePublisher` protocol + factory entry
 
-**Cost caveat discovered post-launch:** the "$0" claim covers SQS + Lambda invocation only. Lambda's webhook callback to the API requires internet egress, and Lambda is VPC-attached (for its EFS/DuckDB mount), so real internet access needs a NAT Gateway (~$32-35/month) — the one component of this design that isn't actually free. See [ADR-014](adr/014-async-worker-production-hardening.md).
+**Cost caveat discovered post-launch:** the "$0" claim covers SQS + Lambda invocation only. Lambda's webhook callback to the API requires internet egress, and Lambda is VPC-attached (for its EFS/DuckDB mount), so real internet access needs a NAT Gateway (~$32-35/month) — the one component of this design that isn't actually free. See [ADR-010](adr/010-async-worker-production-hardening.md).
 
 **Revisit when:** Workload requires durable multi-step workflows (retry, compensation, human-in-the-loop approval), or sweep time exceeds Lambda's 15-min timeout.
 

@@ -59,5 +59,8 @@ This agent owns:
 2. Worker must use only stdlib for HTTP (urllib.request) - no httpx in prod image
 3. RabbitMQ worker must have retry logic (exponential backoff, 10 attempts)
 4. Internal webhooks must validate X-Internal-Key header
-5. Job store is in-memory for now - will be DuckDB in #44
+5. Job store (`shelterpulse/queue/job_store.py`) is in-memory by design - it's ephemeral
+   dispatch bookkeeping (queued/running/completed), not a durability layer. Separately,
+   `shelterpulse/store/duckdb_store.py` persists run history/analytics (see ADR-009) - a
+   different concern, not a replacement for the job store.
 6. Lambda handler must be stateless (no global mutable state)

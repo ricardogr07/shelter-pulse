@@ -66,10 +66,10 @@ All 4 checks must be green. Fix locally before pushing.
 ### Merge
 
 ```bash
-gh pr merge <pr-number> --squash --delete-branch
+gh pr merge <pr-number> --merge --delete-branch
 ```
 
-Always squash. Always delete the source branch.
+Regular merge commit (matches this repo's history), not squash. Always delete the source branch.
 
 ### After merge
 
@@ -81,9 +81,10 @@ CI re-runs on develop HEAD. Orchestrator verifies green before promoting to main
 
 ### When to promote
 
-- After completing a full phase (all gate criteria met)
+- After a meaningful batch of work is merged to develop and gate criteria are met
+  (see `.kiro/agents/DIRECTOR.md`)
 - When develop is stable and CI is green
-- Before tagging a release
+- Before a release
 
 ### What promote.yml runs
 
@@ -100,10 +101,10 @@ fix before promoting (check Dockerfile targets, nginx-app.conf, static export ou
 gh pr create \
   --base main \
   --head develop \
-  --title "chore: promote develop to main -- Phase <N> complete" \
-  --body "Phase <N> gate passed. All CI green on develop."
+  --title "chore: promote develop to main" \
+  --body "All CI green on develop."
 
-gh pr merge <number> --squash
+gh pr merge <number> --merge
 ```
 
 ---
@@ -145,7 +146,7 @@ curl -I "$LIVE/en"         # expect: HTTP/2 200
 
 | Failure | Root cause | Fix |
 |---------|-----------|-----|
-| `test_no_cross_imports` | core/ imports from api/cli/optimize | Remove the bad import |
+| `test_no_cross_imports` | core/ imports from api/ or cli/ | Remove the bad import |
 | `test_conservation` | engine.py changed total cat count | Fix mass balance in engine |
 | `tox -e lint` pyrefly | Missing or wrong type annotation | Add or fix annotation |
 | `npm run build` | TypeScript error, missing export | Fix TS error or add stub |
@@ -170,99 +171,13 @@ gh pr merge --admin
 |------|------|----------|
 | PATCH (0.1.1 → 0.1.2) | Bug fixes, security patches, infra changes, no new user-facing behavior | Security scan fixes, action pinning, nginx port change |
 | MINOR (0.1.x → 0.2.0) | New features, new endpoints, new UI pages, breaking infra requiring config change | New optimizer, new page, new CLI command |
-| MAJOR (0.x → 1.0.0) | Public API contract break, schema change that breaks existing clients | Post-hackathon production release |
+| MAJOR (0.x → 1.0.0) | Public API contract break, schema change that breaks existing clients | A breaking change to a public API contract |
 
 **Decision rule:** When in doubt, it's a PATCH unless you added something a user would notice.
 
-**How to tag:**
-
-```bash
-git checkout main && git pull
-git tag v<MAJOR>.<MINOR>.<PATCH>
-git push origin v<MAJOR>.<MINOR>.<PATCH>
-```
-
-Or use `release.yml` workflow dispatch (validates semver, creates GitHub Release, triggers deploy).
-
-
----
-
-## Promotion Example: feat/issue-29-aikido-security-scan → v0.1.2
-
-### Step 1: Push and PR to develop
-
-```bash
-git add -A
-git commit -m "security: fix all Aikido scan findings
-
-- Fix XSS: replace dangerouslySetInnerHTML with katex.render() DOM API
-- Fix IaC: enable DynamoDB PITR, ECR encryption at rest
-- Fix supply chain: pin all 3rd-party GH Actions to SHA
-- Fix Docker: non-root user (appuser), nginx on port 8080
-- Fix integrity: SHA256 verify AWS CLI download
-- Fix credentials: persist-credentials: false on checkout
-- Fix license: add Apache-2.0 LICENSE file
-- Add smoke test script, Cypress specs, local dev playbook
-
-Closes #26, closes #27, closes #28, closes #29"
-
-git push -u origin feat/issue-29-aikido-security-scan
-
-gh pr create --base develop \
-  --title "security: fix all Aikido scan findings" \
-  --body "Closes #26, #27, #28, #29. See commit message for full list."
-```
-
-### Step 2: Wait for CI (ci.yml)
-
-CI validates:
-- Python tests pass (pinned SHA actions still checkout correctly)
-- UI builds (HowItWorksClient.tsx compiles without dangerouslySetInnerHTML)
-- Docker `app` target builds (non-root user, nginx on 8080)
-
-### Step 3: Merge to develop
-
-```bash
-gh pr merge --squash --delete-branch
-```
-
-### Step 4: PR develop → main
-
-```bash
-git checkout develop && git pull
-gh pr create --base main --head develop \
-  --title "chore: promote develop to main -- Phase 6 complete" \
-  --body "Phase 6 gate: Aikido scan report committed, all findings fixed."
-```
-
-promote.yml runs: full tests + Docker build + GHCR push.
-
-### Step 5: Merge to main
-
-```bash
-gh pr merge --squash
-```
-
-### Step 6: Tag and deploy
-
-```bash
-git checkout main && git pull
-git tag v0.1.2
-git push origin v0.1.2
-```
-
-deploy.yml: OIDC auth → ECR push → ECS update (containerPort: 8080).
-
-### Step 7: Verify live
-
-```bash
-LIVE="https://shelter-pulse.com"
-curl "$LIVE/api/health"    # expect: {"status":"ok"}
-curl -I "$LIVE/en"         # expect: HTTP/2 200
-```
-
-### Known risk: ECS containerPort change
-
-The ECS Express service was created with containerPort 80. This deploy changes it to 8080.
-The deploy.yml passes `containerPort: 8080` in the update command. If ECS rejects the
-port change on update, we will need to recreate the Express service with the new port.
+**How releases actually happen:** tags are never created manually (`git tag` + `git push` for
+a release tag is not allowed). `auto-release.yml` reads conventional-commit prefixes
+(`feat:`/`fix:`/`BREAKING CHANGE:`) since the last tag and bumps semver automatically on every
+push to `main`; skip a release for a given push with `[skip release]`/`[no release]` in the
+commit message. `release.yml` (manual `workflow_dispatch`) is kept as a hotfix escape hatch
+for cases outside the automatic flow. See `.github/workflows.md` for full detail.

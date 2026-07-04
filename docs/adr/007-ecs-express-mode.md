@@ -1,10 +1,10 @@
-﻿# ADR-011: Switch Cloud Deployment from App Runner to ECS Express Mode (Single Consolidated Service)
+﻿# ADR-007: Switch Cloud Deployment from App Runner to ECS Express Mode (Single Consolidated Service)
 
-**Status:** Accepted (supersedes [ADR-008](008-aws-app-runner.md)) | **Date:** 2026-06-28
+**Status:** Accepted (supersedes the earlier App Runner decision) | **Date:** 2026-06-28
 
 ## Context
 
-ADR-008 chose AWS App Runner. While wiring up the deployment we hit a hard wall:
+An earlier decision chose AWS App Runner (that ADR has since been removed; the deployment target it named no longer exists). While wiring up the deployment we hit a hard wall:
 
 - `apprunner CreateService` returns `SubscriptionRequiredException: The AWS Access Key Id
   needs a subscription for the service` on our account (612962922955).
@@ -60,7 +60,7 @@ stable, v5-supported pieces (ECR repo, IAM roles) and the CLI owns the Express s
 - One image is slightly more complex to build (two processes), but removes CORS, the
   build-time API-URL coupling, and the second ALB.
 - `uvicorn` crash → `/api/health` fails → ECS replaces the task (liveness for free).
-- ADR-007 (Render) and ADR-008 (App Runner) are both now superseded.
+- Earlier deployment choices (Render, then App Runner) are both now superseded by this decision.
 
 ## ponytail note
 

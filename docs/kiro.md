@@ -42,7 +42,7 @@ Kiro assisted with:
 
 - Writing the multi-stage Dockerfile (nginx + uvicorn in one container) for local testing
 - Configuring ECS Fargate Express Mode deployment
-- Setting up the release workflow (v* tag → ECR push → ECS deploy)
+- Setting up the release workflow (auto-release on push to main → ECR push → ECS deploy)
 - Debugging the rolling deployment (container port change, ALB health checks)
 
 ### Phase 8: Polish
