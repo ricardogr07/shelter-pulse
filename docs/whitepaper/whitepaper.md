@@ -360,6 +360,8 @@ npm run build && npm run cy:run
 
 This report is a development artifact. Its revision statement should be replaced with the final submitted commit or tag only after all four steps pass on that exact revision.
 
+Step 4's `security` environment runs a static analysis pass (Bandit); it is not the only scan applied to this project. The deployed application and its infrastructure have separately been scanned with Aikido, `pip-audit`, and `npm audit`, across two passes as fixes landed. Full per-finding results, remediation, and accepted-risk justifications are in `SECURITY.md` and `security/README.md` in the repository root, not repeated here.
+
 # License and Citation
 
 ShelterPulse is released under the Apache License 2.0. Cite as:
