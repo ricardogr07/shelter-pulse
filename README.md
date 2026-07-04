@@ -32,17 +32,7 @@ Requirements: runs in under 5 minutes, compares against honest baselines, quanti
 
 ## How it works
 
-```mermaid
-flowchart LR
-    UI["Browser (Next.js UI)"] -->|HTTPS| Nginx[nginx]
-    Nginx -->|"/api/*"| API["FastAPI (sync)"]
-    API --> Core["shelterpulse/core (pure sim)"]
-    API -->|enqueue BO sweep| Queue["RabbitMQ (local) / SQS (prod)"]
-    Queue --> Worker["RabbitMQ worker (local) / Lambda (prod)"]
-    Worker --> Core
-    Worker -->|webhook callback| API
-    API -->|SSE progress| UI
-```
+![How it works: Browser (Next.js UI) calls nginx over HTTPS, which proxies /api/* to FastAPI (sync). FastAPI calls shelterpulse/core directly for the request-response path, and separately enqueues BO sweeps to RabbitMQ (local) / SQS (prod), which dispatches to a RabbitMQ worker (local) / Lambda (prod) - the worker reuses the same core simulation code and calls back to FastAPI via a webhook, which streams SSE progress back to the browser.](docs/images/readme-how-it-works.svg)
 
 ShelterPulse stacks four layers:
 

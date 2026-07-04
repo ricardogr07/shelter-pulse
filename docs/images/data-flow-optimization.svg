@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1260" viewBox="0 0 1760 1260" font-family="Helvetica, Arial, sans-serif">
+<title>Data Flow — Optimization Sweep (POST /optimize)</title>
+<rect width="1760" height="1260" fill="#ffffff"></rect>
+
+<text x="28" y="34" font-size="11" font-weight="600" letter-spacing="0.5" fill="#a1a1aa">DATA FLOW</text>
+<text x="28" y="54" font-size="18" font-weight="800" fill="#18181b">Optimization Sweep — POST /optimize</text>
+
+<defs>
+  <marker id="oa-solid" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 9 3, 0 6" fill="#3f3f46"></polygon>
+  </marker>
+  <marker id="oa-dashed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 9 3, 0 6" fill="#71717a"></polygon>
+  </marker>
+</defs>
+
+
+<g font-family="Menlo, Consolas, monospace">
+  <rect x="98" y="70" width="220" height="58" rx="12" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+  <text x="208" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">UI / CLI</text>
+  <text x="208" y="112" text-anchor="middle" font-size="10" font-weight="500" font-family="Helvetica, Arial, sans-serif" fill="#52525b">Next.js UI or Typer CLI</text>
+
+  <rect x="434" y="70" width="220" height="58" rx="12" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+  <text x="544" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">FastAPI</text>
+  <text x="544" y="112" text-anchor="middle" font-size="10" font-weight="500" font-family="Helvetica, Arial, sans-serif" fill="#52525b">api/app.py</text>
+
+  <rect x="770" y="70" width="220" height="58" rx="12" fill="#f9f3e3" stroke="#92722a" stroke-width="1.5"></rect>
+  <text x="880" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">workflow.py</text>
+  <text x="880" y="112" text-anchor="middle" font-size="10" font-weight="500" font-family="Helvetica, Arial, sans-serif" fill="#52525b">optimize/workflow.py</text>
+
+  <rect x="1106" y="70" width="220" height="58" rx="12" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+  <text x="1216" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">interface.py</text>
+  <text x="1216" y="112" text-anchor="middle" font-size="10" font-weight="500" font-family="Helvetica, Arial, sans-serif" fill="#52525b">optimize/interface.py</text>
+
+  <rect x="1442" y="70" width="220" height="58" rx="12" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+  <text x="1552" y="96" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">engine.py</text>
+  <text x="1552" y="112" text-anchor="middle" font-size="10" font-weight="500" font-family="Helvetica, Arial, sans-serif" fill="#52525b">core/engine.py</text>
+</g>
+
+
+<g stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4">
+  <line x1="208" y1="128" x2="208" y2="1200"></line>
+  <line x1="544" y1="128" x2="544" y2="1200"></line>
+  <line x1="880" y1="128" x2="880" y2="1200"></line>
+  <line x1="1216" y1="128" x2="1216" y2="1200"></line>
+  <line x1="1552" y1="128" x2="1552" y2="1200"></line>
+</g>
+
+
+<g>
+  <rect x="770" y="380" width="892" height="290" rx="4" fill="rgba(244,244,245,0.35)" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <path d="M770,380 h100 q8,0 8,8 v20 q0,8 -8,8 h-100 z" fill="#e4e4e7" stroke="#a1a1aa" stroke-width="1.5"></path>
+  <text x="782" y="400" font-family="Menlo, Consolas, monospace" font-size="12" font-weight="700" fill="#3f3f46">loop ×5 baselines</text>
+
+  <rect x="1106" y="458" width="556" height="142" rx="4" fill="rgba(228,228,231,0.5)" stroke="#71717a" stroke-width="1.5"></rect>
+  <path d="M1106,458 h195 q8,0 8,8 v20 q0,8 -8,8 h-195 z" fill="#d4d4d8" stroke="#71717a" stroke-width="1.5"></path>
+  <text x="1118" y="478" font-family="Menlo, Consolas, monospace" font-size="12" font-weight="700" fill="#3f3f46">loop: same seed_set every time</text>
+
+  <rect x="770" y="700" width="892" height="290" rx="4" fill="rgba(244,244,245,0.35)" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <path d="M770,700 h115 q8,0 8,8 v20 q0,8 -8,8 h-115 z" fill="#e4e4e7" stroke="#a1a1aa" stroke-width="1.5"></path>
+  <text x="782" y="720" font-family="Menlo, Consolas, monospace" font-size="12" font-weight="700" fill="#3f3f46">loop ×n_candidates</text>
+
+  <rect x="1106" y="778" width="556" height="142" rx="4" fill="rgba(228,228,231,0.5)" stroke="#71717a" stroke-width="1.5"></rect>
+  <path d="M1106,778 h195 q8,0 8,8 v20 q0,8 -8,8 h-195 z" fill="#d4d4d8" stroke="#71717a" stroke-width="1.5"></path>
+  <text x="1118" y="798" font-family="Menlo, Consolas, monospace" font-size="12" font-weight="700" fill="#3f3f46">loop: same seed_set every time</text>
+</g>
+
+
+<g stroke="#3f3f46" stroke-width="2" fill="none">
+  <line x1="208" y1="180" x2="537" y2="180" marker-end="url(#oa-solid)"></line>
+  <line x1="544" y1="260" x2="873" y2="260" marker-end="url(#oa-solid)"></line>
+
+  <line x1="880" y1="430" x2="1209" y2="430" marker-end="url(#oa-solid)"></line>
+  <line x1="1216" y1="510" x2="1545" y2="510" marker-end="url(#oa-solid)"></line>
+
+  <line x1="880" y1="750" x2="1209" y2="750" marker-end="url(#oa-solid)"></line>
+  <line x1="1216" y1="830" x2="1545" y2="830" marker-end="url(#oa-solid)"></line>
+
+  <line x1="880" y1="1110" x2="551" y2="1110" marker-end="url(#oa-solid)"></line>
+  <line x1="544" y1="1170" x2="215" y2="1170" marker-end="url(#oa-solid)"></line>
+</g>
+
+
+<g stroke="#71717a" stroke-width="1.75" stroke-dasharray="6 5" fill="none">
+  <line x1="1552" y1="570" x2="1223" y2="570" marker-end="url(#oa-dashed)"></line>
+  <line x1="1216" y1="635" x2="887" y2="635" marker-end="url(#oa-dashed)"></line>
+
+  <line x1="1552" y1="890" x2="1223" y2="890" marker-end="url(#oa-dashed)"></line>
+  <line x1="1216" y1="955" x2="887" y2="955" marker-end="url(#oa-dashed)"></line>
+</g>
+
+
+<rect x="770" y="300" width="500" height="42" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"></rect>
+<text x="786" y="316" font-size="9.5" font-weight="700" letter-spacing="0.05em" fill="#b45309">NOTE — WORKFLOW.PY</text>
+<text x="786" y="333" font-size="12" font-weight="600" fill="#78350f">seed_set fixed here — same seeds used for every candidate (CRN)</text>
+
+
+<rect x="880" y="1020" width="500" height="42" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"></rect>
+<text x="896" y="1036" font-size="9.5" font-weight="700" letter-spacing="0.05em" fill="#b45309">NOTE — WORKFLOW.PY (SELF)</text>
+<text x="896" y="1053" font-size="12" font-weight="600" fill="#78350f">rank: feasible first (cost ≤ budget), then overflow ascending</text>
+
+
+<g font-size="12" font-weight="600" fill="#27272a">
+  <rect x="233" y="160" width="290" height="18" fill="#ffffff"></rect>
+  <text x="378" y="174" text-anchor="middle">POST <tspan font-family="Menlo, Consolas, monospace">/optimize</tspan> {n_candidates, n_reps, use_bo}</text>
+
+  <rect x="614" y="240" width="200" height="18" fill="#ffffff"></rect>
+  <text x="714" y="254" text-anchor="middle" font-family="Menlo, Consolas, monospace">run_optimization_sweep(...)</text>
+
+  <rect x="900" y="410" width="300" height="18" fill="#ffffff"></rect>
+  <text x="1050" y="424" text-anchor="middle" font-family="Menlo, Consolas, monospace">evaluate_candidate(baseline_alloc, ...)</text>
+
+  <rect x="1250" y="490" width="230" height="18" fill="#ffffff"></rect>
+  <text x="1365" y="504" text-anchor="middle" font-family="Menlo, Consolas, monospace">run_simulation(...)</text>
+
+  <rect x="1240" y="550" width="220" height="18" fill="#ffffff"></rect>
+  <text x="1350" y="564" text-anchor="middle">returns <tspan font-family="Menlo, Consolas, monospace">SimulationResult</tspan></text>
+
+  <rect x="890" y="615" width="420" height="18" fill="#ffffff"></rect>
+  <text x="1100" y="629" text-anchor="middle">returns <tspan font-family="Menlo, Consolas, monospace">EvaluationResult</tspan> (mean/std overflow, cost, 95% CI)</text>
+
+  <rect x="890" y="730" width="280" height="18" fill="#ffffff"></rect>
+  <text x="1030" y="744" text-anchor="middle" font-family="Menlo, Consolas, monospace">evaluate_candidate(bo_alloc, ...)</text>
+
+  <rect x="1250" y="810" width="230" height="18" fill="#ffffff"></rect>
+  <text x="1365" y="824" text-anchor="middle" font-family="Menlo, Consolas, monospace">run_simulation(...)</text>
+
+  <rect x="1240" y="870" width="220" height="18" fill="#ffffff"></rect>
+  <text x="1350" y="884" text-anchor="middle">returns <tspan font-family="Menlo, Consolas, monospace">SimulationResult</tspan></text>
+
+  <rect x="890" y="935" width="420" height="18" fill="#ffffff"></rect>
+  <text x="1100" y="949" text-anchor="middle">returns <tspan font-family="Menlo, Consolas, monospace">EvaluationResult</tspan> (mean/std overflow, cost, 95% CI)</text>
+
+  <rect x="627" y="1090" width="170" height="18" fill="#ffffff"></rect>
+  <text x="712" y="1104" text-anchor="middle">ranked JSON list</text>
+
+  <rect x="295" y="1150" width="170" height="18" fill="#ffffff"></rect>
+  <text x="380" y="1164" text-anchor="middle">ranked JSON list</text>
+</g>
+
+
+<g font-size="11.5" font-weight="700" font-family="Menlo, Consolas, monospace" fill="#3f3f46">
+  <rect x="1560" y="388" width="118" height="20" rx="5" fill="#e4e4e7" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="1619" y="402" text-anchor="middle">×5 baselines</text>
+
+  <rect x="1560" y="708" width="128" height="20" rx="5" fill="#e4e4e7" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="1624" y="722" text-anchor="middle">×n_candidates</text>
+</g>
+
+</svg>

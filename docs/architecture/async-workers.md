@@ -6,67 +6,13 @@ The BO optimization sweep (~30s) is offloaded to background workers via a queue 
 
 ### Production (AWS)
 
-```mermaid
-flowchart LR
-    subgraph ecs["ECS Express Mode (Fargate, task role: shelterpulse-ecs-task)"]
-        nginx["nginx :8080"]
-        uvicorn["uvicorn (FastAPI)"]
-        jobstore["job_store.py\n(in-memory, this task only)"]
-        nginx -->|proxy /api/*| uvicorn
-        uvicorn --> jobstore
-    end
-
-    subgraph natvpc["Lambda's private subnets (shelterpulse-lambda-egress-a/b)"]
-        subgraph lambda["Lambda: shelterpulse-worker (VPC + EFS mount)"]
-            handler["handler.py\nrun_optimization_sweep()"]
-            store_write["shelterpulse.store\n(writes DuckDB on EFS if consented)"]
-            handler --> store_write
-        end
-    end
-
-    nat["NAT Gateway\nshelterpulse-lambda-nat\n(TEMPORARY, ~$32-35/mo)"]
-    sqs[("SQS FIFO\nshelterpulse-jobs.fifo")]
-    dlq[("DLQ\nshelterpulse-jobs-dlq.fifo\n(after 3 failed receives)")]
-    efs[("EFS\nshelterpulse.duckdb")]
-
-    uvicorn -->|"sqs:SendMessage\n(boto3)"| sqs
-    sqs -->|event source mapping\nbatch_size=1| handler
-    sqs -.->|maxReceiveCount 3| dlq
-    lambda -->|"0.0.0.0/0 route"| nat
-    nat -->|"POST /api/internal/jobs/{id}/complete\nX-Internal-Key auth"| uvicorn
-    store_write -.-> efs
-
-    style ecs fill:#e8ecf4,stroke:#2d3d7a
-    style natvpc fill:#f4f0e8,stroke:#7a6d2d
-    style lambda fill:#f4f0e8,stroke:#7a6d2d
-```
+![Production architecture: ECS Express Mode (Fargate) runs nginx proxying /api/* to uvicorn, which publishes to an SQS FIFO queue via boto3. SQS triggers the Lambda worker (VPC + EFS attached) via an event source mapping, with a DLQ after 3 failed receives. Lambda writes to DuckDB on EFS if the user consented, and routes its webhook callback through a temporary NAT Gateway back to uvicorn, authenticated via X-Internal-Key.](../images/async-workers-production.svg)
 
 The full pipeline (API → SQS → Lambda → webhook → results) runs end-to-end in production. Lambda's webhook callback requires internet egress while also being VPC-attached (for its EFS mount), and Lambda ENIs never get public IPs — a NAT Gateway is the only way to satisfy both, hence the dedicated egress subnets in the diagram above. See [ADR-010](../adr/010-async-worker-production-hardening.md) for the full fix chain and why `API_URL` needs the `/api` prefix.
 
 ### Local (docker-compose)
 
-```mermaid
-flowchart LR
-    subgraph api_c["api container"]
-        uvicorn2["uvicorn (FastAPI)\nQUEUE_BACKEND=rabbitmq"]
-        jobstore2["job_store.py (in-memory)"]
-        uvicorn2 --> jobstore2
-    end
-
-    rabbitmq[("RabbitMQ\nlocalhost:15672 mgmt UI")]
-
-    subgraph worker_c["worker container(s)"]
-        rabbitmq_worker["rabbitmq_worker.py\nrun_optimization_sweep()"]
-    end
-
-    vol[("Docker volume\nshelterpulse-data\n(DuckDB file)")]
-
-    uvicorn2 -->|publish| rabbitmq
-    rabbitmq -->|consume| rabbitmq_worker
-    rabbitmq_worker -->|"POST /internal/jobs/{id}/complete"| uvicorn2
-    uvicorn2 -.-> vol
-    rabbitmq_worker -.-> vol
-```
+![Local docker-compose architecture: the api container (uvicorn + in-memory job store) publishes to RabbitMQ, which delivers to one or more worker containers running rabbitmq_worker.py. The worker calls back to the api container via a webhook, and both the api and worker containers share a Docker volume for the DuckDB file.](../images/async-workers-local.svg)
 
 Scale workers with `docker compose up --scale worker=4`.
 
