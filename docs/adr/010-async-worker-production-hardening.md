@@ -1,4 +1,4 @@
-# ADR-014: Async Worker Production Hardening
+# ADR-010: Async Worker Production Hardening
 
 **Status:** Accepted (NAT Gateway is a temporary component, see Decision 5)
 **Date:** 2026-07-02
@@ -6,7 +6,7 @@
 
 ## Context
 
-`POST /optimize/builder` in production was returning `429 Too many active jobs` even though nobody was actively using the site. Root-cause investigation surfaced a chain of independent, previously-undiscovered production gaps in the async worker pipeline (ADR-012), each masking the next:
+`POST /optimize/builder` in production was returning `429 Too many active jobs` even though nobody was actively using the site. Root-cause investigation surfaced a chain of independent, previously-undiscovered production gaps in the async worker pipeline (ADR-008), each masking the next:
 
 1. `JobStore` had no expiry mechanism — a job stuck in `queued`/`running` forever (for any reason) permanently counted against `count_active_by_ip()`, eventually exhausting the 3-job-per-IP limit.
 2. The consolidated Docker image (`api`/`app` Dockerfile stages) never installed the `aws` extra (`boto3`), so any request reaching `QUEUE_BACKEND=sqs` crashed with `ModuleNotFoundError` before it could publish to the queue at all.
@@ -30,7 +30,7 @@ This is a general safety net independent of *why* a worker never calls back (cra
 
 ### 3. ECS task IAM role for SQS publish (Accepted, implemented)
 
-Added `aws_iam_role.ecs_task` (`shelterpulse-ecs-task`) + `aws_iam_role_policy.ecs_task_sqs` to `infra/async-workers/main.tf`, scoped to exactly `sqs:SendMessage` + `sqs:GetQueueAttributes` on `shelterpulse-jobs.fifo`. Attached to the running ECS Express service via `aws ecs update-express-gateway-service --task-role-arn ...` (imperative, since the Express service itself isn't Terraform-managed — see ADR-011).
+Added `aws_iam_role.ecs_task` (`shelterpulse-ecs-task`) + `aws_iam_role_policy.ecs_task_sqs` to `infra/async-workers/main.tf`, scoped to exactly `sqs:SendMessage` + `sqs:GetQueueAttributes` on `shelterpulse-jobs.fifo`. Attached to the running ECS Express service via `aws ecs update-express-gateway-service --task-role-arn ...` (imperative, since the Express service itself isn't Terraform-managed — see ADR-007).
 
 ### 4. Correct `API_URL` / `INTERNAL_KEY` (Accepted, implemented)
 

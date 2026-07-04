@@ -1,4 +1,4 @@
-﻿# ADR-005: Use jaxbo Fork as the Bayesian Optimizer Plugin
+﻿# ADR-004: Use jaxbo Fork as the Bayesian Optimizer Plugin
 
 **Status:** Accepted | **Date:** 2026-06-26
 

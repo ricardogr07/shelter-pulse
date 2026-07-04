@@ -28,7 +28,7 @@ Async workers in production:
 - Lambda runs in VPC with EFS mount (for DuckDB persistence)
 - Lambda calls a webhook back on the API with results, authenticated via `X-Internal-Key`
 
-See [async-workers.md](async-workers.md) for the full diagram, current resource list, and a known gap (Lambda currently has no internet egress — see [ADR-014](../adr/014-async-worker-production-hardening.md)).
+See [async-workers.md](async-workers.md) for the full diagram, current resource list, and the NAT Gateway that gives Lambda's VPC-attached ENIs a path to the internet for the webhook callback (see [ADR-010](../adr/010-async-worker-production-hardening.md)).
 
 ## Deploy pipeline
 
@@ -36,8 +36,8 @@ See [async-workers.md](async-workers.md) for the full diagram, current resource 
 flowchart LR
     dev["Feature branch"] -->|PR + CI green| develop["develop"]
     develop -->|PR: promote workflow\nfull e2e + GHCR push| main["main"]
-    main -->|"tag v*"| release["release workflow"]
-    release --> deploy["deploy workflow\n(.github/workflows/deploy.yml)"]
+    main -->|push| autorelease["auto-release workflow\nsemver bump from conventional commits\ncreates tag + GitHub Release"]
+    autorelease --> deploy["deploy workflow\n(.github/workflows/deploy.yml)"]
     deploy --> ecr["Push image to ECR\n(shelterpulse, shelterpulse-worker\nif lambda/ changed)"]
     ecr --> ecs["aws ecs update-express-gateway-service\n(rolling deploy)"]
     ecr --> lambdaupdate["aws lambda update-function-code\n(if lambda/ changed)"]
@@ -46,7 +46,7 @@ flowchart LR
 
 1. Push to `develop`: CI runs (lint + tests + Docker build)
 2. PR `develop` -> `main`: promote workflow (full e2e + GHCR push)
-3. Tag `v*`: release workflow triggers deploy workflow
+3. Push to `main`: `auto-release.yml` reads conventional-commit prefixes since the last tag, bumps semver, creates the tag + GitHub Release, and calls `deploy.yml` directly (skippable per-push via `[skip release]`/`[no release]`). `release.yml` (manual `workflow_dispatch`) is a hotfix escape hatch for cases outside this automatic flow. Tags are never pushed manually.
 4. Deploy: build image, push to ECR, `aws ecs update-express-gateway-service` (rolling deploy, zero-downtime), conditionally `aws lambda update-function-code` if `lambda/` changed since the previous tag
 5. Smoke test: `scripts/smoke_test.py --quick` against the live URL
 6. Rollback: redeploy previous image tag via the same `update-express-gateway-service` command
@@ -59,7 +59,7 @@ flowchart LR
 | ui | nginx + Next.js static export | docker-compose (ui) |
 | app | nginx + uvicorn consolidated (built on `api`) | ECS production |
 
-The `api`/`app` stages install the `aws` extra (`boto3`) — without it, any request that hits `QUEUE_BACKEND=sqs` fails with `ModuleNotFoundError` before it can publish to the queue. See [ADR-014](../adr/014-async-worker-production-hardening.md).
+The `api`/`app` stages install the `aws` extra (`boto3`) — without it, any request that hits `QUEUE_BACKEND=sqs` fails with `ModuleNotFoundError` before it can publish to the queue. See [ADR-010](../adr/010-async-worker-production-hardening.md).
 
 ## Infrastructure (Terraform + some imperative CLI)
 
@@ -79,4 +79,4 @@ flowchart TD
     bootstrap -.->|state backend for all| dns
 ```
 
-**Not Terraform-managed:** the ECS Express Mode service/task definition itself (`shelterpulse` service in the `default` cluster). AWS's ECS Express Mode Terraform resource requires AWS provider v6.x; this repo is pinned to v5.x (see [ADR-011](../adr/011-ecs-express-mode.md)). It's created/updated imperatively via `aws ecs update-express-gateway-service` (see `deploy.yml` and the deploy pipeline above). This means task-level settings not covered by that CLI call (like the task IAM role) are set with a one-off `--task-role-arn` flag rather than tracked in `main.tf`, even though the role itself *is* defined in Terraform (`infra/async-workers/main.tf`).
+**Not Terraform-managed:** the ECS Express Mode service/task definition itself (`shelterpulse` service in the `default` cluster). AWS's ECS Express Mode Terraform resource requires AWS provider v6.x; this repo is pinned to v5.x (see [ADR-007](../adr/007-ecs-express-mode.md)). It's created/updated imperatively via `aws ecs update-express-gateway-service` (see `deploy.yml` and the deploy pipeline above). This means task-level settings not covered by that CLI call (like the task IAM role) are set with a one-off `--task-role-arn` flag rather than tracked in `main.tf`, even though the role itself *is* defined in Terraform (`infra/async-workers/main.tf`).

@@ -1,4 +1,4 @@
-# ADR-009: Use real GP+EI with an explicitly labeled random fallback
+# ADR-006: Use real GP+EI with an explicitly labeled random fallback
 
 **Status:** Amended | **Date:** 2026-06-26 | **Amended:** 2026-07-02
 

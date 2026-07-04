@@ -335,7 +335,7 @@ resource "aws_iam_role_policy" "ecs_task_sqs" {
 # callback) at once - Lambda ENIs never get public IPs, so a NAT Gateway is the
 # only way to give a VPC-attached Lambda outbound internet access. Dedicated
 # subnets + route table here so this never touches the subnets/routing that
-# ECS Express Mode and the ALB depend on (see ADR-014).
+# ECS Express Mode and the ALB depend on (see ADR-010).
 #
 # TEMPORARY for the hackathon judging window: built 2026-07-02, intended to be
 # torn down (terraform destroy -target on these resources, or revert this

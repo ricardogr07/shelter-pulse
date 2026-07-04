@@ -183,7 +183,7 @@ jobs:
 
       # Async job lifecycle: POST /optimize/builder -> SQS -> Lambda -> webhook
       # -> results. This is the exact chain that broke in production (see
-      # docs/adr/014-async-worker-production-hardening.md) and that the fast
+      # docs/adr/010-async-worker-production-hardening.md) and that the fast
       # layer above cannot exercise (it's always 202+job_id in prod).
       - name: Async job lifecycle
         if: vars.DEPLOY_URL != ''
