@@ -14,7 +14,7 @@ inclusion: always
 | REST API | FastAPI ≥ 0.115 + Uvicorn | Auto OpenAPI docs at `/docs` |
 | CLI | Typer ≥ 0.12 | Thin declarative wrapper |
 | Numerics | NumPy ≥ 2 | Vectorized metrics, RNG via `np.random.default_rng()` |
-| Optimizer | jaxbo (Ricardo's JAX-BO fork, Apache-2.0) | Optional dep; scipy fallback if unavailable |
+| Optimizer | jaxbo (fork of JAX-BO, Apache-2.0) | Optional dep; scipy fallback if unavailable |
 | Packaging | uv + tox + hatchling | `uv run`, `uv sync`, `tox -e test` |
 | Dev tools | pytest ≥ 8, pyrefly, bandit | `tox -e lint,security,test,e2e` |
 
@@ -32,19 +32,10 @@ inclusion: always
 | Layer | Choice |
 |-------|--------|
 | Container | Docker + docker compose |
-| Cloud | **AWS ECS Express Mode + ECR** -- single consolidated container (nginx + uvicorn), one ALB, one HTTPS URL. See ADR-011. |
-| CI | GitHub Actions (`.github/workflows/ci.yml`, `promote.yml`, `release.yml`, `deploy.yml`) |
-| CD | Tag `v*` triggers `deploy.yml`: build + push `app` target to ECR, ECS auto-deploys |
-| Async workers | Queue abstraction (ADR-012). `QUEUE_BACKEND=sync\|rabbitmq\|sqs`. RabbitMQ local, SQS+Lambda prod. |
-
-**Phase status (Jun 28 2026):** Phases 1-11 complete. Submission target Jul 6-7.
-
-**Non-negotiables before submission:**
-1. Demo video (< 5 min, Whisker Haven narrative)
-2. Aikido scan report in `/security/`
-3. `.kiro/` committed (present)
-4. README stranger-runnable (done)
-5. Honest baselines in optimizer (5 baselines in `baselines.py`)
+| Cloud | **AWS ECS Express Mode + ECR** -- single consolidated container (nginx + uvicorn), one ALB, one HTTPS URL. See ADR-007. |
+| CI | GitHub Actions (`.github/workflows/ci.yml`, `promote.yml`, `auto-release.yml`, `deploy.yml`; `release.yml` is a manual hotfix escape hatch). See `.github/workflows.md`. |
+| CD | Push to `main` triggers `auto-release.yml` (semver bump from conventional commits) → `deploy.yml`: build + push `app` target to ECR, ECS auto-deploys |
+| Async workers | Queue abstraction (ADR-008). `QUEUE_BACKEND=sync\|rabbitmq\|sqs`. RabbitMQ local, SQS+Lambda prod. |
 
 ## Dependency rules
 
@@ -56,11 +47,14 @@ inclusion: always
 
 ## Test commands
 
+Canonical invocation is `tox`; it isolates the environment. Direct `uv run pytest` works for a fast local loop but bypasses that isolation.
+
 ```bash
-uv run pytest tests/unit/ -v                         # unit tests
-uv run pytest tests/unit/test_conservation.py -v    # regression guard (run after engine changes)
-uv run pytest tests/e2e/ -v                         # e2e (needs API running)
-cd ui && npm run build                              # Next.js build check
-tox -e lint                                         # pyrefly type check
-tox -e security                                     # bandit scan
+tox -e lint                                          # pyrefly type check
+tox -e security                                      # bandit scan
+tox -e test                                          # unit tests + coverage
+tox -e e2e                                           # e2e (spins up services as needed)
+tox -e whitepaper                                    # builds docs/whitepaper/shelterpulse-whitepaper.pdf
+uv run pytest tests/unit/test_conservation.py -v    # regression guard, run after any engine change
+cd ui && npm run type-check && npm run lint && npm run build
 ```
