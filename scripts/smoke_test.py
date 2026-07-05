@@ -48,6 +48,12 @@ API_FUNCTIONAL: list[tuple[str, str, Callable[[object], bool], dict | None]] = [
     ("GET", "/runs/analytics", lambda d: isinstance(d, dict), None),
 ]
 API_OPTIMIZE = ("POST", "/optimize", lambda d: len(d) >= 1)
+
+# These run multiple simulation evaluations per request (6 perturbations for
+# sensitivity, a full baseline+BO comparison for optimize/builder/compare) and
+# measured 70-75s against live prod - well past the 30s default, independent
+# of the ALB's own idle timeout (which only bounds the server side).
+_SLOW_PATHS = {"/sensitivity", "/sensitivity/builder", "/optimize/builder/compare"}
 EXPORT_CHECK = ("POST", "/export", {"n_candidates": 4, "n_replications": 8, "use_bo": False})
 
 
@@ -205,7 +211,8 @@ def main() -> int:
     if api_base:
         print("\n[API Functional]")
         for method, path, validator, body in API_FUNCTIONAL:
-            check_api(api_base, method, path, validator, results, body=body)
+            timeout = 120 if path in _SLOW_PATHS else 30
+            check_api(api_base, method, path, validator, results, body=body, timeout=timeout)
 
         print("\n[API Optimize (slow)]")
         check_api(
