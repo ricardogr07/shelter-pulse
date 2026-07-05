@@ -58,3 +58,11 @@ Terraform modules live in `infra/`, one state file per module (S3 backend, Dynam
 ![Terraform module dependency graph: infra/bootstrap (S3 tfstate bucket + DynamoDB lock table, applied once manually) is the state backend for four dependent modules - infra/github-oidc (GitHub Actions OIDC provider + deploy role), infra/app-runner (historical name; ECR repo + ECS execution/task IAM roles), infra/async-workers (SQS + DLQ, Lambda + role, EFS, ECS task IAM role), and infra/dns (ACM cert, Route53 records, ALB HTTPS listener, redirects).](../images/terraform-modules.svg)
 
 **Not Terraform-managed:** the ECS Express Mode service/task definition itself (`shelterpulse` service in the `default` cluster). AWS's ECS Express Mode Terraform resource requires AWS provider v6.x; this repo is pinned to v5.x (see [ADR-007](../adr/007-ecs-express-mode.md)). It's created/updated imperatively via `aws ecs update-express-gateway-service` (see `deploy.yml` and the deploy pipeline above). This means task-level settings not covered by that CLI call (like the task IAM role) are set with a one-off `--task-role-arn` flag rather than tracked in `main.tf`, even though the role itself *is* defined in Terraform (`infra/async-workers/main.tf`).
+
+The ALB Express Mode creates (`ecs-express-gateway-alb-*`) is also not Terraform-managed, and its `idle_timeout.timeout_seconds` was manually raised from AWS's 60s default to **300s** (matching nginx's own `proxy_read_timeout`) via `aws elbv2 modify-load-balancer-attributes`, since several endpoints (`/sensitivity`, `/optimize/builder/compare`, the demo's synchronous `/optimize`, and the async worker's own webhook callback) can legitimately take longer than 60s to respond. If the ALB is ever recreated by Express Mode, this setting will reset to the 60s default and needs to be reapplied:
+
+```
+aws elbv2 modify-load-balancer-attributes \
+  --load-balancer-arn <express-mode-alb-arn> \
+  --attributes Key=idle_timeout.timeout_seconds,Value=300
+```
