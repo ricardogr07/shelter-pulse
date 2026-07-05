@@ -94,6 +94,7 @@ def optimize(
                     "mean_overflow_cat_days": r.mean_overflow_cat_days,
                     "mean_total_cost": r.mean_total_cost,
                     "is_feasible": r.is_feasible,
+                    "source": r.source,
                 }
                 for i, r in enumerate(results[:top])
             ],

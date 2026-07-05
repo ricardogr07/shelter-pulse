@@ -3,7 +3,7 @@
 Unlike tests/e2e/test_api.py (in-process ASGI transport), this hits a real
 deployed URL end-to-end: POST /optimize/builder -> SQS -> Lambda -> webhook
 -> job_store -> GET /optimize/{id}/results. This is the exact chain that
-broke in production (see docs/adr/014-async-worker-production-hardening.md)
+broke in production (see docs/adr/010-async-worker-production-hardening.md)
 and that no other test in this repo exercises against real infrastructure.
 
 Requires SMOKE_BASE_URL (e.g. https://shelter-pulse.com) - skipped entirely
@@ -37,7 +37,7 @@ _BUILDER_BODY = {
     "kitten_fraction": 0.59,
     "base_adoption_rate": 0.08,
     "n_replications": 8,
-    "consent_storage": False,  # keep DuckDB clean - matches manual verification during ADR-014
+    "consent_storage": False,  # keep DuckDB clean - matches manual verification during ADR-010
     "is_test_data": True,
     "name": "prod-smoke-test",
 }

@@ -28,25 +28,15 @@ Async workers in production:
 - Lambda runs in VPC with EFS mount (for DuckDB persistence)
 - Lambda calls a webhook back on the API with results, authenticated via `X-Internal-Key`
 
-See [async-workers.md](async-workers.md) for the full diagram, current resource list, and a known gap (Lambda currently has no internet egress — see [ADR-014](../adr/014-async-worker-production-hardening.md)).
+See [async-workers.md](async-workers.md) for the full diagram, current resource list, and the NAT Gateway that gives Lambda's VPC-attached ENIs a path to the internet for the webhook callback (see [ADR-010](../adr/010-async-worker-production-hardening.md)).
 
 ## Deploy pipeline
 
-```mermaid
-flowchart LR
-    dev["Feature branch"] -->|PR + CI green| develop["develop"]
-    develop -->|PR: promote workflow\nfull e2e + GHCR push| main["main"]
-    main -->|"tag v*"| release["release workflow"]
-    release --> deploy["deploy workflow\n(.github/workflows/deploy.yml)"]
-    deploy --> ecr["Push image to ECR\n(shelterpulse, shelterpulse-worker\nif lambda/ changed)"]
-    ecr --> ecs["aws ecs update-express-gateway-service\n(rolling deploy)"]
-    ecr --> lambdaupdate["aws lambda update-function-code\n(if lambda/ changed)"]
-    ecs --> smoke["Post-deploy smoke test\nscripts/smoke_test.py --quick"]
-```
+![Deploy pipeline: a feature branch merges to develop via PR + CI, develop merges to main via the promote workflow (full e2e + GHCR push), a push to main triggers the auto-release workflow which bumps semver from conventional commits and creates the tag + GitHub Release, which calls the deploy workflow to push images to ECR, roll out the ECS Express Mode service and conditionally update the Lambda function, then runs a post-deploy smoke test.](../images/deployment-pipeline.svg)
 
 1. Push to `develop`: CI runs (lint + tests + Docker build)
 2. PR `develop` -> `main`: promote workflow (full e2e + GHCR push)
-3. Tag `v*`: release workflow triggers deploy workflow
+3. Push to `main`: `auto-release.yml` reads conventional-commit prefixes since the last tag, bumps semver, creates the tag + GitHub Release, and calls `deploy.yml` directly (skippable per-push via `[skip release]`/`[no release]`). `release.yml` (manual `workflow_dispatch`) is a hotfix escape hatch for cases outside this automatic flow. Tags are never pushed manually.
 4. Deploy: build image, push to ECR, `aws ecs update-express-gateway-service` (rolling deploy, zero-downtime), conditionally `aws lambda update-function-code` if `lambda/` changed since the previous tag
 5. Smoke test: `scripts/smoke_test.py --quick` against the live URL
 6. Rollback: redeploy previous image tag via the same `update-express-gateway-service` command
@@ -59,24 +49,12 @@ flowchart LR
 | ui | nginx + Next.js static export | docker-compose (ui) |
 | app | nginx + uvicorn consolidated (built on `api`) | ECS production |
 
-The `api`/`app` stages install the `aws` extra (`boto3`) — without it, any request that hits `QUEUE_BACKEND=sqs` fails with `ModuleNotFoundError` before it can publish to the queue. See [ADR-014](../adr/014-async-worker-production-hardening.md).
+The `api`/`app` stages install the `aws` extra (`boto3`) — without it, any request that hits `QUEUE_BACKEND=sqs` fails with `ModuleNotFoundError` before it can publish to the queue. See [ADR-010](../adr/010-async-worker-production-hardening.md).
 
 ## Infrastructure (Terraform + some imperative CLI)
 
 Terraform modules live in `infra/`, one state file per module (S3 backend, DynamoDB lock, `infra/backend.hcl`):
 
-```mermaid
-flowchart TD
-    bootstrap["infra/bootstrap\nS3 tfstate bucket + DynamoDB lock table\n(chicken-and-egg: applied once, manually)"]
-    oidc["infra/github-oidc\nGitHub Actions OIDC provider + deploy role\n(no long-lived AWS keys in CI)"]
-    apprunner["infra/app-runner\n(historical name, kept for state continuity)\nECR repo + ECS execution/task IAM roles"]
-    asyncworkers["infra/async-workers\nSQS + DLQ, Lambda + its role,\nEFS + mount targets, ECS task IAM role"]
-    dns["infra/dns\nACM cert, Route53 records,\nALB HTTPS listener + cert attach,\nwww redirect, HTTP->HTTPS redirect"]
+![Terraform module dependency graph: infra/bootstrap (S3 tfstate bucket + DynamoDB lock table, applied once manually) is the state backend for four dependent modules - infra/github-oidc (GitHub Actions OIDC provider + deploy role), infra/app-runner (historical name; ECR repo + ECS execution/task IAM roles), infra/async-workers (SQS + DLQ, Lambda + role, EFS, ECS task IAM role), and infra/dns (ACM cert, Route53 records, ALB HTTPS listener, redirects).](../images/terraform-modules.svg)
 
-    bootstrap -.->|state backend for all| oidc
-    bootstrap -.->|state backend for all| apprunner
-    bootstrap -.->|state backend for all| asyncworkers
-    bootstrap -.->|state backend for all| dns
-```
-
-**Not Terraform-managed:** the ECS Express Mode service/task definition itself (`shelterpulse` service in the `default` cluster). AWS's ECS Express Mode Terraform resource requires AWS provider v6.x; this repo is pinned to v5.x (see [ADR-011](../adr/011-ecs-express-mode.md)). It's created/updated imperatively via `aws ecs update-express-gateway-service` (see `deploy.yml` and the deploy pipeline above). This means task-level settings not covered by that CLI call (like the task IAM role) are set with a one-off `--task-role-arn` flag rather than tracked in `main.tf`, even though the role itself *is* defined in Terraform (`infra/async-workers/main.tf`).
+**Not Terraform-managed:** the ECS Express Mode service/task definition itself (`shelterpulse` service in the `default` cluster). AWS's ECS Express Mode Terraform resource requires AWS provider v6.x; this repo is pinned to v5.x (see [ADR-007](../adr/007-ecs-express-mode.md)). It's created/updated imperatively via `aws ecs update-express-gateway-service` (see `deploy.yml` and the deploy pipeline above). This means task-level settings not covered by that CLI call (like the task IAM role) are set with a one-off `--task-role-arn` flag rather than tracked in `main.tf`, even though the role itself *is* defined in Terraform (`infra/async-workers/main.tf`).

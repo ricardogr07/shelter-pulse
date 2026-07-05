@@ -55,6 +55,7 @@ def _write_yaml(
                 "std_overflow_cat_days": round(r.std_overflow_cat_days, 2),
                 "mean_total_cost": round(r.mean_total_cost, 2),
                 "is_feasible": r.is_feasible,
+                "source": r.source,
             }
             for i, r in enumerate(results)
         ],
@@ -66,7 +67,7 @@ def _write_csv(results: list[EvaluationResult], path: Path) -> None:
     fields = [
         "rank", "foster_support", "clinic_hours", "temporary_isolation",
         "adoption_events", "mean_overflow_cat_days", "std_overflow_cat_days",
-        "mean_total_cost", "is_feasible",
+        "mean_total_cost", "is_feasible", "source",
     ]
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fields)
@@ -82,4 +83,5 @@ def _write_csv(results: list[EvaluationResult], path: Path) -> None:
                 "std_overflow_cat_days": round(r.std_overflow_cat_days, 2),
                 "mean_total_cost": round(r.mean_total_cost, 2),
                 "is_feasible": r.is_feasible,
+                "source": r.source,
             })

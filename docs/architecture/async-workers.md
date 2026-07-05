@@ -6,71 +6,13 @@ The BO optimization sweep (~30s) is offloaded to background workers via a queue 
 
 ### Production (AWS)
 
-```mermaid
-flowchart LR
-    subgraph ecs["ECS Express Mode (Fargate, task role: shelterpulse-ecs-task)"]
-        nginx["nginx :8080"]
-        uvicorn["uvicorn (FastAPI)"]
-        jobstore["job_store.py\n(in-memory, this task only)"]
-        nginx -->|proxy /api/*| uvicorn
-        uvicorn --> jobstore
-    end
+![Production architecture: ECS Express Mode (Fargate) runs nginx proxying /api/* to uvicorn, which publishes to an SQS FIFO queue via boto3. SQS triggers the Lambda worker (VPC + EFS attached) via an event source mapping, with a DLQ after 3 failed receives. Lambda writes to DuckDB on EFS if the user consented, and routes its webhook callback through a temporary NAT Gateway back to uvicorn, authenticated via X-Internal-Key.](../images/async-workers-production.svg)
 
-    subgraph natvpc["Lambda's private subnets (shelterpulse-lambda-egress-a/b)"]
-        subgraph lambda["Lambda: shelterpulse-worker (VPC + EFS mount)"]
-            handler["handler.py\nrun_optimization_sweep()"]
-            store_write["shelterpulse.store\n(writes DuckDB on EFS if consented)"]
-            handler --> store_write
-        end
-    end
-
-    nat["NAT Gateway\nshelterpulse-lambda-nat\n(TEMPORARY, ~$32-35/mo)"]
-    sqs[("SQS FIFO\nshelterpulse-jobs.fifo")]
-    dlq[("DLQ\nshelterpulse-jobs-dlq.fifo\n(after 3 failed receives)")]
-    efs[("EFS\nshelterpulse.duckdb")]
-
-    uvicorn -->|"sqs:SendMessage\n(boto3)"| sqs
-    sqs -->|event source mapping\nbatch_size=1| handler
-    sqs -.->|maxReceiveCount 3| dlq
-    lambda -->|"0.0.0.0/0 route"| nat
-    nat -->|"POST /api/internal/jobs/{id}/complete\nX-Internal-Key auth"| uvicorn
-    store_write -.-> efs
-
-    style ecs fill:#e8ecf4,stroke:#2d3d7a
-    style natvpc fill:#f4f0e8,stroke:#7a6d2d
-    style lambda fill:#f4f0e8,stroke:#7a6d2d
-```
-
-**Resolved (2026-07-02):** the async pipeline is now verified working end-to-end in production — a real `POST /optimize/builder` job was dispatched, ran through Lambda, and returned real results via the webhook. Two things were needed beyond the earlier fixes in this ADR:
-
-1. **NAT Gateway for Lambda egress.** Lambda needs both the EFS mount (VPC-attached) and internet access (webhook callback) at once, and Lambda ENIs never get public IPs — a NAT Gateway is the only way to satisfy both. Built via dedicated subnets (`shelterpulse-lambda-egress-a`/`b`, one NAT Gateway in an existing public subnet) so it never touches the subnets/routing ECS and the ALB depend on.
-   - **This is temporary**, built for the hackathon judging window. Intended teardown after judging concludes (~2026-07-15): remove the `aws_subnet.lambda_a/b`, `aws_eip.nat`, `aws_nat_gateway.lambda`, `aws_route_table.lambda_egress` (+ associations) blocks from `infra/async-workers/main.tf` and revert `aws_lambda_function.worker.vpc_config.subnet_ids` to `var.subnet_ids`, then `terraform apply`. Saves ~$32-35/month.
-2. **`API_URL` needed the `/api` prefix.** nginx (`deploy/nginx-app.conf`) only proxies paths under `/api/*` to uvicorn; everything else falls into the static-file location block. Lambda's `API_URL` was `https://shelter-pulse.com` (bare origin), so every webhook call 404'd at the nginx layer before ever reaching FastAPI — a *different* failure mode from the NAT timeout, only visible once the NAT Gateway made the request actually land somewhere. Fixed by setting `api_url = "https://shelter-pulse.com/api"` in `infra/async-workers/variables.tf`.
+The full pipeline (API → SQS → Lambda → webhook → results) runs end-to-end in production. Lambda's webhook callback requires internet egress while also being VPC-attached (for its EFS mount), and Lambda ENIs never get public IPs — a NAT Gateway is the only way to satisfy both, hence the dedicated egress subnets in the diagram above. See [ADR-010](../adr/010-async-worker-production-hardening.md) for the full fix chain and why `API_URL` needs the `/api` prefix.
 
 ### Local (docker-compose)
 
-```mermaid
-flowchart LR
-    subgraph api_c["api container"]
-        uvicorn2["uvicorn (FastAPI)\nQUEUE_BACKEND=rabbitmq"]
-        jobstore2["job_store.py (in-memory)"]
-        uvicorn2 --> jobstore2
-    end
-
-    rabbitmq[("RabbitMQ\nlocalhost:15672 mgmt UI")]
-
-    subgraph worker_c["worker container(s)"]
-        rabbitmq_worker["rabbitmq_worker.py\nrun_optimization_sweep()"]
-    end
-
-    vol[("Docker volume\nshelterpulse-data\n(DuckDB file)")]
-
-    uvicorn2 -->|publish| rabbitmq
-    rabbitmq -->|consume| rabbitmq_worker
-    rabbitmq_worker -->|"POST /internal/jobs/{id}/complete"| uvicorn2
-    uvicorn2 -.-> vol
-    rabbitmq_worker -.-> vol
-```
+![Local docker-compose architecture: the api container (uvicorn + in-memory job store) publishes to RabbitMQ, which delivers to one or more worker containers running rabbitmq_worker.py. The worker calls back to the api container via a webhook, and both the api and worker containers share a Docker volume for the DuckDB file.](../images/async-workers-local.svg)
 
 Scale workers with `docker compose up --scale worker=4`.
 
@@ -90,7 +32,7 @@ Scale workers with `docker compose up --scale worker=4`.
 5. UI subscribes to `GET /optimize/{job_id}/stream` (SSE) or polls `GET /optimize/{job_id}/status`
 6. UI fetches `GET /optimize/{job_id}/results`
 
-If a worker never calls back (crash, network failure, bad auth), the job would hang forever without a safeguard. `JobStore.sweep_stale()` (called lazily on every `create()` and `count_active_by_ip()`) fails any `queued`/`running` job whose `updated_at` is older than 5 minutes with `error: "Job timed out"`, and notifies any SSE subscriber so the UI shows an error instead of hanging. It also purges `completed`/`failed` jobs older than 30 minutes to bound memory growth. See [ADR-014](../adr/014-async-worker-production-hardening.md).
+If a worker never calls back (crash, network failure, bad auth), the job would hang forever without a safeguard. `JobStore.sweep_stale()` (called lazily on every `create()` and `count_active_by_ip()`) fails any `queued`/`running` job whose `updated_at` is older than 5 minutes with `error: "Job timed out"`, and notifies any SSE subscriber so the UI shows an error instead of hanging. It also purges `completed`/`failed` jobs older than 30 minutes to bound memory growth. See [ADR-010](../adr/010-async-worker-production-hardening.md).
 
 ## Queue Module Structure
 
@@ -125,7 +67,7 @@ Lambda is triggered by the SQS event source mapping (`batch_size=1`, `maximum_co
 
 ## Current AWS Resources (production)
 
-All defined in `infra/async-workers/main.tf` (Terraform, applied manually — see [deployment.md](deployment.md)) except the ECS task role, which is also in that same file but attached to the ECS Express service imperatively via `--task-role-arn` (Express Mode isn't Terraform-managed, see ADR-011).
+All defined in `infra/async-workers/main.tf` (Terraform, applied manually — see [deployment.md](deployment.md)) except the ECS task role, which is also in that same file but attached to the ECS Express service imperatively via `--task-role-arn` (Express Mode isn't Terraform-managed, see ADR-007).
 
 | Resource | Name / ID | Purpose |
 |---|---|---|
@@ -147,12 +89,12 @@ Note: the ECS/API side does **not** currently have an EFS mount (no `volumes`/`m
 - Lambda: 1M invocations + 400K GB-seconds free tier ($0)
 - EFS: ~$0.01/month at current volume (< 100KB)
 - RabbitMQ: only in docker-compose (no prod cost)
-- **NAT Gateway: ~$32-35/month** — provisioned 2026-07-02, **temporary for the hackathon judging window**, intended teardown ~2026-07-15 (see the "Resolved" note above for the exact resources to remove). This is the one line item that breaks the otherwise-$0 async pipeline, and it's the reason it's scoped as temporary rather than left running indefinitely.
+- **NAT Gateway: ~$32-35/month** — temporary, intended teardown once no longer needed (see the resource table above for the exact resources to remove, and [ADR-010](../adr/010-async-worker-production-hardening.md) for why it's required). This is the one line item that breaks the otherwise-$0 async pipeline, and it's the reason it's scoped as temporary rather than left running indefinitely.
 
 ## See Also
 
-- [ADR-012: Queue Abstraction](../adr/012-queue-abstraction.md)
-- [ADR-013: DuckDB over ClickHouse](../adr/013-duckdb-over-clickhouse.md)
-- [ADR-014: Async Worker Production Hardening](../adr/014-async-worker-production-hardening.md)
+- [ADR-008: Queue Abstraction](../adr/008-queue-abstraction.md)
+- [ADR-009: DuckDB over ClickHouse](../adr/009-duckdb-over-clickhouse.md)
+- [ADR-010: Async Worker Production Hardening](../adr/010-async-worker-production-hardening.md)
 - [Docker Local Testing](../docker-local-testing.md)
 - [Deployment Architecture](deployment.md)

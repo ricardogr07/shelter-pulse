@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2520" height="760" viewBox="0 0 2520 760" font-family="Helvetica, Arial, sans-serif">
+  <rect width="2520" height="760" fill="#ffffff"></rect>
+
+  <g>
+    <rect x="60" y="300" width="190" height="100" rx="14" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"></rect>
+    <text x="155" y="356" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">Feature branch</text>
+
+    <rect x="330" y="300" width="170" height="100" rx="14" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"></rect>
+    <text x="415" y="356" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">develop</text>
+
+    <rect x="580" y="300" width="150" height="100" rx="14" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"></rect>
+    <text x="655" y="356" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">main</text>
+  </g>
+
+  <g>
+    <rect x="810" y="275" width="250" height="150" rx="14" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="935" y="341" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">auto-release workflow</text>
+    <text x="935" y="363" text-anchor="middle" font-size="12" font-weight="500" fill="#52525b">semver bump from conventional commits,</text>
+    <text x="935" y="378" text-anchor="middle" font-size="12" font-weight="500" fill="#52525b">creates tag + GitHub Release</text>
+
+    <rect x="1140" y="300" width="230" height="100" rx="14" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="1255" y="345" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">deploy workflow</text>
+    <text x="1255" y="365" text-anchor="middle" font-size="11" font-weight="500" font-family="Menlo, monospace" fill="#71717a">.github/workflows/deploy.yml</text>
+  </g>
+
+  <g>
+    <rect x="1450" y="275" width="250" height="150" rx="14" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="1575" y="341" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">Push image to ECR</text>
+    <text x="1575" y="363" text-anchor="middle" font-size="12" font-weight="500" fill="#52525b">shelterpulse, shelterpulse-worker</text>
+    <text x="1575" y="378" text-anchor="middle" font-size="12" font-weight="500" fill="#52525b">if lambda/ changed</text>
+  </g>
+
+  <g>
+    <rect x="1780" y="120" width="310" height="150" rx="14" fill="#f4f4f5" stroke="#ff9900" stroke-width="1.5"></rect>
+    <text x="1935" y="188" text-anchor="middle" font-size="14.5" font-weight="700" fill="#18181b">aws ecs update-express-gateway-service</text>
+    <text x="1935" y="210" text-anchor="middle" font-size="12" font-weight="500" fill="#52525b">rolling deploy</text>
+
+    <rect x="1780" y="460" width="310" height="130" rx="14" fill="#f4f4f5" stroke="#ff9900" stroke-width="1.5"></rect>
+    <text x="1935" y="520" text-anchor="middle" font-size="14.5" font-weight="700" fill="#18181b">aws lambda update-function-code</text>
+    <text x="1935" y="542" text-anchor="middle" font-size="12" font-weight="500" fill="#52525b">if lambda/ changed</text>
+  </g>
+
+  <g>
+    <rect x="2160" y="295" width="300" height="110" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="2310" y="345" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">Post-deploy smoke test</text>
+    <text x="2310" y="366" text-anchor="middle" font-size="11" font-weight="500" font-family="Menlo, monospace" fill="#71717a">scripts/smoke_test.py --quick</text>
+  </g>
+
+  <g font-size="12.5" font-weight="600" fill="#52525b">
+    <rect x="255" y="336" width="102" height="18" fill="#ffffff"></rect>
+    <text x="306" y="349" text-anchor="middle">PR + CI green</text>
+
+    <rect x="500" y="195" width="265" height="34" fill="#ffffff"></rect>
+    <text x="632" y="209" text-anchor="middle">PR: promote workflow,</text>
+    <text x="632" y="224" text-anchor="middle">full e2e + GHCR push</text>
+
+    <rect x="755" y="336" width="60" height="18" fill="#ffffff"></rect>
+    <text x="785" y="349" text-anchor="middle">push</text>
+  </g>
+
+  <rect x="770" y="440" width="300" height="60" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"></rect>
+  <text x="784" y="458" font-size="12" font-weight="600" fill="#1e40af">No manual git-tag step: the trigger from main is a</text>
+  <text x="784" y="473" font-size="12" font-weight="600" fill="#1e40af">plain push — auto-release workflow itself creates</text>
+  <text x="784" y="488" font-size="12" font-weight="600" fill="#1e40af">the version tag and GitHub Release.</text>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#71717a"></polygon>
+    </marker>
+  </defs>
+
+  <g stroke="#71717a" stroke-width="2" fill="none">
+    <polyline points="250,350 330,350" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="500,350 580,350" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="730,350 810,350" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1060,350 1140,350" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1370,350 1450,350" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1700,350 1740,350 1740,195 1780,195" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1700,350 1740,350 1740,525 1780,525" marker-end="url(#arrowhead)"></polyline>
+    <circle cx="1740" cy="350" r="5" fill="#71717a"></circle>
+    <polyline points="2090,195 2130,195 2130,350 2160,350" marker-end="url(#arrowhead)"></polyline>
+  </g>
+
+  <g font-size="12.5" font-weight="600" fill="#3f3f46">
+    <rect x="60" y="660" width="14" height="14" rx="4" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"></rect>
+    <text x="82" y="671">Git refs</text>
+
+    <rect x="170" y="660" width="14" height="14" rx="4" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="192" y="671">GitHub Actions workflow</text>
+
+    <rect x="360" y="660" width="14" height="14" rx="4" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="382" y="671">Container registry</text>
+
+    <rect x="520" y="660" width="14" height="14" rx="4" fill="#f4f4f5" stroke="#ff9900" stroke-width="1.5"></rect>
+    <text x="542" y="671">AWS deploy action</text>
+
+    <rect x="670" y="660" width="14" height="14" rx="4" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="692" y="671">Validation</text>
+  </g>
+</svg>

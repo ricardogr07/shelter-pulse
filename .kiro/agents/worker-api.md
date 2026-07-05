@@ -1,6 +1,6 @@
 # Worker: API
 
-**Model:** Claude Sonnet 4.6 | **Effort:** medium | **Phase:** 8, 9
+**Model:** Claude Sonnet 4.6 | **Effort:** medium
 
 **Role:** Maintain and extend `shelterpulse/api/app.py`. File already exists and is
 production-ready. Do NOT recreate it.
@@ -25,6 +25,10 @@ Forbidden zones: core/, optimize/ (read-only reference), cli/, ui/, .github/work
 | /simulate/builder | POST | Custom scenario: _builder_to_scenario() + simulate |
 | /optimize/builder | POST | Custom scenario: _builder_to_scenario() + sweep |
 | /export | POST | export_results() from core/export.py → ZIP |
+
+Async job dispatch (queue-backed `/optimize/builder` sweeps, webhook completion) is owned by
+`worker-queue.md`, not this file -- read that worker's doc before touching anything
+queue-related from the API side.
 
 ## How to Add a New Endpoint
 
@@ -51,29 +55,10 @@ curl -X POST http://localhost:8000/optimize \
   -d '{"n_candidates": 4, "n_reps": 8, "use_bo": false}'
 ```
 
-## Phase 8 Task (Issue #36)
-
-BO-vs-baselines comparison: the `/optimize` response already returns a ranked
-`list[EvaluationResult]` including baselines with `allocation_name` field.
-Verify the field is populated for named baselines. If missing, extend the response so
-the UI can label rows "Equal Split", "All Foster", etc. Do not change the existing
-response structure -- add fields only.
-
-## Phase 9 Tasks (Issues #42, #43)
-
-**Issue #42 (Temporal activation):**
-- One-line change: `TEMPORAL_ENABLED = True` in `optimize/workflow.py`
-- Wire Temporal worker process in docker-compose.yml (new service)
-- Verify sweep still returns ranked results
-
-**Issue #43 (Async /optimize + SSE):**
-- POST `/optimize` → returns `{"workflow_id": "<uuid>"}` immediately (non-blocking)
-- GET `/optimize/stream?id=<uuid>` → SSE endpoint streaming progress events
-- New optional dep: `aio-pika>=9.4` (Orchestrator approval required before adding)
-
 ## Key Contracts
 
 - No simulation logic in app.py (all calls go into optimize/ or core/)
 - Single evaluation seam: optimizers call `evaluate_candidate()` in interface.py only
 - CRN: seed_set fixed at sweep start in workflow.py, same across all candidates
-- CORS: `allow_origins` sourced from env var (restrict in prod -- Phase 10 issue #48)
+- CORS: `allow_origins` sourced from env var; restrict to the actual UI origin in any
+  production-facing deployment

@@ -8,6 +8,7 @@ Never calls run_simulation() directly — always via evaluate_candidate().
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 from collections.abc import Sequence
 from typing import Any
@@ -31,24 +32,21 @@ except ImportError as exc:
     logger.warning("jax/jaxbo import failed, using random-search fallback: %s", exc)
 
 
-# ── Simplex ↔ cube helpers ────────────────────────────────────────────────────
-# Represent (a,b,c,d) summing to 1 as (a,b,c) in [0,1]^3; d = 1-a-b-c clamped ≥ 0.
+# ── Simplex helpers ───────────────────────────────────────────────────────────
+# Candidate proposals use the full available budget (four shares summing to
+# one). Warm-start observations may include the zero-intervention baseline.
 
 def _to_cube(shares: np.ndarray) -> np.ndarray:
-    """4-simplex point → 3-cube point (drop last coord)."""
-    return shares[:3]
+    """Return the four explicit spending coordinates used by the GP."""
+    return shares[:4]
 
 
 def _from_cube(x: np.ndarray) -> CandidateAllocation:
-    """3-cube point → CandidateAllocation on 4-simplex via softmax normalization."""
-    # softmax normalization keeps differentiability and handles out-of-simplex x
-    d = np.append(x, 1.0 - x.sum())
-    d = np.clip(d, 0.0, None)
-    total = d.sum()
-    if total < 1e-9:
-        s = np.array([0.25, 0.25, 0.25, 0.25])
-    else:
-        s = d / total
+    """Project four coordinates onto the budget simplex when necessary."""
+    s = np.clip(np.asarray(x, dtype=float), 0.0, 1.0)
+    total = float(s.sum())
+    if total > 1.0:
+        s = s / total
     return CandidateAllocation(
         foster_support=float(s[0]),
         clinic_hours=float(s[1]),
@@ -58,9 +56,8 @@ def _from_cube(x: np.ndarray) -> CandidateAllocation:
 
 
 def _dirichlet_candidates(rng: np.random.Generator, n: int) -> np.ndarray:
-    """n × 3 array of cube points sampled from Dirichlet(1,1,1,1)."""
-    shares = rng.dirichlet([1.0, 1.0, 1.0, 1.0], size=n)
-    return shares[:, :3]  # drop 4th coord
+    """Sample full-budget allocations on the four-share simplex."""
+    return rng.dirichlet([1.0, 1.0, 1.0, 1.0], size=n)
 
 
 # ── jaxbo GP+EI path ──────────────────────────────────────────────────────────
@@ -80,6 +77,7 @@ def _jaxbo_gp_ei(
     n_init = max(5, min(8, n_candidates // 3))
 
     # --- Initialise with warm-start points or random Dirichlet samples ---
+    observations: list[EvaluationResult] = list(warm_start or [])
     results: list[EvaluationResult] = []
     X_obs: list[np.ndarray] = []
     done = 0
@@ -94,31 +92,34 @@ def _jaxbo_gp_ei(
                 r.allocation.adoption_events,
             ]))
             X_obs.append(cube_x)
-            results.append(r)
 
     # Fill up to n_init with random points if needed
-    n_random = max(0, n_init - len(X_obs))
+    n_random = min(n_candidates, max(0, n_init - len(X_obs)))
     if n_random > 0:
         for x in _dirichlet_candidates(rng, n_random):
             alloc = _from_cube(x)
-            er = evaluate_candidate(alloc, scenario, seed_list)
+            er = dataclasses.replace(
+                evaluate_candidate(alloc, scenario, seed_list),
+                source="bo",
+            )
             results.append(er)
+            observations.append(er)
             X_obs.append(x)
             done += 1
             if on_progress:
                 on_progress(done, total)
 
-    n_bo = n_candidates - (len(results) - (len(warm_start) if warm_start else 0))
+    n_bo = n_candidates - len(results)
 
     # --- Sequential GP+EI iterations ---
-    lb = np.zeros(3)
-    ub = np.ones(3)
+    lb = np.zeros(4)
+    ub = np.ones(4)
     prior = input_priors.uniform_prior(lb=lb, ub=ub)  # type: ignore[arg-type]
     gp_options = {"kernel": "Matern52", "input_prior": prior}
 
     for _ in range(n_bo):
         X = np.array(X_obs)
-        y_raw = np.array([r.mean_overflow_cat_days for r in results])
+        y_raw = np.array([r.mean_overflow_cat_days for r in observations])
 
         # Normalise y for GP stability
         y_mean, y_std = y_raw.mean(), y_raw.std() + 1e-8
@@ -140,7 +141,7 @@ def _jaxbo_gp_ei(
         candidates = _dirichlet_candidates(rng, 256)
         ei_vals = []
         for cand in candidates:
-            c = jnp.array(cand).reshape(1, 3)
+            c = jnp.array(cand).reshape(1, 4)
             mu, sigma = gp.predict(c, params=params, batch=batch, bounds=bounds)
             ei = float(acquisitions.EI(mu, sigma, best_y_norm)[0])
             ei_vals.append(ei)
@@ -148,8 +149,12 @@ def _jaxbo_gp_ei(
         best_idx = int(np.argmin(ei_vals))  # EI returns negative
         x_next = candidates[best_idx]
         alloc = _from_cube(x_next)
-        er = evaluate_candidate(alloc, scenario, seed_list)
+        er = dataclasses.replace(
+            evaluate_candidate(alloc, scenario, seed_list),
+            source="bo",
+        )
         results.append(er)
+        observations.append(er)
         X_obs.append(x_next)
         done += 1
         if on_progress:
@@ -172,12 +177,13 @@ def _random_search(
 
     seed_list = list(seed_set)
     rng = np.random.default_rng(scenario.seed + 999)
-    results: list[EvaluationResult] = list(warm_start) if warm_start else []
-
-    n_needed = n_candidates - len(results)
+    results: list[EvaluationResult] = []
     done = 0
-    for x in _dirichlet_candidates(rng, max(0, n_needed)):
-        results.append(evaluate_candidate(_from_cube(x), scenario, seed_list))
+    for x in _dirichlet_candidates(rng, n_candidates):
+        results.append(dataclasses.replace(
+            evaluate_candidate(_from_cube(x), scenario, seed_list),
+            source="random",
+        ))
         done += 1
         if on_progress:
             on_progress(done, n_candidates)

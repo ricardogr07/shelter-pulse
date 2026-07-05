@@ -93,11 +93,25 @@ jobs:
         run: |
           curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
           curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip.sig" -o awscliv2.zip.sig
+          # Real fingerprint verified directly against a live download (the
+          # previous FB5DB77FD5C118B80511ADA8A6310180E282A1C0 here was wrong -
+          # it never matched the actual signing key, which is why the old
+          # fallback below existed: verification always failed, so someone
+          # suppressed the error instead of fixing the key. Retry the
+          # keyserver fetch (real-world flakiness), but a bad signature now
+          # fails the job - no more silent fallback.
+          for i in 1 2 3; do
+            gpg --no-default-keyring --keyring /tmp/aws-cli.gpg \
+              --keyserver hkps://keys.openpgp.org \
+              --recv-keys FB5DB77FD5C118B80511ADA8A6310ACC4672475C && break
+            if [ "$i" = 3 ]; then
+              echo "::error::Could not fetch AWS CLI signing key after 3 attempts"
+              exit 1
+            fi
+            sleep 5
+          done
           gpg --no-default-keyring --keyring /tmp/aws-cli.gpg \
-            --keyserver hkps://keys.openpgp.org \
-            --recv-keys FB5DB77FD5C118B80511ADA8A6310180E282A1C0 2>/dev/null || true
-          gpg --no-default-keyring --keyring /tmp/aws-cli.gpg \
-            --verify awscliv2.zip.sig awscliv2.zip 2>/dev/null || echo "::warning::GPG verification skipped (key server unavailable)"
+            --verify awscliv2.zip.sig awscliv2.zip
           unzip -q awscliv2.zip
           sudo ./aws/install --update
           aws --version
@@ -183,7 +197,7 @@ jobs:
 
       # Async job lifecycle: POST /optimize/builder -> SQS -> Lambda -> webhook
       # -> results. This is the exact chain that broke in production (see
-      # docs/adr/014-async-worker-production-hardening.md) and that the fast
+      # docs/adr/010-async-worker-production-hardening.md) and that the fast
       # layer above cannot exercise (it's always 202+job_id in prod).
       - name: Async job lifecycle
         if: vars.DEPLOY_URL != ''

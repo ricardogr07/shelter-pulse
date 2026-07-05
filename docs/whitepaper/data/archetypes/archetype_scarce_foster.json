@@ -1,0 +1,41 @@
+{
+  "archetype": "archetype_scarce_foster",
+  "scenario_name": "Archetype: Scarce Foster",
+  "housing_capacity": 35,
+  "isolation_capacity": 5,
+  "foster_capacity": 2,
+  "vet_tech_fte": 1.5,
+  "animal_care_fte": 3.0,
+  "total_intervention_budget": 5000.0,
+  "n_candidates": 15,
+  "n_replications": 16,
+  "elapsed_seconds": 71.12129780004034,
+  "zero_intervention_utilization": {
+    "vet_tech_utilization": 1.0,
+    "animal_care_utilization": 0.5493914597660143,
+    "foster_coordinator_utilization": 0.031558524787097336,
+    "peak_isolation_queue": 12.5625,
+    "peak_housing_occupancy": 35.0,
+    "overflow_cat_days": 3535.2916666666656
+  },
+  "winner_utilization": {
+    "vet_tech_utilization": 1.0,
+    "animal_care_utilization": 0.492973413010828,
+    "foster_coordinator_utilization": 0.03722612079130312,
+    "peak_isolation_queue": 12.5625,
+    "peak_housing_occupancy": 35.0,
+    "overflow_cat_days": 606.6588541666662
+  },
+  "best_baseline_source": "baseline:all_in_events",
+  "best_baseline_overflow": 606.6588541666662,
+  "best_bo_source": "bo",
+  "best_bo_overflow": 736.4244791666665,
+  "best_bo_allocation": {
+    "foster_support": 0.00644382328423574,
+    "clinic_hours": 0.02617906890677425,
+    "temporary_isolation": 0.03301126318415282,
+    "adoption_events": 0.9343658446248372
+  },
+  "absolute_difference": 129.76562500000034,
+  "outcome": "worse"
+}

@@ -50,6 +50,7 @@ resource "aws_sqs_queue" "jobs_dlq" {
   fifo_queue                  = true
   content_based_deduplication = true
   message_retention_seconds   = 1209600 # 14 days
+  sqs_managed_sse_enabled     = true    # SSE-SQS, AWS-managed key, no KMS to provision/pay for
 
   tags = {
     Project = "shelterpulse"
@@ -64,6 +65,7 @@ resource "aws_sqs_queue" "jobs" {
   visibility_timeout_seconds  = 300   # 5 min (Lambda timeout + buffer)
   message_retention_seconds   = 86400 # 1 day
   receive_wait_time_seconds   = 20    # long polling
+  sqs_managed_sse_enabled     = true  # SSE-SQS, AWS-managed key, no KMS to provision/pay for
 
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.jobs_dlq.arn
@@ -335,7 +337,7 @@ resource "aws_iam_role_policy" "ecs_task_sqs" {
 # callback) at once - Lambda ENIs never get public IPs, so a NAT Gateway is the
 # only way to give a VPC-attached Lambda outbound internet access. Dedicated
 # subnets + route table here so this never touches the subnets/routing that
-# ECS Express Mode and the ALB depend on (see ADR-014).
+# ECS Express Mode and the ALB depend on (see ADR-010).
 #
 # TEMPORARY for the hackathon judging window: built 2026-07-02, intended to be
 # torn down (terraform destroy -target on these resources, or revert this

@@ -120,7 +120,7 @@ total_intervention_budget: 5000`}</pre>
           <p>By using the <strong>same random seeds</strong> for each candidate allocation, differences in overflow are due to the allocation - not random noise.</p>
           <p><strong>Confidence intervals</strong> (95%):</p>
           <MathBlock>{String.raw`\text{CI}_{95} = \bar{Y} \pm 1.96 \cdot \frac{\sigma}{\sqrt{N}}`}</MathBlock>
-          <p>With <Tex>{String.raw`N=32`}</Tex> replications, a result of <Tex>{String.raw`234 \pm 18`}</Tex> overflow cat-days means we{"'"}re 95% confident the true expected value is in <Tex>{String.raw`[216, 252]`}</Tex>.</p>
+          <p>With <Tex>{String.raw`N=32`}</Tex> replications, the current best BO candidate has a mean of <Tex>{String.raw`82.1`}</Tex> modeled overflow cat-days and a 95% Monte Carlo interval of <Tex>{String.raw`[44.4, 119.7]`}</Tex>. This interval quantifies simulation noise, not real-world model accuracy.</p>
         </div>
       )
     },
@@ -173,7 +173,14 @@ total_intervention_budget: 5000`}</pre>
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t.howItWorks.title}</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 mb-8">{t.howItWorks.subtitle}</p>
+        <p className="text-zinc-500 dark:text-zinc-400 mb-4">{t.howItWorks.subtitle}</p>
+        <a
+          href="/shelterpulse-whitepaper.pdf"
+          download
+          className="inline-flex items-center gap-2 mb-8 px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 font-semibold rounded-lg text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+        >
+          {t.howItWorks.downloadWhitepaper}
+        </a>
         <div className="space-y-3">
           {sections.map((s, i) => (
             <div key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">

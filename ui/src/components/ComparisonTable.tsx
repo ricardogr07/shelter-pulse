@@ -19,9 +19,17 @@ interface Props {
 }
 
 export default function ComparisonTable({ winner, baselines }: Props) {
+  const winningBaseline = winner.source.startsWith("baseline:")
+    ? winner.source.slice("baseline:".length)
+    : null;
+  const winnerLabel = winningBaseline
+    ? `Sweep winner (${winningBaseline.replace(/_/g, " ")})`
+    : winner.source === "bo"
+      ? "Best BO candidate"
+      : "Sweep winner";
   const rows: CompareRow[] = [
-    { label: "BO Winner", result: winner, isWinner: true },
-    ...Object.entries(baselines).map(([name, result]) => ({
+    { label: winnerLabel, result: winner, isWinner: true },
+    ...Object.entries(baselines).filter(([name]) => name !== winningBaseline).map(([name, result]) => ({
       label: name.replace(/_/g, " "),
       result,
       isWinner: false,

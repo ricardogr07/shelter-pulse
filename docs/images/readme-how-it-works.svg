@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="500" viewBox="0 0 1800 500" font-family="Helvetica, Arial, sans-serif">
+<title>How it works — ShelterPulse architecture overview</title>
+<rect width="1800" height="500" fill="#ffffff"></rect>
+
+<text x="28" y="24" font-size="11" font-weight="600" letter-spacing="0.5" fill="#a1a1aa">ARCHITECTURE OVERVIEW</text>
+<text x="28" y="46" font-size="18" font-weight="800" fill="#18181b">How it works</text>
+
+<defs>
+  <marker id="hw-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 9 3, 0 6" fill="#3f3f46"></polygon>
+  </marker>
+  <marker id="hw-arrow-dashed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 9 3, 0 6" fill="#71717a"></polygon>
+  </marker>
+</defs>
+
+
+<g fill="none">
+  <path d="M1570,170 Q1165,88 760,170" stroke="#71717a" stroke-width="1.75" stroke-dasharray="6 5" marker-end="url(#hw-arrow-dashed)"></path>
+  <path d="M760,170 Q455,88 150,170" stroke="#71717a" stroke-width="1.75" stroke-dasharray="6 5" marker-end="url(#hw-arrow-dashed)"></path>
+</g>
+<g font-size="11.5" font-weight="600" fill="#52525b">
+  <rect x="1085" y="78" width="160" height="18" fill="#ffffff"></rect>
+  <text x="1165" y="91" text-anchor="middle">webhook callback</text>
+
+  <rect x="390" y="78" width="130" height="18" fill="#ffffff"></rect>
+  <text x="455" y="91" text-anchor="middle">SSE progress</text>
+</g>
+
+
+<g stroke="#3f3f46" stroke-width="2" fill="none">
+  <line x1="255" y1="205" x2="396" y2="205" marker-end="url(#hw-arrow)"></line>
+  <line x1="520" y1="205" x2="671" y2="205" marker-end="url(#hw-arrow)"></line>
+  <line x1="845" y1="205" x2="1006" y2="205" marker-end="url(#hw-arrow)"></line>
+  <line x1="1290" y1="205" x2="1386" y2="205" marker-end="url(#hw-arrow)"></line>
+</g>
+
+
+<g stroke="#3f3f46" stroke-width="2" fill="none">
+  <line x1="760" y1="240" x2="893" y2="347" marker-end="url(#hw-arrow)"></line>
+  <line x1="1570" y1="240" x2="1027" y2="347" marker-end="url(#hw-arrow)"></line>
+</g>
+
+<g font-size="12" font-weight="600" fill="#27272a">
+  <rect x="272" y="187" width="108" height="16" fill="#ffffff"></rect>
+  <text x="326" y="199" text-anchor="middle">HTTPS</text>
+
+  <rect x="537" y="187" width="118" height="16" fill="#ffffff"></rect>
+  <text x="596" y="199" text-anchor="middle" font-family="Menlo, Consolas, monospace">/api/*</text>
+
+  <rect x="862" y="187" width="185" height="16" fill="#ffffff"></rect>
+  <text x="955" y="199" text-anchor="middle">enqueue BO sweep</text>
+
+  <rect x="745" y="278" width="115" height="16" fill="#ffffff"></rect>
+  <text x="802" y="290" text-anchor="middle">direct call</text>
+
+  <rect x="1225" y="278" width="150" height="16" fill="#ffffff"></rect>
+  <text x="1300" y="290" text-anchor="middle">reuse core sim</text>
+</g>
+
+
+<g font-family="Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#18181b">
+  <rect x="45" y="170" width="210" height="70" rx="12" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="150" y="211" text-anchor="middle">Browser (Next.js UI)</text>
+
+  <rect x="400" y="170" width="120" height="70" rx="12" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="460" y="211" text-anchor="middle">nginx</text>
+
+  <rect x="675" y="170" width="170" height="70" rx="12" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="760" y="211" text-anchor="middle">FastAPI (sync)</text>
+
+  <rect x="1010" y="170" width="280" height="70" rx="12" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="1150" y="211" text-anchor="middle" font-size="12.5">RabbitMQ (local) / SQS (prod)</text>
+
+  <rect x="1390" y="170" width="360" height="70" rx="12" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="1570" y="211" text-anchor="middle" font-size="12.5">RabbitMQ worker (local) / Lambda (prod)</text>
+
+  <rect x="825" y="350" width="270" height="70" rx="12" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+  <text x="960" y="391" text-anchor="middle" font-size="12.5">shelterpulse/core (pure sim)</text>
+</g>
+
+</svg>

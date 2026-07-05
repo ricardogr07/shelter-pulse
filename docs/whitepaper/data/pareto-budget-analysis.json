@@ -1,0 +1,292 @@
+{
+  "scenario": "Whisker Haven",
+  "total_intervention_budget": 5000.0,
+  "n_replications": 32,
+  "points": [
+    {
+      "source": "all_in_events @ 10% budget",
+      "spend": 500.0,
+      "overflow": 1676.1393229166674,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 20% budget",
+      "spend": 1000.0,
+      "overflow": 1349.0546875000002,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 30% budget",
+      "spend": 1500.0,
+      "overflow": 1046.7421875,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 40% budget",
+      "spend": 2000.0,
+      "overflow": 787.8046875000002,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 50% budget",
+      "spend": 2500.0,
+      "overflow": 565.3723958333335,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 60% budget",
+      "spend": 3000.0,
+      "overflow": 381.60677083333366,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 70% budget",
+      "spend": 3500.0,
+      "overflow": 239.20182291666663,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 80% budget",
+      "spend": 4000.0,
+      "overflow": 143.2890625,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 90% budget",
+      "spend": 4500.0,
+      "overflow": 84.38802083333334,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 100% budget",
+      "spend": 5000.0,
+      "overflow": 50.208333333333336,
+      "pareto_optimal": true
+    },
+    {
+      "source": "baseline:all_in_events",
+      "spend": 5000.0,
+      "overflow": 50.208333333333336,
+      "pareto_optimal": true
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 82.08203124999997,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 85.40625000000006,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 90.74739583333331,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 97.6640624999999,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 104.93229166666659,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 106.09765625000003,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 108.26432291666666,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 118.00260416666674,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 118.61067708333334,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 124.85156250000006,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 126.92838541666664,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.000000000001,
+      "overflow": 142.50130208333346,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 144.73046875,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 205.63020833333331,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 285.24739583333337,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:domain_heuristic",
+      "spend": 5000.0,
+      "overflow": 314.68098958333326,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 4999.999999999999,
+      "overflow": 526.5716145833331,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:all_in_foster",
+      "spend": 5000.0,
+      "overflow": 530.0104166666664,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 565.6380208333334,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:equal",
+      "spend": 5000.0,
+      "overflow": 874.3815104166661,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 949.4049479166669,
+      "pareto_optimal": false
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 1888.6067708333337,
+      "pareto_optimal": false
+    },
+    {
+      "source": "baseline:zero",
+      "spend": 0.0,
+      "overflow": 2038.291666666667,
+      "pareto_optimal": true
+    },
+    {
+      "source": "bo",
+      "spend": 5000.0,
+      "overflow": 2135.658854166667,
+      "pareto_optimal": false
+    }
+  ],
+  "pareto_frontier": [
+    {
+      "source": "baseline:zero",
+      "spend": 0.0,
+      "overflow": 2038.291666666667,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 10% budget",
+      "spend": 500.0,
+      "overflow": 1676.1393229166674,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 20% budget",
+      "spend": 1000.0,
+      "overflow": 1349.0546875000002,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 30% budget",
+      "spend": 1500.0,
+      "overflow": 1046.7421875,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 40% budget",
+      "spend": 2000.0,
+      "overflow": 787.8046875000002,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 50% budget",
+      "spend": 2500.0,
+      "overflow": 565.3723958333335,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 60% budget",
+      "spend": 3000.0,
+      "overflow": 381.60677083333366,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 70% budget",
+      "spend": 3500.0,
+      "overflow": 239.20182291666663,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 80% budget",
+      "spend": 4000.0,
+      "overflow": 143.2890625,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 90% budget",
+      "spend": 4500.0,
+      "overflow": 84.38802083333334,
+      "pareto_optimal": true
+    },
+    {
+      "source": "all_in_events @ 100% budget",
+      "spend": 5000.0,
+      "overflow": 50.208333333333336,
+      "pareto_optimal": true
+    },
+    {
+      "source": "baseline:all_in_events",
+      "spend": 5000.0,
+      "overflow": 50.208333333333336,
+      "pareto_optimal": true
+    }
+  ],
+  "note": "Fractional-budget points evaluate the all_in_events allocation shape at less than full spend using the existing evaluate_candidate() interface. Full-budget points are deduplicated from the Whisker Haven evidence file (BO candidates and named baselines)."
+}

@@ -95,7 +95,7 @@ docker logs shelter-pulse-worker-1 --tail 20
 
 1. **Feature branch** -> local docker-compose test -> PR to develop -> CI green -> merge
 2. **develop -> main**: PR with full e2e + promote workflow
-3. **Deploy**: Tag-based (`v*` tag triggers deploy workflow)
+3. **Deploy**: push to `main` triggers `auto-release.yml`, which tags, creates a GitHub Release, and calls the deploy workflow automatically (no manual tag push)
 4. **Smoke test**: Verify live URL responds (health + basic API calls)
 5. **Rollback if needed**: Redeploy previous image tag via:
    ```bash

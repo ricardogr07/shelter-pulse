@@ -1,6 +1,6 @@
 # Worker: Deployment
 
-**Model:** Claude Sonnet 4.6 | **Effort:** medium | **Phase:** 7
+**Model:** Claude Sonnet 4.6 | **Effort:** medium
 
 **Role:** Build Docker images, push to ECR, trigger ECS rolling update, verify live URL.
 
@@ -21,7 +21,7 @@ Get account ID:
 aws sts get-caller-identity --query Account --output text
 ```
 
-## Manual Deploy (Phase 7)
+## Manual Deploy
 
 ```bash
 # 1. Authenticate to ECR
@@ -46,16 +46,20 @@ aws ecs update-service \
   --region us-east-1
 ```
 
-## Automated Deploy (CD via git tag)
+## Automated Deploy (normal path)
 
-```bash
-git checkout main && git pull
-git tag v<major>.<minor>.<patch>
-git push origin v<major>.<minor>.<patch>
-```
+Tags are never created manually -- `git tag` + `git push` for a release tag is not allowed
+(see `.github/workflows.md`). Instead:
 
-`deploy.yml` runs automatically: OIDC auth → build → ECR push → ECS update.
-Allow 3-5 minutes for rolling update before verifying.
+- **Normal**: push a commit to `main` (via the develop → main PR flow). `auto-release.yml`
+  reads conventional-commit prefixes since the last tag, bumps semver, creates the tag and
+  GitHub Release, and calls `deploy.yml` directly. Skip a release for a given push with
+  `[skip release]` or `[no release]` in the commit message.
+- **Manual hotfix escape hatch**: trigger `release.yml` via `workflow_dispatch` (Actions tab)
+  for a controlled/specific version outside the automatic flow.
+
+Either way, `deploy.yml` runs: OIDC auth → build → ECR push → ECS update → post-deploy
+smoke tests. Allow 3-5 minutes for the rolling update before verifying.
 
 ## Verify Live URL
 
@@ -79,15 +83,9 @@ curl -s -X POST "$LIVE/api/optimize" \
 # Check for CORS errors -- open browser console at $LIVE/en and run the optimizer wizard
 ```
 
-## Phase 7 Tasks
-
-**Issue #33 (push image):** Run manual deploy steps above.
-**Issue #34 (verify live):** Run all verification commands. Open browser at `$LIVE/en`,
-run optimizer wizard end-to-end, confirm no CORS errors in browser console.
-
 ## NEVER
 
 - Hard-code AWS credentials in any file
 - Run `terraform destroy` (Terraform worker's domain, Director must approve)
-- Push to ECR before running `uv run pytest tests/unit/ -v` locally
+- Push to ECR before running `tox -e test` locally
 - Manually edit ECS task definitions or service config -- use Terraform or tags

@@ -26,6 +26,15 @@ COPY scenarios/ scenarios/
 # Add project root to Python path (avoids hatchling build-wheel step in image)
 ENV PYTHONPATH=/app
 
+# Non-root: existing /app files stay root-owned but world-readable (default
+# COPY permissions), which is all uvicorn/the worker need. Only /app/data
+# (the DuckDB volume mount) needs write access, so only that gets chowned -
+# a recursive chown of the whole venv would bloat every layer that follows.
+RUN useradd -r -s /bin/false apiuser \
+    && mkdir -p /app/data \
+    && chown apiuser:apiuser /app/data
+USER apiuser
+
 EXPOSE 8000
 CMD [".venv/bin/uvicorn", "shelterpulse.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
 
@@ -55,6 +64,10 @@ EXPOSE 80
 # reverse-proxy /api/* to uvicorn. Build the UI with NEXT_PUBLIC_API_URL=/api so the
 # browser calls a same-origin relative path (no CORS, no build-time API URL coupling).
 FROM api AS app
+
+# Re-elevate: the api stage above now ends as apiuser, but apt-get/useradd
+# below need root. Ends as appuser again via the USER line near the bottom.
+USER root
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends nginx \

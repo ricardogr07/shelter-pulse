@@ -19,30 +19,36 @@ c:/git/shelter-pulse/
 │   │   ├── interface.py       ← evaluate_candidate(): THE seam all optimizers call
 │   │   ├── baselines.py       ← Named baselines (ALL_BASELINES dict)
 │   │   ├── jaxbo_optimizer.py ← BO plugin (jaxbo primary, scipy fallback)
-│   │   └── workflow.py        ← run_optimization_sweep() + TEMPORAL_ENABLED flag
+│   │   └── workflow.py        ← run_optimization_sweep()
+│   ├── store/
+│   │   └── duckdb_store.py    ← Optional DuckDB persistence: save_run(), load_run()
+│   ├── queue/                 ← Async job dispatch (see architecture.md for backends)
 │   ├── api/
 │   │   └── app.py             ← FastAPI: /health /simulate /optimize /baselines /export
 │   └── cli/
 │       └── main.py            ← Typer: simulate, optimize, baselines, export
-├── ui/                        ← Next.js app
-│   ├── src/app/page.tsx       ← Landing page (hero + CTAs)
-│   ├── src/app/demo/page.tsx  ← 6-step Whisker Haven wizard
-│   ├── src/app/simulate/page.tsx ← Custom simulation builder
+├── lambda/
+│   └── handler.py             ← SQS event handler: production async worker
+├── ui/                        ← Next.js app, i18n-routed under [lang] (en/es)
+│   ├── src/app/[lang]/page.tsx           ← Landing page (hero + CTAs)
+│   ├── src/app/[lang]/demo/page.tsx      ← Guided Whisker Haven wizard
+│   ├── src/app/[lang]/how-it-works/page.tsx ← Model walkthrough + whitepaper download
+│   ├── src/app/[lang]/simulate/page.tsx  ← Custom simulation builder
 │   ├── src/components/        ← Shared components (NavBar, Footer, charts)
+│   ├── src/i18n/dictionaries.ts ← All UI copy, en/es - edit here, not inline
 │   ├── src/api.ts             ← fetch wrappers for backend
 │   ├── src/types.ts           ← TypeScript types
 │   └── AGENTS.md              ← MUST READ before writing Next.js code
 ├── scenarios/
-│   └── whisker_haven.yaml     ← The one demo scenario (do not add others)
+│   └── whisker_haven.yaml     ← The primary demo scenario
 ├── tests/
 │   ├── unit/                  ← pytest unit tests
 │   └── e2e/                   ← pytest e2e (API) + Cypress (UI)
-├── .kiro/
-│   ├── steering/              ← This directory: always-loaded agent context
-│   └── README.md              ← Kiro Track submission marker
-└── .localagent/
-    ├── docs/                  ← Implementation specs + STATUS.md
-    └── agents/                ← Worker + orchestrator instruction files
+└── .kiro/
+    ├── steering/               ← Always-loaded agent context (this file + others)
+    ├── agents/                 ← Role definitions: PLANNER, ORCHESTRATOR, DIRECTOR, worker-*.md
+    ├── docs/                   ← Reusable playbooks (issue workflow, local dev, PR/CI-CD)
+    └── README.md                ← Kiro Track submission write-up
 ```
 
 ## The critical invariant
@@ -73,4 +79,4 @@ api/app.py  ←── ui/ (HTTP/JSON, not Python imports)
 
 ## File ownership per worker
 
-Each worker file in `.localagent/agents/` lists exactly which files a worker owns and which are forbidden. Workers must not touch files outside their ownership scope.
+Each `worker-*.md` file in `.kiro/agents/` lists exactly which files that worker owns and which are forbidden. Workers must not touch files outside their ownership scope.

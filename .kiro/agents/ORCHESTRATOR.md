@@ -1,13 +1,13 @@
 # Orchestrator
 
-**Role:** Execute phases by dispatching workers, running tests, committing, and managing PRs.
+**Role:** Execute work by dispatching workers, running tests, committing, and managing PRs.
 
 ## Issue-Driven Workflow
 
 All work starts from a GitHub issue. See `.kiro/docs/playbook-issue-workflow.md` for the
 step-by-step. Short version:
 
-1. `gh issue list --repo ricardogr07/shelter-pulse --label "phase:<N>"` -- find work
+1. `gh issue list --repo ricardogr07/shelter-pulse` -- find work
 2. `gh issue edit <N> --add-assignee @me` -- claim it
 3. `git checkout -b feat/issue-<N>-<slug>` -- branch
 4. Dispatch appropriate worker (see dispatch table below)
@@ -17,51 +17,17 @@ step-by-step. Short version:
 
 ## Worker Dispatch Table
 
-| Work domain | Worker file | Phase |
-|-------------|-------------|-------|
-| Security scan, triage | Read .localagent/docs/PHASE-6/ | 6 |
-| Terraform plan/apply | worker-terraform.md | 7 |
-| ECR push + ECS deploy | worker-deployment.md | 7 |
-| API endpoint changes | worker-api.md | 8, 9 |
-| UI changes | worker-ui.md | 8, 10 |
-| CLI changes | worker-cli.md | any |
-| Multi-file planning | PLANNER.md | any |
+| Work domain | Worker file |
+|-------------|-------------|
+| Terraform plan/apply | worker-terraform.md |
+| ECR push + ECS deploy | worker-deployment.md |
+| API endpoint changes | worker-api.md |
+| Async queue/worker changes | worker-queue.md |
+| UI changes | worker-ui.md |
+| CLI changes | worker-cli.md |
+| Multi-file planning | PLANNER.md |
 
-## Phase Execution Sequence
-
-**Phase 6 (Security):** Issues #26-29
-1. Work through sequentially: pre-scan (#26) → scan (#27) → triage (#28)
-2. Commit Aikido report to /security/
-3. PR to develop, merge, promote develop → main
-
-**Phase 7 (Deploy):** Issues #30-35
-1. worker-terraform.md: issues #30 (ECR), #31 (apply), #32 (UI service check)
-2. worker-deployment.md: issues #33 (push image), #34 (verify live)
-3. After live URL confirmed: README update (#34)
-4. PR to develop, merge, promote to main
-
-**Phase 8 (Polish):** Issues #36-41
-Parallel:
-- Track A (API): #36 BO comparison response field → worker-api.md
-- Track B (UI): #36 comparison panel → worker-ui.md
-Then sequential: #37 (timeline fix), #38 (warm-start), #39 (kiro write-up), #40 (tox rerun)
-
-**Phase 9 (Async):** Issues #42-46
-1. #42 (Temporal): flip TEMPORAL_ENABLED → worker-api.md
-2. #43 (RabbitMQ + SSE): async endpoint → worker-api.md
-3. #44, #45 (ClickHouse + UI): worker-api.md + worker-ui.md
-4. Ship what's ready by Jul 5
-
-**Phase 10 (Backlog):** Issues #47-54
-Dispatch in priority order (P1 first):
-- #47 clinic callout (1h), #48 CORS restrict (30min), #49 pickle cache (1h)
-- #50 sliders (2h), #51 a11y (2h) -- if time permits
-- #52, #53 stretch goals
-
-**Phase 11 (Submit):** Issues #55-58
-- #55 README live URLs: direct commit after Phase 7 confirmed
-- #56 Demo video: human-only task
-- #57 Submission: human-only task, hard deadline Jul 6 23:59 BST
+Security scans and triage are Director-level tasks (no dedicated worker file).
 
 ## Review Protocol
 
@@ -78,7 +44,8 @@ git diff --name-only                                # verify scope
 
 ## PR Rules
 
-- Squash merge always: `gh pr merge <N> --squash --delete-branch`
+- Merge via `gh pr merge <N> --merge --delete-branch` (regular merge commit, matching this
+  repo's history -- not squash)
 - PR body must include "Closes #<issue-number>" for auto-close
 - Never push directly to develop or main
 - Never use --no-verify or --force-push
@@ -87,10 +54,11 @@ git diff --name-only                                # verify scope
 
 ## CI/CD Summary
 
-See `.kiro/docs/playbook-pr-cicd.md` for full detail.
+See `.kiro/docs/playbook-pr-cicd.md` and `.github/workflows.md` for full detail.
 
 | Git action | CI/CD triggered |
 |-----------|----------------|
-| PR to develop | ci.yml: lint + test + security + UI build |
-| Merge develop → main | promote.yml: full suite + Docker build + GHCR push |
-| Push `v*` tag on main | deploy.yml: ECR push + ECS rolling update |
+| PR to develop | ci.yml: lint + test + security + UI build + whitepaper build (path-gated) |
+| Merge develop → main | promote.yml: full suite + e2e + GHCR push |
+| Push to main | auto-release.yml: semver bump from conventional commits, tags, creates GitHub Release, calls deploy.yml (skip via `[skip release]`/`[no release]` in the commit message) |
+| deploy.yml (called by auto-release.yml or the manual release.yml) | ECR push, ECS rolling update, post-deploy smoke tests |

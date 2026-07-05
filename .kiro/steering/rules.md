@@ -41,12 +41,11 @@ git commit --amend     # orchestrator only
 
 Files in `.github/workflows/` are orchestrator-only. Never touch them.
 
-## 5. Mark done in STATUS.md
+## 5. Mark done via the issue/PR, not a side file
 
-When a task is complete, edit `.localagent/docs/STATUS.md`:
-- Set your track's Status to `DONE`
-- Fill in the Tests column with which pytest commands passed
-- Note any issues in the Notes column
+When a task is complete, close it out through the normal GitHub flow: `Closes #<N>` in the
+commit/PR body, and note which test commands passed in the PR description. Don't maintain a
+separate status-tracking file.
 
 ## 6. Minimum code (ponytail constraint)
 
@@ -56,11 +55,11 @@ Write the minimum code that satisfies the spec. No:
 - Helper classes that wrap a single function
 - Abstractions for hypothetical future cases
 
-The spec in `.localagent/docs/<spec>.md` defines exactly what's needed. Stay within it.
+The linked issue or spec document defines exactly what's needed. Stay within it.
 
 ## 7. Forbidden zones per role
 
-Each worker has an explicit file ownership list in `.localagent/agents/worker-*.md`. Only edit files you own. If a change requires touching a file owned by another worker, coordinate via STATUS.md notes.
+Each worker has an explicit file ownership list in `.kiro/agents/worker-*.md`. Only edit files you own. If a change requires touching a file owned by another worker, coordinate via the PR or issue.
 
 ## 8. Run tests before marking done
 

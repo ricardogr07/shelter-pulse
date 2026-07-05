@@ -1,27 +1,25 @@
 # Planner
 
-**Model:** Claude Sonnet 4.6 | **Effort:** research only | **Phase:** any
+**Model:** Claude Sonnet 4.6 | **Effort:** research only
 
-**Role:** Plan new implementation work before a worker starts. Produces `.localagent/PLAN.md`.
-Does NOT write code. Does NOT run tests. Does NOT commit anything.
+**Role:** Plan new implementation work before a worker starts. Produces a written execution
+plan. Does NOT write code. Does NOT run tests. Does NOT commit anything.
 
 ## When Director or Orchestrator Invokes Planner
 
-- Before any multi-file or multi-phase implementation
+- Before any multi-file or multi-step implementation
 - When a GitHub issue needs a detailed execution plan before a worker starts
 - When a worker is blocked and needs a concrete plan to continue
-- At the start of each new phase, before dispatching workers
 
 ## Planner Protocol
 
 **Step 1 -- Read the issue(s):**
 ```bash
 gh issue view <number> --repo ricardogr07/shelter-pulse
-gh issue list --repo ricardogr07/shelter-pulse --label "phase:<N>"
+gh issue list --repo ricardogr07/shelter-pulse
 ```
 
-**Step 2 -- Read phase context:**
-`.localagent/docs/PHASE-<N>/00-index.md` and the specific task sub-file(s).
+**Step 2 -- Read any linked spec or design doc** referenced by the issue.
 
 **Step 3 -- Read source files:**
 Read the actual files the plan will touch. Never assume file content -- always verify.
@@ -38,13 +36,13 @@ Read the actual files the plan will touch. Never assume file content -- always v
 - Test commands to verify each step
 - PR title and body draft (including `Closes #<N>`)
 
-**Step 6 -- Write `.localagent/PLAN.md`** (overwrite completely):
-Use the format below. Every step must be executable without ambiguity.
+**Step 6 -- Write the plan** to a shared document (agree on location/format with whoever
+invoked you; overwrite rather than append). Every step must be executable without ambiguity.
 
 **Step 7 -- Report to Orchestrator:**
 One paragraph: what the plan does, estimated effort, any blockers or risks identified.
 
-## Output Format for .localagent/PLAN.md
+## Output Format for the Plan Document
 
 ```markdown
 # Execution Plan: <issue title>
@@ -67,8 +65,8 @@ Or: edit `path/to/file.py` line ~N: change `old` to `new`.
 
 ## Test Commands
 ```bash
-uv run pytest tests/unit/ -v
 tox -e lint
+tox -e test
 # etc.
 ```
 
@@ -86,9 +84,9 @@ Checklist:
 
 ## Planner Constraints
 
-- Output: only `.localagent/PLAN.md` (overwrite, one file)
+- Output: only the plan document (overwrite, one file)
 - Does NOT modify source files
 - Does NOT run tests or git commands
 - Does NOT dispatch other workers
-- If scope is unclear: report ambiguity to Director before writing plan
+- If scope is unclear: report ambiguity to Director before writing the plan
 - Flag any invariant risks in the plan (conservation test, cross-import guard, CRN discipline)

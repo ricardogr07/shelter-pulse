@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2900" height="380" viewBox="0 0 2900 380" font-family="Helvetica, Arial, sans-serif">
+<title>Schema Flow — scenario YAML to React state</title>
+<rect width="2900" height="380" fill="#ffffff"></rect>
+
+<text x="28" y="34" font-size="11" font-weight="600" letter-spacing="0.5" fill="#a1a1aa">DATA FLOW</text>
+<text x="28" y="54" font-size="18" font-weight="800" fill="#18181b">Schema Flow — scenario file to UI state</text>
+
+<defs>
+  <marker id="sf-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 9 3, 0 6" fill="#3f3f46"></polygon>
+  </marker>
+</defs>
+
+<line x1="228" y1="225" x2="2658" y2="225" stroke="#d4d4d8" stroke-width="1.5"></line>
+
+<g stroke="#3f3f46" stroke-width="2" fill="none">
+  <line x1="228" y1="225" x2="373" y2="225" marker-end="url(#sf-arrow)"></line>
+  <line x1="583" y1="225" x2="798" y2="225" marker-end="url(#sf-arrow)"></line>
+  <line x1="1008" y1="225" x2="1208" y2="225" marker-end="url(#sf-arrow)"></line>
+  <line x1="1418" y1="225" x2="1563" y2="225" marker-end="url(#sf-arrow)"></line>
+  <line x1="1773" y1="225" x2="1913" y2="225" marker-end="url(#sf-arrow)"></line>
+  <line x1="2123" y1="225" x2="2298" y2="225" marker-end="url(#sf-arrow)"></line>
+  <line x1="2508" y1="225" x2="2648" y2="225" marker-end="url(#sf-arrow)"></line>
+</g>
+
+<g font-size="12" font-weight="600" font-family="Menlo, Consolas, monospace" fill="#3f3f46">
+  <rect x="253" y="197" width="126" height="16" fill="#ffffff"></rect>
+  <text x="316" y="209" text-anchor="middle">yaml.safe_load</text>
+
+  <rect x="598" y="197" width="185" height="16" fill="#ffffff"></rect>
+  <text x="690" y="209" text-anchor="middle">Scenario.model_validate</text>
+
+  <rect x="1013" y="197" width="200" height="16" fill="#ffffff"></rect>
+  <text x="1113" y="209" text-anchor="middle">resolve_intervention</text>
+
+  <rect x="1433" y="197" width="126" height="16" fill="#ffffff"></rect>
+  <text x="1496" y="209" text-anchor="middle">run_simulation</text>
+
+  <rect x="1793" y="197" width="100" height="16" fill="#ffffff"></rect>
+  <text x="1843" y="209" text-anchor="middle">run_paired</text>
+</g>
+<g font-size="12" font-weight="600" fill="#3f3f46">
+  <rect x="2133" y="197" width="180" height="16" fill="#ffffff"></rect>
+  <text x="2223" y="209" text-anchor="middle">JSON serialization</text>
+</g>
+<g font-size="12" font-weight="600" font-family="Menlo, Consolas, monospace" fill="#3f3f46">
+  <rect x="2538" y="197" width="90" height="16" fill="#ffffff"></rect>
+  <text x="2583" y="209" text-anchor="middle">fetch</text>
+</g>
+
+<g>
+  <rect x="28" y="175" width="200" height="100" rx="14" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="128" y="215" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#18181b">whisker_haven.yaml</text>
+  <text x="128" y="235" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">YAML scenario file</text>
+
+  <rect x="383" y="175" width="200" height="100" rx="14" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="483" y="215" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#18181b">dict</text>
+  <text x="483" y="235" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">raw parsed data</text>
+
+  <rect x="808" y="175" width="200" height="100" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+  <text x="908" y="215" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#18181b">Scenario</text>
+  <text x="908" y="235" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">frozen Pydantic model</text>
+
+  <rect x="1218" y="175" width="200" height="100" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+  <text x="1318" y="215" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#18181b">InterventionParams</text>
+  <text x="1318" y="235" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">resource deltas</text>
+
+  <rect x="1573" y="175" width="200" height="100" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+  <text x="1673" y="215" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#18181b">SimulationResult</text>
+  <text x="1673" y="235" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">one replication</text>
+
+  <rect x="1923" y="175" width="200" height="100" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+  <text x="2023" y="215" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#18181b">MonteCarloSummary</text>
+  <text x="2023" y="235" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">mean / std / 95% CI</text>
+
+  <rect x="2308" y="175" width="200" height="100" rx="14" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+  <text x="2408" y="215" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#18181b">API response</text>
+  <text x="2408" y="235" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">Pydantic response model</text>
+
+  <rect x="2658" y="175" width="200" height="100" rx="14" fill="#eff6ff" stroke="#1e40af" stroke-width="1.5"></rect>
+  <text x="2758" y="215" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#18181b">React state</text>
+  <text x="2758" y="235" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">TypeScript types</text>
+</g>
+
+<g font-size="12" font-weight="600" fill="#3f3f46">
+  <rect x="28" y="328" width="14" height="14" rx="4" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></rect>
+  <text x="50" y="339">raw / serialized data</text>
+
+  <rect x="228" y="328" width="14" height="14" rx="4" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+  <text x="250" y="339">core domain model (core/)</text>
+
+  <rect x="460" y="328" width="14" height="14" rx="4" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+  <text x="482" y="339">API boundary</text>
+
+  <rect x="622" y="328" width="14" height="14" rx="4" fill="#eff6ff" stroke="#1e40af" stroke-width="1.5"></rect>
+  <text x="644" y="339">UI (Next.js)</text>
+</g>
+
+</svg>

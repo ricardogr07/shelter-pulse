@@ -1,0 +1,105 @@
+# Archetype: Ample Capacity — a well-resourced control scenario, NOT a
+# copy of Whisker Haven with one change: housing, isolation, foster, and
+# vet-tech capacity are all well above Whisker Haven's levels. Confirms
+# that when nothing genuinely binds, strategies converge and the
+# best-baseline-beats-BO pattern seen in the constrained archetypes is not
+# an artifact that appears regardless of resourcing.
+
+name: "Archetype: Ample Capacity"
+version: "0.1"
+description: >
+  A well-resourced control: housing, isolation, foster, and vet-tech
+  capacity all well above Whisker Haven's levels, same intake and seasonal
+  surge. Sanity-check contrast against the 6 constrained archetypes.
+
+duration_days: 90
+seed: 42
+n_replications: 64
+
+intake_rate_per_day: 3.8
+
+intake_profiles:
+  - age_class: neonatal
+    health_status: medical_hold
+    weight: 0.20
+  - age_class: weaned_kitten
+    health_status: healthy
+    weight: 0.25
+  - age_class: weaned_kitten
+    health_status: medical_hold
+    weight: 0.14
+  - age_class: juvenile
+    health_status: healthy
+    weight: 0.18
+  - age_class: adult
+    health_status: healthy
+    weight: 0.15
+  - age_class: adult
+    health_status: isolation_required
+    weight: 0.08
+
+housing_capacity: 90         # up from Whisker Haven's 35
+isolation_capacity: 15       # up from Whisker Haven's 5
+
+workforce:
+  - role: vet_tech
+    fte: 4.0                 # up from Whisker Haven's 1.5
+    hours_per_day: 8.0
+    skills: [medical_assessment, vaccination, treatment]
+
+  - role: animal_care
+    fte: 6.0                 # up from Whisker Haven's 3.0
+    hours_per_day: 8.0
+    skills: [feeding, cleaning, socialization, neonatal_care]
+
+  - role: foster_coordinator
+    fte: 1.5                 # up from Whisker Haven's 0.5
+    hours_per_day: 8.0
+    skills: [foster_placement, foster_support, adoption_counseling]
+
+foster_network:
+  capacity: 25                # up from Whisker Haven's 8
+  coordinator_hours_per_week: 40.0
+  supply_cost_per_cat_day: 2.50
+
+cost_model:
+  fixed_per_day: 350.00
+  variable_per_cat_day: 8.50
+  medical_event_cost: 85.00
+  adoption_event_cost: 250.00
+
+seasonal_events:
+  - name: "Kitten Season Peak"
+    start_day: 14
+    duration_days: 42
+    intake_multiplier: 2.5
+
+  - name: "Vet Tech Absence"
+    start_day: 55
+    duration_days: 5
+    intake_multiplier: 1.0
+
+interventions:
+  - type: foster_support
+    budget_share: 0.25
+    effect_params:
+      capacity_increase_per_dollar: 0.002
+      coordinator_hours_per_dollar: 0.001
+
+  - type: extra_clinic_hours
+    budget_share: 0.25
+    effect_params:
+      vet_hours_per_dollar: 0.005
+      clearance_speed_multiplier: 1.0
+
+  - type: temporary_isolation
+    budget_share: 0.25
+    effect_params:
+      slots_per_dollar: 0.0008
+
+  - type: adoption_events
+    budget_share: 0.25
+    effect_params:
+      adoption_rate_multiplier_per_dollar: 0.0001
+
+total_intervention_budget: 5000.00

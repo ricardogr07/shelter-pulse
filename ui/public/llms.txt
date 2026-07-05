@@ -11,15 +11,15 @@ isolation capacity, and adoption events.
 
 ## Key results
 
-- Whisker Haven demo: BO reduces overflow from 234 to 0 cat-days
-- 20 candidates x 32 replications in < 30 seconds
+- Whisker Haven development evidence: all-events baseline 50.2 mean overflow cat-days; best BO candidate 121.1; equal allocation 874.4
+- Recorded 5-baseline + 20-candidate x 32-replication sweep: 140.7 seconds on the documented development environment
 - 5 named baseline strategies compared per sweep
 - Common Random Numbers ensure fair comparison between candidates
 
 ## Architecture
 
 - **Simulation engine**: SimPy discrete-event model of complete cat lifecycle
-- **Optimizer**: Gaussian Process + Expected Improvement (jaxbo primary, scipy fallback)
+- **Optimizer**: Gaussian Process + Expected Improvement with JAX/jaxbo; deterministic Dirichlet random-search fallback
 - **API**: FastAPI REST (Python 3.12)
 - **Frontend**: Next.js 16 + React + TypeScript + Tailwind CSS (static export)
 - **Deployment**: nginx + uvicorn in one ECS Fargate container

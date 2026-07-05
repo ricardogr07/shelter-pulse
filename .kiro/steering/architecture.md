@@ -24,6 +24,8 @@ shelterpulse/optimize/workflow.py    run_optimization_sweep(): baselines + BO ca
 shelterpulse/optimize/baselines.py   5 named allocations: equal, all_in_foster, all_in_events, domain_heuristic, zero
 shelterpulse/optimize/jaxbo_optimizer.py  GP+EI (jax primary, scipy fallback); simplex→cube projection
 
+shelterpulse/store/duckdb_store.py   save_run()/load_run(): optional DuckDB persistence for run history, consent log, analytics
+
 shelterpulse/queue/__init__.py       Factory: get_publisher() selects backend via QUEUE_BACKEND env var
 shelterpulse/queue/interface.py      Protocol: QueuePublisher, ProgressListener
 shelterpulse/queue/sync_backend.py   In-process (default): no queue, existing behavior preserved
@@ -47,8 +49,7 @@ scenarios/whisker_haven.yaml         Demo scenario; loaded lazily by _get_scenar
 ## Invariants that must never be broken
 
 **1. Core purity**
-`shelterpulse/core/` imports nothing from `shelterpulse.api`, `shelterpulse.cli`, or `shelterpulse.optimize`.
-Enforced by `tests/unit/test_no_cross_imports.py` in CI. Violations cause import-cycle bugs that are hard to trace.
+`shelterpulse/core/` imports nothing from `shelterpulse.api` or `shelterpulse.cli` (CI-enforced by `tests/unit/test_no_cross_imports.py`), and by convention should not import from `shelterpulse.optimize` either (not yet CI-enforced). Violations cause import-cycle bugs that are hard to trace.
 
 **2. CRN discipline**
 All candidates in a sweep are evaluated with the **same** `seed_set`. The seed set is created once in `workflow.run_optimization_sweep()` and passed unchanged to every `evaluate_candidate()` call.
@@ -181,34 +182,29 @@ class MyPublisher:
 
 ---
 
-## Current project status (as of Jun 28 2026)
+## Current state
 
-- **Phases 1–11 complete.** Core sim, BO, API endpoints, UI, ECS deployment all working.
-- **Queue backend (ADR-004, ADR-010):** `QUEUE_BACKEND=sync` (default). Sweep < 30s in-process; set `QUEUE_BACKEND=rabbitmq` for docker-compose horizontal scaling or `QUEUE_BACKEND=sqs` for production Lambda workers.
-- **Approaching submission deadline Jul 6–7.**
+**Queue backend** ([ADR-008](../../docs/adr/008-queue-abstraction.md)): `QUEUE_BACKEND=sync` (default). Sweep < 30s in-process; set `QUEUE_BACKEND=rabbitmq` for docker-compose horizontal scaling or `QUEUE_BACKEND=sqs` for production Lambda workers.
 
-### Non-negotiables still to close before submission
-
-1. < 5 min demo video with Whisker Haven narrative
-2. README a stranger can run from ✓ (done in this overhaul)
-3. Aikido scan report in `/security/`
-4. `.kiro/` folder committed ✓ (present)
-5. Honest baseline comparison for optimizer ✓ (5 baselines in `baselines.py`)
+**Persistence** ([ADR-009](../../docs/adr/009-duckdb-over-clickhouse.md)): optional DuckDB store for run history, consent log, and analytics via `shelterpulse/store/duckdb_store.py`.
 
 ---
 
 ## ADR index
+
+Only current decisions are kept here. Superseded ADRs are removed once their
+replacement lands; the replacement's own Context section narrates what came
+before.
 
 | ADR | Decision | Status |
 |---|---|---|
 | [001](../../docs/adr/001-python-3.12.md) | Python 3.12 | Active |
 | [002](../../docs/adr/002-nextjs-react-tailwind.md) | Next.js + React + Tailwind (overrides Streamlit default) | Active |
 | [003](../../docs/adr/003-simpy-discrete-event.md) | SimPy for DES | Active |
-| [004](../../docs/adr/004-temporal-gate.md) | Gate Temporal to EOD Jun 28 | Active |
-| [005](../../docs/adr/005-jaxbo-optimizer.md) | jaxbo as BO plugin | Active |
-| [006](../../docs/adr/006-fastapi-rest.md) | FastAPI REST adapter | Active |
-| [007](../../docs/adr/007-render-deployment.md) | Render deployment | **Superseded by ADR-011** |
-| [008](../../docs/adr/008-aws-app-runner.md) | AWS App Runner | **Superseded by ADR-011** |
-| [009](../../docs/adr/009-scipy-gp-optimizer.md) | Real scipy GP+EI optimizer | Active |
-| [010](../../docs/adr/010-temporal-gate-result.md) | Temporal gate result: in-process chosen | Active |
-| [011](../../docs/adr/011-ecs-express-mode.md) | ECS Express Mode (current deployment) | Active |
+| [004](../../docs/adr/004-jaxbo-optimizer.md) | jaxbo as BO plugin | Active |
+| [005](../../docs/adr/005-fastapi-rest.md) | FastAPI REST adapter | Active |
+| [006](../../docs/adr/006-scipy-gp-optimizer.md) | Real scipy GP+EI optimizer | Amended |
+| [007](../../docs/adr/007-ecs-express-mode.md) | ECS Express Mode (current deployment) | Active |
+| [008](../../docs/adr/008-queue-abstraction.md) | Queue abstraction (RabbitMQ local, SQS+Lambda prod) | Active |
+| [009](../../docs/adr/009-duckdb-over-clickhouse.md) | DuckDB over ClickHouse for run persistence | Active |
+| [010](../../docs/adr/010-async-worker-production-hardening.md) | Async worker production hardening | Active |

@@ -25,9 +25,9 @@ Consolidated rationale for non-obvious choices in ShelterPulse. Each section cov
 
 ## 2. Common Random Numbers (CRN)
 
-**Decision:** Every candidate allocation is evaluated with the same `seed_set`. The set is fixed before the sweep and passed unchanged to every `evaluate_candidate()` call.
+**Decision:** Every allocation is evaluated with the same `seed_set`, pre-generated intake schedule, and per-cat streams separated by stochastic source.
 
-**Why CRN is non-negotiable:**
+**Why paired streams matter:**
 
 Without CRN, comparing two allocations requires:
 
@@ -35,7 +35,7 @@ Without CRN, comparing two allocations requires:
 n_needed ≈ 2 × (z_α/2 + z_β)² × σ² / δ²
 ```
 
-where `δ` is the true difference and `σ²` is replication variance. In practice, replication variance in the Whisker Haven scenario is large enough that without CRN you need ~10× more replications to achieve the same statistical power to detect a given allocation difference.
+where `δ` is the true difference and `σ²` is replication variance.
 
 With CRN, the variance of `(overflow_A - overflow_B)` is:
 
@@ -43,9 +43,9 @@ With CRN, the variance of `(overflow_A - overflow_B)` is:
 Var(X_A - X_B) = Var(X_A) + Var(X_B) - 2·Cov(X_A, X_B)
 ```
 
-Positive covariance from shared seeds reduces this substantially: same-seed runs covary because they see the same arrival sequence, so allocation differences dominate.
+Positive covariance can reduce comparison variance, but reusing only an initial seed is insufficient when intervention-dependent control flow consumes random numbers differently. We therefore pre-generate intake and split per-cat random sources. No ShelterPulse-specific variance-reduction factor is published until it is measured directly.
 
-**Implementation:** `montecarlo.make_seed_set(base_seed, n)` generates the fixed seed list. `workflow.py` calls `run_optimization_sweep(scenario, seed_set=seed_set)` once and passes the same seed_set to every candidate. Breaking this (using fresh seeds per candidate) silently invalidates the ranking.
+**Implementation:** `montecarlo.make_seed_set(base_seed, n)` generates the fixed seed list. `engine._generate_arrivals()` creates the exogenous intake schedule before lifecycle execution, and each cat has independent streams for assessment, isolation, clearance, adoption, transfer, and foster coordination.
 
 **Revisit when:** Switching to a variance reduction technique that conflicts with CRN (e.g., antithetic variates across pairs rather than across candidates).
 
@@ -53,23 +53,25 @@ Positive covariance from shared seeds reduces this substantially: same-seed runs
 
 ## 3. Bayesian Optimization: GP + Expected Improvement
 
-**Decision:** jaxbo (JAX-based GP+EI) as primary optimizer, scipy GP+EI as fallback, random Dirichlet as final fallback.
+**Decision:** jaxbo (JAX-based GP+EI) is the primary optimizer. If JAX/jaxbo is unavailable, the supported fallback is deterministic seeded Dirichlet random search.
 
 **Why GP+EI over random/grid search:**
 - The allocation space is a 4-simplex (shares summing ≤ 1). Random Dirichlet search is unbiased but sample-inefficient: it doesn't use information from prior evaluations.
-- GP+EI builds a probabilistic surrogate after each evaluation and maximizes Expected Improvement: trading off exploration (high uncertainty) vs. exploitation (near observed minima). This finds better allocations with fewer function evaluations.
-- 20 candidates evaluated with 32 replications each takes < 30s in-process. BO vs. random makes a measurable difference even at this scale.
+- GP+EI builds a probabilistic surrogate after each evaluation and uses Expected Improvement to trade off exploration and exploitation.
+- Five named baselines warm-start the GP and remain explicitly labeled in the returned ranking. A baseline may outperform every BO candidate.
+- A recorded 20-candidate, 32-replication development sweep took 243.2 seconds. Runtime thresholds require repeated final-commit evidence.
 
 **Why jaxbo as primary:**
-- jaxbo is Ricardo's own Apache-2.0 JAX-BO implementation: zero third-party trust risk, full control over the GP kernel (Matern-5/2) and acquisition function
-- JAX enables GPU acceleration for free if the runtime has a GPU
+- jaxbo provides the Matérn-5/2 GP path used by this project.
+- Each iteration evaluates Expected Improvement over 256 feasible Dirichlet proposals.
 
-**Why scipy fallback:**
-- jax + jaxlib add ~200 MB to the Docker image. In `[project.optional-dependencies].optimize`, they're optional.
-- scipy GP+EI (via `scipy.optimize.minimize` + numpy linear algebra) covers the same interface with no extra dependencies.
+**Fallback boundary:**
+- JAX, jaxlib, and jaxbo are optional dependencies.
+- Without them, the code does not claim Bayesian optimization; it reports seeded random-search candidates.
 
-**4-simplex → 3-cube projection:**
-- BO works in [0,1]³ (3-dimensional unit cube). The 4-simplex (4 shares summing to 1) is represented by dropping one coordinate and normalizing via softmax. The optimizer sees a 3-cube; the evaluation layer reconstructs 4 shares. See `jaxbo_optimizer.py`.
+**Simplex representation:**
+- The GP observes all four spending shares, so zero intervention remains distinct from all-in-events.
+- Proposed candidates are sampled on the four-share, full-budget simplex; arbitrary inputs are clipped and normalized only when their sum exceeds one.
 
 **Revisit when:** Sweep time exceeds 5 minutes (async workers already handle this via queue abstraction), or when the allocation space grows beyond 4 interventions (projection changes).
 
@@ -107,7 +109,7 @@ Positive covariance from shared seeds reduces this substantially: same-seed runs
 
 **Why:**
 - Demo needs one URL. Two separate services (UI + API) require CORS headers, two ALBs, two service URLs: complexity with no benefit for a hackathon demo.
-- AWS App Runner closed to new customers 2026-04-30 (see ADR-008). ECS Fargate with a load-balanced Express service is the equivalent PaaS path on current AWS.
+- AWS App Runner closed to new customers 2026-04-30 (see [ADR-007](adr/007-ecs-express-mode.md)). ECS Fargate with a load-balanced Express service is the equivalent PaaS path on current AWS.
 - Consolidated image eliminates the `NEXT_PUBLIC_API_URL` bake-at-build-time problem: the UI's `/api/*` calls go to the same origin, so no CORS and no build-time env var needed.
 
 **What the Dockerfile does:**
@@ -136,7 +138,7 @@ app target   → python:3.12-slim + nginx:alpine + /out + nginx.conf
 - `QUEUE_BACKEND=sync` preserves all existing behavior - CI uses this
 - Adding a new backend is one class implementing `QueuePublisher` protocol + factory entry
 
-**Cost caveat discovered post-launch:** the "$0" claim covers SQS + Lambda invocation only. Lambda's webhook callback to the API requires internet egress, and Lambda is VPC-attached (for its EFS/DuckDB mount), so real internet access needs a NAT Gateway (~$32-35/month) — the one component of this design that isn't actually free. See [ADR-014](adr/014-async-worker-production-hardening.md).
+**Cost caveat discovered post-launch:** the "$0" claim covers SQS + Lambda invocation only. Lambda's webhook callback to the API requires internet egress, and Lambda is VPC-attached (for its EFS/DuckDB mount), so real internet access needs a NAT Gateway (~$32-35/month) — the one component of this design that isn't actually free. See [ADR-010](adr/010-async-worker-production-hardening.md).
 
 **Revisit when:** Workload requires durable multi-step workflows (retry, compensation, human-in-the-loop approval), or sweep time exceeds Lambda's 15-min timeout.
 
