@@ -15,6 +15,8 @@ import logging
 import os
 import urllib.request
 
+from shelterpulse.store import init_schema
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -27,6 +29,12 @@ logger.info(
     "Cold start: API_URL=%r INTERNAL_KEY=%s",
     API_URL, f"<{len(INTERNAL_KEY)} chars>" if INTERNAL_KEY else "<unset>",
 )
+
+# shelterpulse/api/app.py's startup hook only initializes its own ephemeral
+# local DuckDB file, not the EFS-mounted file this Lambda writes to - so
+# Lambda needs its own schema init. CREATE TABLE IF NOT EXISTS makes this
+# safe to run once per cold start.
+init_schema()
 
 
 def _post_json(url: str, data: dict) -> None:
