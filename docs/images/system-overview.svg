@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="1600" height="900" viewBox="0 0 1600 900" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1600" height="900" fill="#ffffff"></rect>
+
+  
+  <rect x="640" y="70" width="460" height="760" rx="22" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="664" y="94" font-size="15" font-weight="700" letter-spacing="0.6" fill="#71717a">API</text>
+
+  <rect x="330" y="355" width="260" height="190" rx="22" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="352" y="378" font-size="15" font-weight="700" letter-spacing="0.6" fill="#71717a">UI</text>
+
+  <rect x="1160" y="330" width="400" height="340" rx="22" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="1182" y="353" font-size="15" font-weight="700" letter-spacing="0.6" fill="#71717a">QUEUE BACKEND (QUEUE_BACKEND)</text>
+
+  
+  <rect x="60" y="390" width="220" height="130" rx="16" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"></rect>
+  <text x="170" y="440" text-anchor="middle" font-size="34">🧑‍💼</text>
+  <text x="170" y="466" text-anchor="middle" font-size="17" font-weight="700" fill="#18181b">Shelter Manager</text>
+  <text x="170" y="486" text-anchor="middle" font-size="14" font-weight="500" fill="#52525b">(browser)</text>
+
+  
+  <rect x="355" y="400" width="210" height="110" rx="16" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+  <text x="460" y="450" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">Next.js UI</text>
+  <text x="460" y="470" text-anchor="middle" font-size="14" font-weight="500" fill="#52525b">(static export)</text>
+
+  
+  <rect x="710" y="150" width="320" height="100" rx="16" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+  <text x="870" y="196" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">FastAPI</text>
+  <text x="870" y="216" text-anchor="middle" font-size="14" font-weight="500" fill="#52525b">shelterpulse/api/app.py</text>
+
+  
+  <rect x="710" y="290" width="320" height="100" rx="16" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+  <text x="870" y="336" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">optimize/workflow.py</text>
+  <text x="870" y="356" text-anchor="middle" font-size="14" font-weight="500" fill="#52525b">sweep orchestrator</text>
+
+  
+  <rect x="710" y="430" width="320" height="100" rx="16" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+  <text x="870" y="474" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">optimize/interface.py</text>
+  <text x="870" y="496" text-anchor="middle" font-size="14" font-weight="500" fill="#52525b">evaluate_candidate()</text>
+
+  
+  <rect x="710" y="570" width="320" height="130" rx="16" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+  <text x="870" y="620" text-anchor="middle" font-size="16" font-weight="700" fill="#18181b">core/</text>
+  <text x="870" y="640" text-anchor="middle" font-size="14" font-weight="500" fill="#52525b">SimPy engine, schema,</text>
+  <text x="870" y="658" text-anchor="middle" font-size="14" font-weight="500" fill="#52525b">interventions, montecarlo</text>
+
+  
+  <rect x="1300" y="380" width="150" height="70" rx="14" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+  <text x="1375" y="420" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">queue/</text>
+
+  
+  <rect x="1190" y="500" width="170" height="34" rx="17" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+  <text x="1275" y="522" text-anchor="middle" font-size="14" font-weight="600" fill="#5c531f">sync (in-process, default/CI)</text>
+
+  <rect x="1380" y="500" width="170" height="34" rx="17" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+  <text x="1465" y="522" text-anchor="middle" font-size="13.5" font-weight="600" fill="#5c531f">rabbitmq (docker-compose)</text>
+
+  <rect x="1290" y="580" width="170" height="34" rx="17" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+  <text x="1375" y="602" text-anchor="middle" font-size="13" font-weight="600" fill="#5c531f">sqs (production, Lambda consumes)</text>
+
+  
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#71717a"></polygon>
+    </marker>
+  </defs>
+  <g stroke="#71717a" stroke-width="2" fill="none">
+    <polyline points="280,455 350,455" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="460,400 460,300 710,300" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="870,250 870,288" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="870,390 870,428" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="870,530 870,568" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1030,200 1375,200 1375,378" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1375,450 1375,480 1275,480 1275,498" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1375,450 1375,480 1465,480 1465,498" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1375,450 1375,578" marker-end="url(#arrowhead)"></polyline>
+  </g>
+
+  
+  <rect x="590" y="322" width="90" height="20" fill="#ffffff"></rect>
+  <text x="595" y="337" font-size="13" font-weight="600" fill="#52525b">HTTP /api/*</text>
+
+  <rect x="1160" y="162" width="150" height="38" fill="#ffffff"></rect>
+  <text x="1235" y="176" text-anchor="middle" font-size="13" font-weight="600" fill="#52525b">async dispatch,</text>
+  <text x="1235" y="192" text-anchor="middle" font-size="13" font-weight="600" fill="#52525b">QUEUE_BACKEND flag</text>
+
+  
+  <g font-size="13" font-weight="600" fill="#3f3f46">
+    <rect x="60" y="800" width="16" height="16" rx="4" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+    <text x="84" y="812">Adapters (UI/API)</text>
+
+    <rect x="256" y="800" width="16" height="16" rx="4" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="280" y="812">Optimization layer</text>
+
+    <rect x="456" y="800" width="16" height="16" rx="4" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="480" y="812">Core simulation library</text>
+
+    <rect x="676" y="800" width="16" height="16" rx="4" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="700" y="812">Queue / async dispatch</text>
+  </g>
+</svg>

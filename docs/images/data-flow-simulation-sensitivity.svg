@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="600" viewBox="0 0 1760 600" font-family="Helvetica, Arial, sans-serif">
+<title>Data Flow — Simulation &amp; Sensitivity (secondary request flows)</title>
+<rect width="1760" height="600" fill="#ffffff"></rect>
+
+<line x1="900" y1="60" x2="900" y2="560" stroke="#e4e4e7" stroke-width="1"></line>
+
+
+<text x="40" y="34" font-size="11" font-weight="600" letter-spacing="0.5" fill="#a1a1aa">SECONDARY FLOW</text>
+<text x="40" y="54" font-size="18" font-weight="800" fill="#18181b">Single Simulation / Timeline</text>
+
+
+<rect x="40" y="70" width="220" height="58" rx="12" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+<text x="150" y="96" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="700" fill="#18181b">UI</text>
+<text x="150" y="112" text-anchor="middle" font-size="10" font-weight="500" fill="#52525b">Next.js UI</text>
+
+<rect x="280" y="70" width="220" height="58" rx="12" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+<text x="390" y="96" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="700" fill="#18181b">FastAPI</text>
+<text x="390" y="112" text-anchor="middle" font-size="10" font-weight="500" fill="#52525b">api/app.py</text>
+
+<rect x="520" y="70" width="220" height="58" rx="12" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+<text x="630" y="96" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="700" fill="#18181b">engine.py</text>
+<text x="630" y="112" text-anchor="middle" font-size="10" font-weight="500" fill="#52525b">core/engine.py</text>
+
+
+<g stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4">
+  <line x1="150" y1="128" x2="150" y2="500"></line>
+  <line x1="390" y1="128" x2="390" y2="500"></line>
+  <line x1="630" y1="128" x2="630" y2="500"></line>
+</g>
+
+
+<defs>
+  <marker id="ah-solid" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 9 3, 0 6" fill="#3f3f46"></polygon>
+  </marker>
+  <marker id="ah-dashed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 9 3, 0 6" fill="#71717a"></polygon>
+  </marker>
+</defs>
+<g stroke="#3f3f46" stroke-width="2" fill="none">
+  <line x1="150" y1="180" x2="383" y2="180" marker-end="url(#ah-solid)"></line>
+  <line x1="390" y1="260" x2="623" y2="260" marker-end="url(#ah-solid)"></line>
+</g>
+<g stroke="#71717a" stroke-width="1.75" stroke-dasharray="6 5" fill="none">
+  <line x1="630" y1="340" x2="397" y2="340" marker-end="url(#ah-dashed)"></line>
+  <line x1="390" y1="420" x2="157" y2="420" marker-end="url(#ah-dashed)"></line>
+</g>
+
+<g font-size="12" font-weight="600" fill="#27272a">
+  <rect x="88" y="160" width="345" height="18" fill="#ffffff"></rect>
+  <text x="270" y="174" text-anchor="middle">POST <tspan font-family="Menlo, Consolas, monospace">/simulate/timeline</tspan> {allocation, n_reps}</text>
+
+  <rect x="264" y="240" width="490" height="18" fill="#ffffff"></rect>
+  <text x="510" y="254" text-anchor="middle" font-family="Menlo, Consolas, monospace">run_simulation(scenario, seed=scenario.seed, intervention)</text>
+
+  <rect x="228" y="320" width="565" height="18" fill="#ffffff"></rect>
+  <text x="510" y="334" text-anchor="middle">returns <tspan font-family="Menlo, Consolas, monospace">SimulationResult</tspan> (daily housing_used + overflow_queue snapshots)</text>
+
+  <rect x="107" y="400" width="325" height="18" fill="#ffffff"></rect>
+  <text x="270" y="414" text-anchor="middle">returns <tspan font-family="Menlo, Consolas, monospace">list[TimelinePoint]</tspan> (day, housing_used, overflow)</text>
+</g>
+
+
+<text x="920" y="34" font-size="11" font-weight="600" letter-spacing="0.5" fill="#a1a1aa">SECONDARY FLOW</text>
+<text x="920" y="54" font-size="18" font-weight="800" fill="#18181b">Sensitivity Analysis (Tornado Chart)</text>
+
+
+<rect x="920" y="70" width="220" height="58" rx="12" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+<text x="1030" y="96" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="700" fill="#18181b">UI</text>
+<text x="1030" y="112" text-anchor="middle" font-size="10" font-weight="500" fill="#52525b">Next.js UI</text>
+
+<rect x="1160" y="70" width="220" height="58" rx="12" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+<text x="1270" y="96" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="700" fill="#18181b">FastAPI</text>
+<text x="1270" y="112" text-anchor="middle" font-size="10" font-weight="500" fill="#52525b">api/app.py</text>
+
+<rect x="1400" y="70" width="220" height="58" rx="12" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+<text x="1510" y="96" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="700" fill="#18181b">interface.py</text>
+<text x="1510" y="112" text-anchor="middle" font-size="10" font-weight="500" fill="#52525b">optimize/interface.py</text>
+
+
+<g stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4">
+  <line x1="1030" y1="128" x2="1030" y2="500"></line>
+  <line x1="1270" y1="128" x2="1270" y2="500"></line>
+  <line x1="1510" y1="128" x2="1510" y2="500"></line>
+</g>
+
+
+<rect x="1250" y="212" width="320" height="180" rx="4" fill="rgba(244,244,245,0.35)" stroke="#a1a1aa" stroke-width="1.5"></rect>
+<path d="M1250,212 h60 q8,0 8,8 v18 q0,8 -8,8 h-60 z" fill="#e4e4e7" stroke="#a1a1aa" stroke-width="1.5"></path>
+<text x="1258" y="230" font-family="Menlo, Consolas, monospace" font-size="11" font-weight="700" fill="#3f3f46">loop ×6 — 3 params × {high, low}</text>
+
+
+<g stroke="#3f3f46" stroke-width="2" fill="none">
+  <line x1="1030" y1="180" x2="1263" y2="180" marker-end="url(#ah-solid)"></line>
+  <line x1="1270" y1="300" x2="1503" y2="300" marker-end="url(#ah-solid)"></line>
+</g>
+<g stroke="#71717a" stroke-width="1.75" stroke-dasharray="6 5" fill="none">
+  <line x1="1510" y1="370" x2="1277" y2="370" marker-end="url(#ah-dashed)"></line>
+  <line x1="1270" y1="460" x2="1037" y2="460" marker-end="url(#ah-dashed)"></line>
+</g>
+
+<g font-size="12" font-weight="600" fill="#27272a">
+  <rect x="1002" y="160" width="255" height="18" fill="#ffffff"></rect>
+  <text x="1130" y="174" text-anchor="middle">POST <tspan font-family="Menlo, Consolas, monospace">/sensitivity</tspan> {allocation, n_reps}</text>
+
+  <rect x="1148" y="280" width="480" height="18" fill="#ffffff"></rect>
+  <text x="1388" y="294" text-anchor="middle" font-family="Menlo, Consolas, monospace">evaluate_candidate(allocation, perturbed_scenario, seed_set)</text>
+
+  <rect x="1310" y="350" width="155" height="18" fill="#ffffff"></rect>
+  <text x="1388" y="364" text-anchor="middle">returns <tspan font-family="Menlo, Consolas, monospace">EvaluationResult</tspan></text>
+
+  <rect x="985" y="440" width="290" height="18" fill="#ffffff"></rect>
+  <text x="1130" y="454" text-anchor="middle">returns <tspan font-family="Menlo, Consolas, monospace">list[SensitivityPoint]</tspan> (param, direction, overflow_mean)</text>
+</g>
+
+</svg>

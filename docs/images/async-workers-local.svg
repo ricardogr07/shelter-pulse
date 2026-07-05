@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1400" height="820" fill="#ffffff"></rect>
+
+  
+  <rect x="60" y="180" width="340" height="400" rx="18" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="80" y="202" font-size="13" font-weight="700" letter-spacing="0.4" fill="#a1a1aa">API CONTAINER</text>
+
+  <g>
+    <rect x="100" y="250" width="260" height="88" rx="12" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5"></rect>
+    <text x="230" y="288" text-anchor="middle" font-size="15" font-weight="700" font-family="monospace" fill="#18181b">uvicorn</text>
+    <text x="230" y="308" text-anchor="middle" font-size="12" font-weight="500" fill="#71717a">FastAPI · QUEUE_BACKEND=rabbitmq</text>
+
+    <rect x="100" y="400" width="260" height="88" rx="12" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5"></rect>
+    <text x="230" y="440" text-anchor="middle" font-size="15" font-weight="700" font-family="monospace" fill="#18181b">job_store.py</text>
+    <text x="230" y="460" text-anchor="middle" font-size="12" font-weight="500" fill="#71717a">in-memory</text>
+  </g>
+
+  
+  <rect x="560" y="296" width="280" height="100" rx="12" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"></rect>
+  <text x="700" y="338" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">RabbitMQ</text>
+  <text x="700" y="358" text-anchor="middle" font-size="12" font-weight="500" fill="#71717a">localhost:15672 mgmt UI</text>
+
+  
+  <rect x="1000" y="180" width="340" height="400" rx="18" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="1020" y="202" font-size="13" font-weight="700" letter-spacing="0.4" fill="#a1a1aa">WORKER CONTAINER(S)</text>
+
+  <g>
+    <rect x="1040" y="330" width="260" height="100" rx="12" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5"></rect>
+    <text x="1170" y="373" text-anchor="middle" font-size="15" font-weight="700" font-family="monospace" fill="#18181b">rabbitmq_worker.py</text>
+    <text x="1170" y="393" text-anchor="middle" font-size="12" font-weight="500" font-family="monospace" fill="#71717a">run_optimization_sweep()</text>
+  </g>
+
+  <text x="1020" y="464" font-size="12" font-weight="500" fill="#a1a1aa">scalable —</text>
+  <text x="1020" y="482" font-size="12" font-weight="500" font-family="monospace" fill="#71717a">docker compose up --scale worker=4</text>
+
+  
+  <g>
+    <ellipse cx="700" cy="623" rx="75" ry="13" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></ellipse>
+    <rect x="625" y="623" width="150" height="60" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></rect>
+    <path d="M 625 623 L 625 683" stroke="#a1a1aa" stroke-width="1.5" fill="none"></path>
+    <path d="M 775 623 L 775 683" stroke="#a1a1aa" stroke-width="1.5" fill="none"></path>
+    <ellipse cx="700" cy="683" rx="75" ry="13" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"></ellipse>
+    <text x="700" y="651" text-anchor="middle" font-size="12.5" font-weight="700" fill="#3f3f46">shelterpulse-data</text>
+    <text x="700" y="670" text-anchor="middle" font-size="11.5" font-weight="500" fill="#71717a">DuckDB file</text>
+  </g>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#a1a1aa"></polygon>
+    </marker>
+  </defs>
+
+  
+  <g stroke="#a1a1aa" stroke-width="2" fill="none">
+    
+    <polyline points="360,294 560,325" marker-end="url(#arrowhead)"></polyline>
+    
+    <polyline points="840,325 1040,357" marker-end="url(#arrowhead)"></polyline>
+    
+    <polyline points="1040,470 700,560 360,470" marker-end="url(#arrowhead)"></polyline>
+  </g>
+
+  
+  <g stroke="#a1a1aa" stroke-width="2" stroke-dasharray="7 6" fill="none">
+    <polyline points="230,488 230,650 625,650" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1170,430 1170,650 775,650" marker-end="url(#arrowhead)"></polyline>
+  </g>
+
+  
+  <rect x="432" y="293" width="56" height="20" fill="#ffffff"></rect>
+  <text x="437" y="308" font-size="12" font-weight="600" fill="#52525b">publish</text>
+
+  <rect x="910" y="328" width="66" height="20" fill="#ffffff"></rect>
+  <text x="915" y="343" font-size="12" font-weight="600" fill="#52525b">consume</text>
+
+  <rect x="530" y="568" width="340" height="20" fill="#ffffff"></rect>
+  <text x="700" y="583" text-anchor="middle" font-size="12" font-weight="600" fill="#52525b">POST /internal/jobs/{id}/complete</text>
+</svg>

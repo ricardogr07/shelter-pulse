@@ -2,38 +2,7 @@
 
 ShelterPulse system context: who uses it and how the major pieces connect.
 
-```mermaid
-flowchart TD
-    user["Shelter Manager\n(browser)"]
-
-    subgraph frontend["UI"]
-        nextjs["Next.js UI\n(static export)"]
-    end
-
-    subgraph backend["API"]
-        fastapi["FastAPI\n(shelterpulse/api/app.py)"]
-        workflow["optimize/workflow.py\n(sweep orchestrator)"]
-        interface["optimize/interface.py\nevaluate_candidate()"]
-        core["core/\nSimPy engine, schema,\ninterventions, montecarlo"]
-        queue["queue/\nasync dispatch\n(QUEUE_BACKEND flag)"]
-    end
-
-    subgraph backends["Queue backend (QUEUE_BACKEND)"]
-        sync_b["sync\n(in-process, default/CI)"]
-        rabbit_b["rabbitmq\n(docker-compose)"]
-        sqs_b["sqs\n(production, Lambda consumes)"]
-    end
-
-    user --> nextjs
-    nextjs -->|"HTTP /api/*"| fastapi
-    fastapi --> workflow
-    workflow --> interface
-    interface --> core
-    fastapi --> queue
-    queue --> sync_b
-    queue --> rabbit_b
-    queue --> sqs_b
-```
+![System overview: a Shelter Manager's browser talks to the Next.js UI, which calls the FastAPI adapter over HTTP /api/*. Inside the API, requests flow through the sweep orchestrator and evaluation interface into the pure core simulation engine. The API also dispatches to a queue module, which fans out to one of three mutually exclusive backends: sync (in-process, default/CI), rabbitmq (docker-compose), or sqs (production, consumed by Lambda).](../images/system-overview.svg)
 
 ## Deployment modes
 

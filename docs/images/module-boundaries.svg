@@ -1,0 +1,217 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="900" viewBox="0 0 1760 900" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1760" height="900" fill="#ffffff"></rect>
+
+  
+  <rect x="40" y="70" width="380" height="520" rx="20" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="60" y="92" font-size="14" font-weight="700" letter-spacing="0.5" fill="#71717a">core — pure Python, no I/O</text>
+
+  <rect x="450" y="70" width="340" height="520" rx="20" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="470" y="92" font-size="14" font-weight="700" letter-spacing="0.5" fill="#71717a">optimize</text>
+
+  <rect x="810" y="70" width="420" height="520" rx="20" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="830" y="92" font-size="14" font-weight="700" letter-spacing="0.5" fill="#71717a">queue — async job dispatch</text>
+
+  <rect x="1250" y="70" width="260" height="520" rx="20" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="1268" y="92" font-size="14" font-weight="700" letter-spacing="0.5" fill="#71717a">store</text>
+
+  <rect x="40" y="640" width="1450" height="180" rx="20" fill="#fafafa" stroke="#d4d4d8" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+  <text x="60" y="662" font-size="14" font-weight="700" letter-spacing="0.5" fill="#71717a">adapters — thin I/O wrappers</text>
+
+  
+  <g>
+    <rect x="60" y="118" width="340" height="78" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="230" y="148" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">schema.py</text>
+    <text x="230" y="167" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">Pydantic v2 models + YAML loader —</text>
+    <text x="230" y="181" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">Scenario (frozen), CatIntakeProfile</text>
+
+    <rect x="60" y="210" width="340" height="78" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="230" y="240" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">engine.py</text>
+    <text x="230" y="259" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">SimPy discrete-event engine —</text>
+    <text x="230" y="273" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">run_simulation(), _cat_process()</text>
+
+    <rect x="60" y="302" width="340" height="78" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="230" y="335" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">interventions.py</text>
+    <text x="230" y="357" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">resolve_intervention() — budget shares → resource deltas</text>
+
+    <rect x="60" y="394" width="340" height="78" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="230" y="427" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">montecarlo.py</text>
+    <text x="230" y="449" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">run_paired(), make_seed_set() — CRN paired replications</text>
+
+    <rect x="60" y="486" width="340" height="78" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="230" y="519" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">export.py</text>
+    <text x="230" y="541" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">export_results() — YAML + CSV reproducible output</text>
+  </g>
+
+  
+  <g>
+    <rect x="470" y="118" width="300" height="82" rx="14" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="620" y="150" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">interface.py</text>
+    <text x="620" y="172" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">evaluate_candidate() — the evaluation seam</text>
+
+    <rect x="470" y="214" width="300" height="78" rx="14" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="620" y="244" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">baselines.py</text>
+    <text x="620" y="263" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">5 named allocations: equal, all-in foster,</text>
+    <text x="620" y="277" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">all-in events, domain heuristic, zero</text>
+
+    <rect x="470" y="306" width="300" height="78" rx="14" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="620" y="339" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">jaxbo_optimizer.py</text>
+    <text x="620" y="361" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">GP+EI (jax primary, scipy fallback) — simplex → cube projection</text>
+
+    <rect x="470" y="398" width="300" height="92" rx="14" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="620" y="428" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">workflow.py</text>
+    <text x="620" y="448" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">run_optimization_sweep() — calls</text>
+    <text x="620" y="462" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">interface.evaluate_candidate() per baseline /</text>
+    <text x="620" y="476" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">BO candidate → ranked list</text>
+  </g>
+
+  
+  <g>
+    <rect x="830" y="118" width="380" height="70" rx="14" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="1020" y="148" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">interface.py</text>
+    <text x="1020" y="168" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">QueuePublisher / ProgressListener protocols</text>
+
+    <rect x="830" y="200" width="115" height="72" rx="12" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="887" y="230" text-anchor="middle" font-size="12.5" font-weight="700" fill="#18181b">sync_backend.py</text>
+    <text x="887" y="248" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">in-process</text>
+    <text x="887" y="260" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">(default, CI)</text>
+
+    <rect x="955" y="200" width="130" height="72" rx="12" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="1020" y="228" text-anchor="middle" font-size="12.5" font-weight="700" fill="#18181b">rabbitmq_backend.py</text>
+    <text x="1020" y="248" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">aio-pika</text>
+    <text x="1020" y="260" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">(docker-compose)</text>
+
+    <rect x="1095" y="200" width="115" height="72" rx="12" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="1152" y="230" text-anchor="middle" font-size="12.5" font-weight="700" fill="#18181b">sqs_backend.py</text>
+    <text x="1152" y="248" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">boto3</text>
+    <text x="1152" y="260" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">(production)</text>
+
+    <rect x="955" y="284" width="130" height="66" rx="12" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="1020" y="312" text-anchor="middle" font-size="12.5" font-weight="700" fill="#18181b">rabbitmq_worker.py</text>
+    <text x="1020" y="330" text-anchor="middle" font-size="10.5" font-weight="500" fill="#52525b">consumer process</text>
+
+    <rect x="830" y="430" width="380" height="90" rx="14" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="1020" y="463" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">job_store.py</text>
+    <text x="1020" y="485" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">In-memory job state + SSE pub/sub —</text>
+    <text x="1020" y="499" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">sweep_stale() TTL-expires stuck jobs</text>
+  </g>
+
+  
+  <g>
+    <rect x="1270" y="130" width="220" height="76" rx="14" fill="#f0e8f4" stroke="#5d2d7a" stroke-width="1.5"></rect>
+    <text x="1380" y="162" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">__init__.py</text>
+    <text x="1380" y="183" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">No-op stubs if duckdb not installed</text>
+
+    <rect x="1270" y="220" width="220" height="110" rx="14" fill="#f0e8f4" stroke="#5d2d7a" stroke-width="1.5"></rect>
+    <text x="1380" y="253" text-anchor="middle" font-size="15" font-weight="700" fill="#18181b">duckdb_store.py</text>
+    <text x="1380" y="274" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">DuckDB on EFS (prod) / local file (dev) —</text>
+    <text x="1380" y="288" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">save_run(), log_consent(), get_analytics()</text>
+  </g>
+
+  
+  <g>
+    <rect x="70" y="690" width="380" height="110" rx="14" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+    <text x="260" y="724" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">api/app.py</text>
+    <text x="260" y="746" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">FastAPI — /simulate /optimize /baselines</text>
+    <text x="260" y="760" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">/sensitivity /runs/* /export</text>
+
+    <rect x="480" y="690" width="260" height="110" rx="14" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+    <text x="610" y="724" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">cli/main.py</text>
+    <text x="610" y="746" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">Typer commands — simulate, optimize,</text>
+    <text x="610" y="760" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">baselines, export</text>
+
+    <rect x="770" y="690" width="260" height="110" rx="14" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+    <text x="900" y="724" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">ui/</text>
+    <text x="900" y="746" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">Next.js + React + TypeScript + Tailwind —</text>
+    <text x="900" y="760" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">calls /api/* via fetch</text>
+
+    <rect x="1060" y="690" width="260" height="110" rx="14" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+    <text x="1190" y="724" text-anchor="middle" font-size="14" font-weight="700" fill="#18181b">lambda/handler.py</text>
+    <text x="1190" y="746" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">SQS-triggered BO sweeps —</text>
+    <text x="1190" y="760" text-anchor="middle" font-size="11.5" font-weight="500" fill="#52525b">writes via store directly</text>
+  </g>
+
+  
+  <g font-size="12" font-weight="600" fill="#52525b">
+    <rect x="420" y="312" width="60" height="18" fill="#ffffff"></rect>
+    <text x="450" y="325" text-anchor="middle">imports</text>
+
+    <rect x="786" y="312" width="60" height="18" fill="#ffffff"></rect>
+    <text x="816" y="325" text-anchor="middle">imports</text>
+
+    <rect x="875" y="596" width="110" height="18" fill="#ffffff"></rect>
+    <text x="930" y="609" text-anchor="middle">async dispatch</text>
+
+    <rect x="440" y="648" width="100" height="18" fill="#ffffff"></rect>
+    <text x="490" y="661" text-anchor="middle">imports core</text>
+
+    <rect x="50" y="648" width="100" height="18" fill="#ffffff"></rect>
+    <text x="100" y="661" text-anchor="middle">imports core</text>
+
+    <rect x="1235" y="596" width="120" height="18" fill="#ffffff"></rect>
+    <text x="1295" y="609" text-anchor="middle">persists via store</text>
+  </g>
+
+  <rect x="88" y="590" width="280" height="20" fill="#ffffff"></rect>
+  <text x="90" y="604" font-size="11.5" font-weight="700" fill="#b91c1c">FORBIDDEN — enforced by tests/unit/test_no_cross_imports.py</text>
+
+  
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#71717a"></polygon>
+    </marker>
+    <marker id="arrowhead-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#b91c1c"></polygon>
+    </marker>
+  </defs>
+
+  <g stroke="#71717a" stroke-width="1.5" fill="none">
+    <polyline points="230,196 230,210" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="230,288 230,302" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="230,380 230,394" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="230,472 230,486" marker-end="url(#arrowhead)"></polyline>
+
+    <polyline points="620,292 620,308 590,308 590,398" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="620,384 620,398" marker-end="url(#arrowhead)"></polyline>
+
+    <polyline points="1020,188 1020,194 887,194 887,200" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1020,188 1020,200" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1020,188 1020,194 1152,194 1152,200" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1020,272 1020,284" marker-end="url(#arrowhead)"></polyline>
+
+    <polyline points="1380,206 1380,220" marker-end="url(#arrowhead)"></polyline>
+  </g>
+
+  <g stroke="#71717a" stroke-width="2" fill="none">
+    <polyline points="420,330 450,330" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="790,330 810,330" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="230,590 230,650 260,650 260,690" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="280,590 280,650 610,650 610,690" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1020,590 1020,650 900,650 900,690" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="400,690 400,610 1380,610 1380,330" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="1190,690 1190,610 1420,610 1420,330" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="450,745 770,745" marker-end="url(#arrowhead)"></polyline>
+  </g>
+
+  <polyline points="60,590 60,745 70,745" stroke="#b91c1c" stroke-width="2" stroke-dasharray="7 6" fill="none" marker-end="url(#arrowhead-red)"></polyline>
+
+  
+  <g font-size="12.5" font-weight="600" fill="#3f3f46">
+    <rect x="40" y="850" width="14" height="14" rx="4" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="62" y="861">core</text>
+
+    <rect x="120" y="850" width="14" height="14" rx="4" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="142" y="861">optimize</text>
+
+    <rect x="222" y="850" width="14" height="14" rx="4" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="244" y="861">queue</text>
+
+    <rect x="310" y="850" width="14" height="14" rx="4" fill="#f0e8f4" stroke="#5d2d7a" stroke-width="1.5"></rect>
+    <text x="332" y="861">store</text>
+
+    <rect x="392" y="850" width="14" height="14" rx="4" fill="#f4ece8" stroke="#7a3d2d" stroke-width="1.5"></rect>
+    <text x="414" y="861">adapters</text>
+
+    <line x1="510" y1="857" x2="524" y2="857" stroke="#b91c1c" stroke-width="2" stroke-dasharray="3 3"></line>
+    <text x="532" y="861">forbidden import (CI-enforced)</text>
+  </g>
+</svg>

@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1600" height="900" fill="#ffffff"></rect>
+
+  
+  <g stroke="#71717a" stroke-width="2" stroke-dasharray="7 6" fill="none">
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 9 3, 0 6" fill="#71717a"></polygon>
+      </marker>
+    </defs>
+    <polyline points="800,190 800,270 220,270 220,320" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="800,190 800,270 620,270 620,320" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="800,190 800,270 1020,270 1020,320" marker-end="url(#arrowhead)"></polyline>
+    <polyline points="800,190 800,270 1400,270 1400,320" marker-end="url(#arrowhead)"></polyline>
+  </g>
+
+  <rect x="720" y="234" width="160" height="24" rx="6" fill="#ffffff" stroke="#e4e4e7"></rect>
+  <text x="800" y="250" text-anchor="middle" font-size="12.5" font-weight="600" fill="#52525b">state backend for all</text>
+
+  
+  <g>
+    <rect x="550" y="60" width="500" height="130" rx="14" fill="#f4f4f5" stroke="#52525b" stroke-width="1.5"></rect>
+    <text x="800" y="122" text-anchor="middle" font-size="17" font-weight="700" font-family="monospace" fill="#18181b">infra/bootstrap</text>
+    <text x="800" y="145" text-anchor="middle" font-size="12" font-weight="500" fill="#52525b">S3 tfstate bucket + DynamoDB lock table —</text>
+    <text x="800" y="160" text-anchor="middle" font-size="12" font-weight="500" fill="#52525b">chicken-and-egg: applied once, manually</text>
+  </g>
+
+  
+  <g>
+    <rect x="40" y="320" width="360" height="280" rx="14" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="62" y="352" font-size="15.5" font-weight="700" font-family="monospace" fill="#18181b">infra/github-oidc</text>
+    <text x="76" y="382" font-size="12" fill="#3f3f46">• GitHub Actions OIDC provider</text>
+    <text x="76" y="402" font-size="12" fill="#3f3f46">• Deploy IAM role</text>
+    <text x="76" y="422" font-size="12" fill="#3f3f46">• No long-lived AWS keys in CI</text>
+  </g>
+
+  
+  <g>
+    <rect x="440" y="320" width="360" height="280" rx="14" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="462" y="352" font-size="15.5" font-weight="700" font-family="monospace" fill="#18181b">infra/app-runner</text>
+    <text x="462" y="371" font-size="12" font-weight="500" fill="#52525b">historical name, kept for state continuity</text>
+    <text x="476" y="399" font-size="12" fill="#3f3f46">• ECR repository</text>
+    <text x="476" y="419" font-size="12" fill="#3f3f46">• ECS execution IAM role</text>
+    <text x="476" y="439" font-size="12" fill="#3f3f46">• ECS task IAM role</text>
+  </g>
+
+  
+  <g>
+    <rect x="840" y="320" width="360" height="280" rx="14" fill="#f0e8f4" stroke="#5d2d7a" stroke-width="1.5"></rect>
+    <text x="862" y="352" font-size="15.5" font-weight="700" font-family="monospace" fill="#18181b">infra/async-workers</text>
+    <text x="876" y="382" font-size="12" fill="#3f3f46">• SQS queue + DLQ</text>
+    <text x="876" y="402" font-size="12" fill="#3f3f46">• Lambda function + IAM role</text>
+    <text x="876" y="422" font-size="12" fill="#3f3f46">• EFS + mount targets</text>
+    <text x="876" y="442" font-size="12" fill="#3f3f46">• ECS task IAM role</text>
+  </g>
+
+  
+  <g>
+    <rect x="1240" y="320" width="320" height="280" rx="14" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="1262" y="352" font-size="15.5" font-weight="700" font-family="monospace" fill="#18181b">infra/dns</text>
+    <text x="1276" y="382" font-size="12" fill="#3f3f46">• ACM certificate</text>
+    <text x="1276" y="402" font-size="12" fill="#3f3f46">• Route53 records</text>
+    <text x="1276" y="422" font-size="12" fill="#3f3f46">• ALB HTTPS listener + cert attach</text>
+    <text x="1276" y="442" font-size="12" fill="#3f3f46">• www redirect</text>
+    <text x="1276" y="462" font-size="12" fill="#3f3f46">• HTTP → HTTPS redirect</text>
+  </g>
+
+  
+  <g font-size="12.5" font-weight="600" fill="#3f3f46">
+    <rect x="40" y="646" width="14" height="14" rx="4" fill="#f4f4f5" stroke="#52525b" stroke-width="1.5"></rect>
+    <text x="62" y="657">Root — applied once, manually</text>
+
+    <rect x="330" y="646" width="14" height="14" rx="4" fill="#e8ecf4" stroke="#2d3d7a" stroke-width="1.5"></rect>
+    <text x="352" y="657">CI/CD</text>
+
+    <rect x="440" y="646" width="14" height="14" rx="4" fill="#f4f0e8" stroke="#7a6d2d" stroke-width="1.5"></rect>
+    <text x="462" y="657">Compute</text>
+
+    <rect x="560" y="646" width="14" height="14" rx="4" fill="#f0e8f4" stroke="#5d2d7a" stroke-width="1.5"></rect>
+    <text x="582" y="657">Async</text>
+
+    <rect x="660" y="646" width="14" height="14" rx="4" fill="#e8f4e8" stroke="#2d7a2d" stroke-width="1.5"></rect>
+    <text x="682" y="657">Networking</text>
+
+    <line x1="800" y1="653" x2="814" y2="653" stroke="#71717a" stroke-width="2" stroke-dasharray="4 3"></line>
+    <text x="822" y="657">dashed = state backend dependency</text>
+  </g>
+</svg>

@@ -50,6 +50,7 @@ resource "aws_sqs_queue" "jobs_dlq" {
   fifo_queue                  = true
   content_based_deduplication = true
   message_retention_seconds   = 1209600 # 14 days
+  sqs_managed_sse_enabled     = true    # SSE-SQS, AWS-managed key, no KMS to provision/pay for
 
   tags = {
     Project = "shelterpulse"
@@ -64,6 +65,7 @@ resource "aws_sqs_queue" "jobs" {
   visibility_timeout_seconds  = 300   # 5 min (Lambda timeout + buffer)
   message_retention_seconds   = 86400 # 1 day
   receive_wait_time_seconds   = 20    # long polling
+  sqs_managed_sse_enabled     = true  # SSE-SQS, AWS-managed key, no KMS to provision/pay for
 
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.jobs_dlq.arn
