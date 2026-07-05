@@ -38,7 +38,7 @@ const liveSmoke = Cypress.env("liveSmoke") === true || Cypress.env("liveSmoke") 
     // Step 3 bottleneck -> optimize (POST /optimize, cached for demo params, fast)
     cy.contains("button", "Optimize Budget").click();
     // Step 4: real BO winner rendered, not stuck on "Optimizing..."
-    cy.contains("Optimized Allocation", { timeout: 30000 }).should("be.visible");
+    cy.contains("Best Sweep Allocation", { timeout: 30000 }).should("be.visible");
     cy.contains("Overflow Cat-Days").should("be.visible");
   });
 
