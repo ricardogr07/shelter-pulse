@@ -55,4 +55,9 @@ resolved.
 
 ## Reporting a vulnerability
 
-This is a hackathon project. If you find a security issue, open a GitHub issue labelled `security`.
+This is a hackathon project with no dedicated security contact, but please still report
+privately rather than in a public issue: use GitHub's private vulnerability reporting
+(this repository's **Security** tab -> **Report a vulnerability**). Given the synthetic-data
+scope above, most findings will be about infrastructure/dependency hygiene rather than data
+exposure, but the private channel avoids giving a working exploit a public audience before
+a fix lands.

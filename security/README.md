@@ -42,7 +42,13 @@ See: `npm-audit.json`
 | `actions/checkout` persists Git credentials (`auto-release.yml`, `release.yml`) | Low | Supply Chain | `release.yml` already an accepted risk (see below); `auto-release.yml` added to the same accepted-risk entry - it also pushes a git tag (`git push origin "v$VERSION"`), so it has the same real requirement |
 | GitHub organization should enforce an IP allow list | Medium | Org config | Dropped: not a repo/code finding, it's a GitHub org/account setting. IP allow-listing for org access is a GitHub Enterprise Cloud feature that may not even be available on this account's plan, and configuring it wrong risks locking out the only maintainer. Left to manual review outside this project's code. |
 
-**Dashboard artifact:** [`aikido-dashboard.png`](aikido-dashboard.png), captured 2026-07-04, shows all 8 findings above as listed by Aikido against `main` (still "New" since the fix branch hadn't merged yet at capture time). PDF/JSON export of scan results isn't available on this project's Aikido plan, so this screenshot is the retained evidence artifact for the round-2 findings.
+**Dashboard artifact:** [`aikido-dashboard.png`](aikido-dashboard.png), captured 2026-07-04, shows all 8 findings above as listed by Aikido against `main` (still "New" since the fix branch hadn't merged yet at capture time). PDF/JSON export of scan results isn't available on this project's Aikido plan (no scanner version number is displayed on the free-tier dashboard either), so this screenshot is the retained evidence artifact for the round-2 findings.
+
+| Property | Value |
+|---|---|
+| SHA-256 | `2a035f4a47783c6fd157a10857a0b9c5111f80fde4ca6b73cc226f448323bf31` |
+| Scanned ref | `main` @ `ecd71b64d30bd8804c8e014ee9c4244760aad048` |
+| Findings shown | 8 (1 critical, 2 high, 3 medium, 2 low; the dropped org-level finding is not a repo scan result and isn't shown here) |
 
 **Note on the integrity-verification finding:** the round-1 "fix" below (added 2026-06-29) turned out not to work. The GPG verification step had `|| true` and `|| echo "::warning"` fallbacks that silently swallowed *any* verification failure and let the AWS CLI install proceed anyway - it looked like it verified, but never actually blocked on a bad signature. Worse, the hardcoded key fingerprint (`...180E282A1C0`) didn't even match the real AWS CLI signing key (verified directly against a live download: the actual fingerprint is `FB5DB77FD5C118B80511ADA8A6310ACC4672475C`), so a strict version of the old check would have failed permanently - which is almost certainly *why* the silent fallbacks were added in the first place, rather than fixing the real key. Round 2 fixes both: corrected fingerprint, and verification failures now fail the job (a bounded 3-attempt retry only covers the keyserver-reachability step, not a bad signature).
 

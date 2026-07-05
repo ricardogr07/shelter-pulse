@@ -16,6 +16,8 @@
 
 ---
 
+![Shelter Pulse readme banner.](docs/images/readme-banner.svg)
+
 ## The problem
 
 Every spring, kitten season floods cat shelters. Intake surges 2-3x. Isolation queues fill. Housing overflows. Managers face an impossible allocation problem: a fixed budget split across four interventions (foster support, extra clinic hours, temporary isolation capacity, adoption events) with no way to model outcomes before committing real staff and dollars. Gut-feel allocation routinely leaves overflow on the table.
@@ -68,7 +70,7 @@ Next.js + Tailwind frontend calling FastAPI. Sensitivity tornado chart, day-by-d
 | **Baselines** | 5 named strategies compared per sweep |
 | **Whisker Haven evidence** | All-events baseline: 50.2 mean overflow cat-days; best BO candidate: 82.1; equal allocation: 874.4 |
 
-**The most surprising modeling result:** of the four intervention levers, only `adoption_events` changes cats' *rate of leaving* the shelter; foster support, extra clinic hours, and temporary isolation only add capacity or speed up processing upstream of that exit. Under this model, that is why concentrating budget on adoption events consistently outperforms every other allocation this project tested, including what Bayesian optimization finds - a structural property of the levers, not a search failure. Full mechanism, a multi-objective search that confirms it, and the honest negative result for BO: [whitepaper](docs/whitepaper/whitepaper.md).
+**The most surprising modeling result:** of the four intervention levers, only `adoption_events` changes cats' *rate of leaving* the shelter; foster support, extra clinic hours, and temporary isolation only add capacity or speed up processing upstream of that exit. Under this model, that is why concentrating budget on adoption events consistently outperforms every other allocation this project tested, including what Bayesian optimization finds - a structural property of the levers, not a search failure. The model calls this **bottleneck displacement**: relieving a non-binding resource (like vet-tech FTE, per the whitepaper's archetype study) just moves cats faster into a housing queue that was already full, instead of draining it. Full mechanism, a multi-objective search that confirms it, and the honest negative result for BO: [whitepaper](docs/whitepaper/whitepaper.md).
 
 These are synthetic, model-dependent development results. Configuration, seeds, source digests, confidence intervals, and the complete ranking are retained in [`docs/whitepaper/evidence/whisker-haven.json`](docs/whitepaper/evidence/whisker-haven.json). Regenerate the artifact on the final release commit before quoting it externally.
 
@@ -140,6 +142,8 @@ cd ui && npm run type-check && npm run lint   # frontend
 | Coverage | pytest-cov | 73% of `shelterpulse/` (`tox -e test`) | Evidence gate |
 
 GitHub Actions selects the relevant Python, UI, and Docker checks from changed paths on pull requests targeting `develop`.
+
+**Security:** [`SECURITY.md`](SECURITY.md) has the threat model (assets, trust boundaries, threats and controls); [`security/README.md`](security/README.md) has the full per-finding scan evidence (Aikido, pip-audit, npm audit) and accepted-risk justifications.
 
 ## Project structure
 
