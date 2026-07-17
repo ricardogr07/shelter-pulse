@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { simulateCustom, optimizeCustom, optimizeBuilderCompare, getSensitivity, getTimeline, getTimelineCompare, fetchRecentRuns, type SensitivityResult, type DailySnapshot, type CompareResult, type AsyncJobResponse, type PreviousRun } from "@/api";
 import { getDictionary } from "@/i18n/dictionaries";
+import { StaticModeBanner } from "@/components/StaticModeBanner";
 import type { EvaluationResult, CustomScenario } from "@/types";
 import SensitivityChart from "@/components/SensitivityChart";
 import TimelineChart from "@/components/TimelineChart";
@@ -193,6 +194,8 @@ export default function SimulateClient({ lang }: { lang: string }) {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t.simulate.title}</h1>
         <p className="text-zinc-600 dark:text-zinc-400 mb-8">{t.simulate.subtitle}</p>
+
+        <StaticModeBanner />
 
         <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800 space-y-6">
           <Input label={t.simulate.labels.name} tooltip={t.simulate.tooltips.name} name="name" type="text" value={form.name} onChange={set("name")} onBlur={checkPreviousRuns} />
