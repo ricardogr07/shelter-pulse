@@ -36,12 +36,6 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
           >
             {t.landing.ctaDemo}
           </Link>
-          <Link
-            href={`/${lang}/simulate`}
-            className="px-6 py-3 border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 font-semibold rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-          >
-            {t.landing.ctaCustom}
-          </Link>
         </div>
       </section>
 

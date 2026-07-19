@@ -156,10 +156,9 @@ total_intervention_budget: 5000`}</pre>
       title: "8. Try It Yourself",
       content: (
         <div className="space-y-3">
-          <p>Two ways to explore:</p>
+          <p>Explore the recorded optimization:</p>
           <div className="flex gap-3 mt-2">
             <Link href={`/${lang}/demo`} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold rounded-lg text-sm transition-colors">Guided Demo →</Link>
-            <Link href={`/${lang}/simulate`} className="px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 font-semibold rounded-lg text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">Custom Builder →</Link>
           </div>
         </div>
       )

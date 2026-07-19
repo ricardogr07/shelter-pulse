@@ -28,37 +28,10 @@ class TestFactory:
             publisher = get_publisher()
             assert isinstance(publisher, SyncPublisher)
 
-    def test_rabbitmq_raises_without_dep(self):
-        """QUEUE_BACKEND=rabbitmq attempts import of rabbitmq_backend.
-
-        This test verifies the factory routes correctly. The actual import
-        may fail if aio-pika is not installed, which is expected in the
-        base test environment.
-        """
+    def test_backend_env_ignored_returns_sync(self):
+        """The async backends are removed: any QUEUE_BACKEND value returns sync."""
         with patch.dict(os.environ, {"QUEUE_BACKEND": "rabbitmq"}):
-            try:
-                publisher = get_publisher()
-                # If aio-pika is installed, verify correct type
-                from shelterpulse.queue.rabbitmq_backend import RabbitMQPublisher
-                assert isinstance(publisher, RabbitMQPublisher)
-            except ImportError:
-                # Expected: aio-pika not in base dev deps
-                pass
-
-    def test_sqs_raises_without_dep(self):
-        """QUEUE_BACKEND=sqs attempts import of sqs_backend.
-
-        Similar to rabbitmq - routes correctly but may fail on import
-        if boto3 is not installed.
-        """
-        with patch.dict(os.environ, {"QUEUE_BACKEND": "sqs"}):
-            try:
-                publisher = get_publisher()
-                from shelterpulse.queue.sqs_backend import SQSPublisher
-                assert isinstance(publisher, SQSPublisher)
-            except ImportError:
-                # Expected: boto3 not in base dev deps
-                pass
+            assert isinstance(get_publisher(), SyncPublisher)
 
     def test_default_returns_sync_progress_listener(self):
         """Default progress listener is SyncProgressListener."""
