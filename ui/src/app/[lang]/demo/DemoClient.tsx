@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { simulate, optimize, getBaselines, exportUrl, apiBase } from "@/api";
+import { simulate, optimize, getBaselines, exportUrl, apiBase, STATIC_MODE } from "@/api";
+import { StaticModeBanner } from "@/components/StaticModeBanner";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { AllocationIn, EvaluationResult } from "@/types";
 import ComparisonTable from "@/components/ComparisonTable";
@@ -111,6 +112,20 @@ export default function DemoClient({ lang }: { lang: string }) {
 
   async function downloadExport() {
     setError(null);
+    if (STATIC_MODE) {
+      // No backend in static mode: export the recorded sweep already in state as CSV.
+      const data = sweepResults ?? [];
+      const header = "source,foster_support,clinic_hours,temporary_isolation,adoption_events,mean_overflow_cat_days,mean_total_cost,is_feasible";
+      const csv = [header, ...data.map((r) => [r.source, r.foster_support, r.clinic_hours, r.temporary_isolation, r.adoption_events, r.mean_overflow_cat_days, r.mean_total_cost, r.is_feasible].join(","))].join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "shelterpulse_recorded_sweep.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
     try {
       const r = await fetch(exportUrl(), {
         method: "POST",
@@ -143,6 +158,8 @@ export default function DemoClient({ lang }: { lang: string }) {
             Kitten season resource optimizer · Whisker Haven demo
           </p>
         </div>
+
+        <StaticModeBanner />
 
         <div className="flex gap-1 mb-8">
           {(["configure", "baseline", "bottleneck", "optimize", "compare", "export"] as Step[]).map((s, i) => (

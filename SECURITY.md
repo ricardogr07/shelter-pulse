@@ -10,29 +10,28 @@ because there is nothing sensitive to protect.
 ## Threat model
 
 **Assets:** synthetic scenario data; the opt-in run-history/consent log in DuckDB
-(also synthetic); the `INTERNAL_KEY` webhook shared secret; the AWS infrastructure
-and its IAM roles; the GitHub Actions OIDC deploy role.
+(also synthetic); the AWS infrastructure and its IAM roles; the GitHub Actions
+OIDC deploy role.
 
 **Trust boundaries / entry points:**
 
 | Entry point | Exposure | Auth |
 |---|---|---|
-| Public HTTPS (`/en`, `/api/*`) | Anonymous, internet-facing | None (nothing sensitive to protect); per-IP rate limiting on concurrent jobs |
-| Internal webhook (`/internal/jobs/*`) | Called only by the Lambda/RabbitMQ worker, not by browsers | `X-Internal-Key` shared secret |
-| CI/CD (GitHub Actions) | Deploy role assumed via OIDC, no long-lived AWS keys | Narrowly scoped to ECR, ECS Express, and one named Lambda function ARN |
+| Public HTTPS (`/en`) | Anonymous, internet-facing static site (S3 + CloudFront) | None (nothing sensitive to protect; no backend) |
+| Self-hosted API (`/api/*`, local docker compose) | Whoever runs it locally | Per-IP rate limiting on the compute-heavy endpoints |
+| CI (GitHub Actions) | OIDC role, no long-lived AWS keys | Kept for remaining AWS automation |
 | Terraform-managed infra | Applied manually from a developer machine | Not part of automated CI |
 
 **Threats considered and their controls:**
 
 - Adversarial/malformed API input -> Pydantic v2 validation at every boundary, 422 on rejection; no `eval`, no arbitrary file paths from user input, no shell execution.
-- Endpoint abuse / compute-exhaustion DoS on the optimize endpoints -> per-IP concurrent-job limit (`count_active_by_ip`), 5-minute job TTL sweep so a stuck job can't hold a slot indefinitely.
+- Endpoint abuse / compute-exhaustion DoS on the optimize endpoints -> per-IP rate limiting (token bucket) on the compute-heavy endpoints.
 - Cross-site scripting -> Content-Security-Policy, no `dangerouslySetInnerHTML` anywhere in the UI.
 - Clickjacking -> `X-Frame-Options: DENY`.
 - Transport downgrade -> HSTS.
-- Internal webhook forgery -> shared-secret header, path not reachable from the public internet except via the NAT-routed Lambda that holds the secret.
 - Supply chain -> dependencies pinned in `uv.lock` and scanned periodically by Aikido (manual/scheduled scans; instant on-push scanning is a paid Aikido tier this project doesn't use), pip-audit/npm-audit, GitHub Actions pinned to full commit SHAs, Docker base images pinned to versioned tags (not `:latest`), AWS CLI download integrity verified by GPG signature against the correct published key.
-- Container/host privilege -> every runtime container (API, worker, RabbitMQ, the consolidated production image) runs as a non-root user.
-- Data at rest -> SQS (SSE-SQS), EFS, and ECR are all encrypted.
+- Container/host privilege -> every runtime container (API, UI, the consolidated image) runs as a non-root user.
+- Data at rest -> the public site is a static export with no data store; the S3 site bucket is private behind CloudFront Origin Access Control, and ECR is encrypted.
 
 **Residual risks:** see the Accepted Risks table in
 [`security/README.md`](security/README.md) rather than duplicating it here -

@@ -7,9 +7,6 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
-      - QUEUE_BACKEND=rabbitmq
-      - RABBITMQ_URL=amqp://shelter:pulse@rabbitmq:5672/
-      - INTERNAL_KEY=dev-key-123
       - DUCKDB_PATH=/app/data/shelterpulse.duckdb
     volumes:
       - shelterpulse-data:/app/data
@@ -18,9 +15,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
 
   ui:
     build:
@@ -33,43 +27,6 @@ services:
     depends_on:
       api:
         condition: service_healthy
-
-  rabbitmq:
-    build:
-      context: .
-      dockerfile: docker/rabbitmq.Dockerfile
-    ports:
-      - "5672:5672"
-    environment:
-      RABBITMQ_DEFAULT_USER: shelter
-      RABBITMQ_DEFAULT_PASS: pulse
-    healthcheck:
-      test: ["CMD", "rabbitmqctl", "status"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 20s
-
-  worker:
-    build:
-      context: .
-      target: api
-    command: [".venv/bin/python", "-m", "shelterpulse.queue.rabbitmq_worker"]
-    environment:
-      - PYTHONUNBUFFERED=1
-      - RABBITMQ_URL=amqp://shelter:pulse@rabbitmq:5672/
-      - API_URL=http://api:8000
-      - INTERNAL_KEY=dev-key-123
-      - DUCKDB_PATH=/app/data/shelterpulse.duckdb
-    volumes:
-      - shelterpulse-data:/app/data
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      api:
-        condition: service_healthy
-    deploy:
-      replicas: 1
 
 volumes:
   shelterpulse-data:

@@ -25,10 +25,9 @@ _BUILDER_BODY = {
     "kitten_fraction": 0.59, "base_adoption_rate": 0.08, "n_replications": 8,
 }
 
-# Endpoints checked here are all synchronous (200, no job polling required).
-# /optimize/builder is intentionally excluded: in production it's always async
-# (202 + job_id), and belongs in tests/e2e/test_prod_smoke.py where the
-# dispatch -> poll -> results chain can actually be exercised.
+# Endpoints checked here are all fast (a few seconds at most). /optimize/builder
+# is synchronous too but intentionally excluded: a full BO sweep takes ~30s+,
+# which defeats a smoke test; tests/e2e/test_duckdb_consent.py exercises it.
 API_FUNCTIONAL: list[tuple[str, str, Callable[[object], bool], dict | None]] = [
     ("GET", "/health", lambda d: d["status"] == "ok", None),
     ("GET", "/baselines", lambda d: len(d) == 5, None),

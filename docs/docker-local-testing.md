@@ -1,6 +1,6 @@
 # Docker Local Testing
 
-All infrastructure changes must be verified locally before pushing or promoting to production.
+All infrastructure changes must be verified locally before pushing.
 
 ## Quick Start
 
@@ -8,11 +8,9 @@ All infrastructure changes must be verified locally before pushing or promoting 
 docker compose up --build -d
 ```
 
-This starts 4 services:
-- **api** (port 8000): FastAPI with QUEUE_BACKEND=rabbitmq
+This starts 2 services:
+- **api** (port 8000): FastAPI; optimization sweeps run synchronously in-process
 - **ui** (port 3000): Next.js static export via nginx
-- **rabbitmq** (port 5672): Message broker for async jobs
-- **worker**: Consumes optimization jobs from RabbitMQ
 
 ## Verify Health
 
@@ -24,105 +22,26 @@ curl http://localhost:3000/en
 # HTML response
 ```
 
-## Test the Async Flow
+## Test an Optimization Sweep
 
 ```bash
-# Submit an async optimization
+# Blocks until the sweep completes (~30s), returns the ranked results directly
 curl -X POST http://localhost:8000/optimize/builder \
   -H 'Content-Type: application/json' \
   -d '{"duration_days":30,"housing_capacity":20,"n_replications":4}'
-# Returns: {"job_id":"...","status":"queued"}
-
-# Poll for completion
-curl http://localhost:8000/optimize/<job_id>/status
-# Returns: {"status":"completed",...}
-
-# Get results
-curl http://localhost:8000/optimize/<job_id>/results
 # Returns: [{...}, ...]
 ```
 
-```mermaid
-sequenceDiagram
-    participant UI
-    participant API as api container
-    participant MQ as rabbitmq
-    participant W as worker container
-
-    UI->>API: POST /optimize/builder
-    API->>MQ: publish job
-    API-->>UI: 202 {job_id, status: queued}
-    MQ->>W: consume job
-    W->>W: run_optimization_sweep()
-    W->>API: POST /internal/jobs/{id}/complete (X-Internal-Key)
-    UI->>API: GET /optimize/{id}/status (poll)
-    API-->>UI: {status: completed}
-    UI->>API: GET /optimize/{id}/results
-    API-->>UI: [EvaluationOut, ...]
-```
-
-If the worker never calls back (crashed, bad `INTERNAL_KEY`, network issue), the job doesn't hang forever: `JobStore.sweep_stale()` fails it out after 5 minutes and notifies any open SSE stream. See [architecture/async-workers.md](architecture/async-workers.md#job-lifecycle).
-
 ## Running Tests
 
-### Unit + E2E (no Docker needed)
 ```bash
 uv run pytest tests/unit/ tests/e2e/ -v
 ```
 
-### Integration (requires Docker running)
-```bash
-uv run pytest tests/integration/ -v
-```
-
-Integration tests verify the full async flow: API -> RabbitMQ -> Worker -> Webhook -> Results.
-
-## Scaling Workers
-
-```bash
-docker compose up --scale worker=4 -d
-```
-
-Multiple workers consume from the same RabbitMQ queue concurrently.
-
-## Checking Worker Logs
-
-```bash
-docker logs shelter-pulse-worker-1 --tail 20
-```
-
-## Promote to Production Flow
-
-1. **Feature branch** -> local docker-compose test -> PR to develop -> CI green -> merge
-2. **develop -> main**: PR with full e2e + promote workflow
-3. **Deploy**: push to `main` triggers `auto-release.yml`, which tags, creates a GitHub Release, and calls the deploy workflow automatically (no manual tag push)
-4. **Smoke test**: Verify live URL responds (health + basic API calls)
-5. **Rollback if needed**: Redeploy previous image tag via:
-   ```bash
-   aws ecs update-express-gateway-service \
-     --service-arn $SERVICE_ARN \
-     --primary-container "{\"image\":\"$ECR_REPO:v$PREV_VERSION\",\"containerPort\":8080}"
-   ```
-
-## Production vs Local Differences
-
-| Aspect | Local (docker-compose) | Production (AWS) |
-|--------|----------------------|------------------|
-| Queue | RabbitMQ container | SQS FIFO queue |
-| Worker | Docker container | Lambda function |
-| Storage | Docker volume | EFS file system |
-| Feature flag | QUEUE_BACKEND=rabbitmq | QUEUE_BACKEND=sqs |
-| Progress | RabbitMQ progress queue | Webhook POST |
-
 ## Troubleshooting
-
-### Worker not connecting to RabbitMQ
-Check that rabbitmq container is healthy: `docker compose ps`
-Worker retries connection 10 times with exponential backoff.
 
 ### API returning 500 on /optimize/builder
 Check API logs: `docker logs shelter-pulse-api-1 --tail 30`
-Common cause: aio-pika not installed (need `--extra worker` in Dockerfile).
 
 ### Stale images
 ```bash

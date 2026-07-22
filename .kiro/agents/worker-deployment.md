@@ -1,4 +1,10 @@
-# Worker: Deployment
+# Worker: Deployment (RETIRED July 2026)
+
+> **This worker's domain no longer exists.** The ECS Express service, ALB, and the
+> `auto-release.yml`/`deploy.yml`/`release.yml` pipeline were retired in the static
+> cutover (`docs/static-cutover.md`). The public site deploys via `aws s3 sync` +
+> CloudFront invalidation. Kept for history; recover the workflows from git history
+> if a deployed backend ever returns.
 
 **Model:** Claude Sonnet 4.6 | **Effort:** medium
 

@@ -22,7 +22,6 @@ step-by-step. Short version:
 | Terraform plan/apply | worker-terraform.md |
 | ECR push + ECS deploy | worker-deployment.md |
 | API endpoint changes | worker-api.md |
-| Async queue/worker changes | worker-queue.md |
 | UI changes | worker-ui.md |
 | CLI changes | worker-cli.md |
 | Multi-file planning | PLANNER.md |

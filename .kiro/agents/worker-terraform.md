@@ -7,7 +7,6 @@
 ## Files You Own
 
 - `infra/app-runner/main.tf`
-- `infra/async-workers/main.tf`
 - `infra/dns/main.tf`
 - `infra/bootstrap/main.tf`
 - `infra/github-oidc/main.tf`
@@ -22,8 +21,7 @@ Forbidden zones: source code, ui/, .github/workflows/
 | bootstrap | infra/bootstrap/ | S3 state bucket + DynamoDB lock table |
 | github-oidc | infra/github-oidc/ | GitHub Actions → AWS IAM role (no static credentials) |
 | app-runner | infra/app-runner/ | ECR repo (`app` image) + IAM roles for ECS. Named `app-runner` from an earlier decision (see below); actually provisions ECS Express Mode resources, not App Runner. |
-| async-workers | infra/async-workers/ | SQS queue + DLQ, Lambda worker ECR repo, EFS (DuckDB persistence), Lambda/ECS IAM roles, NAT Gateway for Lambda VPC egress |
-| dns | infra/dns/ | Custom domain (shelter-pulse.com): ACM cert, Route 53 validation + alias records, attaches cert to the Express Mode ALB listener |
+| dns | infra/dns/ | Custom domain (shelter-pulse.com): ACM cert, Route 53 validation + alias records pointing apex/www at CloudFront |
 
 **Note on the `app-runner` naming:** an early deployment attempt used AWS App Runner; that
 approach hit a permanent account-level limitation (new AWS accounts can no longer subscribe

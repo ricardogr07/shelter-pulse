@@ -19,7 +19,7 @@ export default function NavBar({ lang }: { lang: string }) {
     { href: `/${lang}`, label: t.nav.home },
     { href: `/${lang}/demo`, label: t.nav.demo },
     { href: `/${lang}/how-it-works`, label: t.nav.howItWorks },
-    { href: `/${lang}/simulate`, label: t.nav.buildCustom },
+    // Custom builder hidden: the static showcase has no backend for live custom runs.
   ];
 
   return (

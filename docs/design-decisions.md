@@ -124,7 +124,9 @@ app target   → python:3.12-slim + nginx:alpine + /out + nginx.conf
 
 ---
 
-## 7. Queue abstraction: RabbitMQ local, SQS+Lambda prod
+## 7. Queue abstraction: RabbitMQ local, SQS+Lambda prod (retired July 2026)
+
+**Retired:** the entire async path (queue abstraction, RabbitMQ/SQS backends, Lambda worker, job store, SSE progress) was removed in the July 2026 static cutover; `/optimize/builder` is synchronous again. Kept here as the record of the original decision.
 
 **Decision:** Offload BO sweep to background workers via a queue abstraction. `QUEUE_BACKEND` env var selects: sync (default, in-process), rabbitmq (docker-compose), sqs (production).
 

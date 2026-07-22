@@ -8,7 +8,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy dependency files first for layer caching
 COPY pyproject.toml uv.lock ./
-RUN uv sync --no-dev --no-install-project --extra optimize --extra worker --extra store --extra aws
+RUN uv sync --no-dev --no-install-project --extra optimize --extra store
 
 # pyDOE shim: jaxbo imports `pyDOE` (old name); installed package is `pydoe` (new name)
 # Must use .venv's python, not the system one - uv installs into .venv, and the

@@ -42,7 +42,7 @@ BUILDER_PAYLOAD = {
 
 async def test_optimize_with_consent_persists_to_runs_recent(client):
     """Full flow: optimize with consent -> check /runs/recent shows the run."""
-    # QUEUE_BACKEND defaults to "sync" in tests, so this blocks and returns results
+    # /optimize/builder is synchronous: it blocks and returns results
     r = await client.post("/optimize/builder", json=BUILDER_PAYLOAD)
     assert r.status_code == 200
     results = r.json()

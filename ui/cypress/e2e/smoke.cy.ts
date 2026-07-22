@@ -24,8 +24,9 @@ describe("ShelterPulse smoke", () => {
 // backend, not just DOM-shell presence. Skipped by default - ci.yml's
 // per-PR "UI checks" job runs this whole spec file against a local static
 // build with no backend (npx serve, no API), so these must stay off there.
-// Only deploy.yml's smoke-test-ui job passes --env liveSmoke=true, pointed
-// at --config baseUrl=https://shelter-pulse.com (a real deployed backend).
+// Run manually against a local compose stack with --env liveSmoke=true
+// --config baseUrl=http://localhost:3000 (the deployed site is static, so
+// there is no live backend to point these at anymore).
 const liveSmoke = Cypress.env("liveSmoke") === true || Cypress.env("liveSmoke") === "true";
 (liveSmoke ? describe : describe.skip)("ShelterPulse smoke - live data", () => {
   it("demo wizard: baseline -> optimize renders real computed results", () => {
@@ -42,12 +43,10 @@ const liveSmoke = Cypress.env("liveSmoke") === true || Cypress.env("liveSmoke") 
     cy.contains("Overflow Cat-Days").should("be.visible");
   });
 
-  it("custom builder: optimize dispatches the async job and renders real results", () => {
+  it("custom builder: optimize runs the sync sweep and renders real results", () => {
     cy.visit("/en/simulate");
-    // Default form values are fine - triggers POST /optimize/builder, which is
-    // always async (202 + job_id) in production. The UI's own SSE-driven
-    // ProgressStream must resolve to real results within the same window
-    // prod sweeps take (~30s-3min, see docs/architecture/async-workers.md).
+    // Default form values are fine - triggers POST /optimize/builder, which
+    // blocks until the sweep completes (~30s-3min) and returns results directly.
     cy.contains("button", "Optimize").click();
     cy.contains("Optimization Results", { timeout: 240000 }).should("be.visible");
     // First result row has a real (non-empty) overflow number, not a placeholder
