@@ -119,16 +119,11 @@ export async function simulateWhatIf(s: CustomScenarioParams, allocation: { fost
   return r.json();
 }
 
-export interface AsyncJobResponse { job_id: string; status: string }
-
-export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, reps = 32, consent?: { consent_storage: boolean; is_test_data: boolean }): Promise<EvaluationResult[] | AsyncJobResponse> {
+export async function optimizeCustom(s: CustomScenarioParams, nCandidates = 20, reps = 32, consent?: { consent_storage: boolean; is_test_data: boolean }): Promise<EvaluationResult[]> {
   if (STATIC_MODE) throw new Error(STATIC_MSG);
   const r = await fetch(`${API}/optimize/builder`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, n_candidates: nCandidates, n_replications: reps, ...(consent || {}) }) });
   if (!r.ok) throw new Error(await r.text());
-  const data = await r.json();
-  // 202 = async dispatch, returns {job_id, status}
-  if (r.status === 202 || data.job_id) return data as AsyncJobResponse;
-  return data as EvaluationResult[];
+  return r.json();
 }
 
 export interface PreviousRun {

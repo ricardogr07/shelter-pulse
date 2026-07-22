@@ -7,8 +7,6 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
-      - QUEUE_BACKEND=sync
-      - INTERNAL_KEY=dev-key-123
       - DUCKDB_PATH=/app/data/shelterpulse.duckdb
     volumes:
       - shelterpulse-data:/app/data

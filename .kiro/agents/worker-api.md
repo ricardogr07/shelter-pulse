@@ -26,10 +26,6 @@ Forbidden zones: core/, optimize/ (read-only reference), cli/, ui/, .github/work
 | /optimize/builder | POST | Custom scenario: _builder_to_scenario() + sweep |
 | /export | POST | export_results() from core/export.py → ZIP |
 
-Async job dispatch (queue-backed `/optimize/builder` sweeps, webhook completion) is owned by
-`worker-queue.md`, not this file -- read that worker's doc before touching anything
-queue-related from the API side.
-
 ## How to Add a New Endpoint
 
 1. Define input model (Pydantic, frozen or regular)

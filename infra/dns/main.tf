@@ -1,18 +1,17 @@
-# Custom domain configuration for ShelterPulse ECS Express Mode service.
+# Custom domain configuration for the ShelterPulse static site.
 #
 # This module:
 # 1. Requests an ACM certificate for shelter-pulse.com + *.shelter-pulse.com
+#    (us-east-1, which is also what CloudFront requires)
 # 2. Validates the certificate via Route 53 DNS records
-# 3. Looks up the ECS Express Mode ALB and HTTPS listener
-# 4. Attaches the certificate to the listener
-# 5. Imports and modifies the Express Mode listener rule to accept the custom
-#    domain hostname (preserving Express Mode's blue/green target group management)
-# 6. Creates a www -> apex 301 redirect rule
-# 7. Creates Route 53 A alias records pointing to the ALB
+# 3. Creates Route 53 A alias records pointing apex + www at the CloudFront
+#    distribution that serves the static export from S3
 #
-# Express Mode manages the priority-1 rule's forward action (blue/green TG weights).
-# We only modify its host-header condition to include shelter-pulse.com.
-# The action block is ignored via lifecycle to avoid conflicts with Express Mode.
+# The distribution, S3 bucket, and CloudFront Function are hand-managed for
+# now (see docs/static-cutover.md); codifying them as infra/static-site is the
+# deferred Phase 4 of the backend retirement plan. The ALB listener/rule
+# resources this module managed in the ECS era were removed when that stack
+# was destroyed.
 
 terraform {
   required_version = ">= 1.5"
@@ -41,19 +40,9 @@ variable "domain_name" {
   default = "shelter-pulse.com"
 }
 
-variable "alb_name" {
-  default     = "ecs-express-gateway-alb-7e687b2f"
-  description = "Name of the ALB created by ECS Express Mode"
-}
-
-variable "express_rule_arn" {
-  default     = "arn:aws:elasticloadbalancing:us-east-1:612962922955:listener-rule/app/ecs-express-gateway-alb-7e687b2f/e3184b0b6175fbf1/fcc8252bdd1f4803/499dc81bf4b2100c"
-  description = "ARN of the Express Mode listener rule (priority 1) to import"
-}
-
-variable "active_target_group_arn" {
-  default     = "arn:aws:elasticloadbalancing:us-east-1:612962922955:targetgroup/ecs-gateway-tg-d1c3da90bbdc3cd46/d0a494038785db97"
-  description = "ARN of the currently active target group (used in imported rule action)"
+variable "cloudfront_distribution_id" {
+  default     = "E3QGGSZBB1R96B"
+  description = "CloudFront distribution serving the static site"
 }
 
 # ---------------------------------------------------------------------------
@@ -110,140 +99,38 @@ resource "aws_acm_certificate_validation" "main" {
 }
 
 # ---------------------------------------------------------------------------
-# ALB + Listener (data sources - managed by ECS Express Mode)
+# CloudFront distribution (data source - hand-managed, see header comment)
 # ---------------------------------------------------------------------------
 
-data "aws_lb" "express" {
-  name = var.alb_name
-}
-
-data "aws_lb_listener" "https" {
-  load_balancer_arn = data.aws_lb.express.arn
-  port              = 443
-}
-
-# ---------------------------------------------------------------------------
-# HTTP listener - redirect all traffic to HTTPS
-# ---------------------------------------------------------------------------
-
-resource "aws_lb_listener" "http_redirect" {
-  load_balancer_arn = data.aws_lb.express.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type = "redirect"
-
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
-
-  tags = {
-    Project = "shelterpulse"
-  }
-}
-
-# ---------------------------------------------------------------------------
-# Attach custom certificate to the HTTPS listener
-# ---------------------------------------------------------------------------
-
-resource "aws_lb_listener_certificate" "custom_domain" {
-  listener_arn    = data.aws_lb_listener.https.arn
-  certificate_arn = aws_acm_certificate_validation.main.certificate_arn
-}
-
-# ---------------------------------------------------------------------------
-# Express Mode Listener Rule (imported)
-#
-# Express Mode creates this rule at priority 1 with the .on.aws hostname.
-# We import it into state and add shelter-pulse.com to the host-header
-# condition. Express Mode manages the action (blue/green TG weights),
-# so we ignore_changes on action to avoid conflicts.
-# ---------------------------------------------------------------------------
-
-resource "aws_lb_listener_rule" "express" {
-  listener_arn = data.aws_lb_listener.https.arn
-  priority     = 1
-
-  condition {
-    host_header {
-      values = [
-        var.domain_name,
-        "sh-f52a79071fe149e0ac99448fc11e8496.ecs.us-east-1.on.aws"
-      ]
-    }
-  }
-
-  action {
-    type             = "forward"
-    target_group_arn = var.active_target_group_arn
-  }
-
-  tags = {
-    AmazonECSManaged = "true"
-  }
-
-  lifecycle {
-    ignore_changes = [action]
-  }
-}
-
-# ---------------------------------------------------------------------------
-# www redirect rule
-# ---------------------------------------------------------------------------
-
-resource "aws_lb_listener_rule" "www_redirect" {
-  listener_arn = data.aws_lb_listener.https.arn
-  priority     = 20
-
-  condition {
-    host_header {
-      values = ["www.${var.domain_name}"]
-    }
-  }
-
-  action {
-    type = "redirect"
-
-    redirect {
-      host        = var.domain_name
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
+data "aws_cloudfront_distribution" "site" {
+  id = var.cloudfront_distribution_id
 }
 
 # ---------------------------------------------------------------------------
 # Route 53 Alias Records
 # ---------------------------------------------------------------------------
 
-# A record for apex domain -> ALB
 resource "aws_route53_record" "apex" {
   zone_id = data.aws_route53_zone.main.zone_id
   name    = var.domain_name
   type    = "A"
 
   alias {
-    name                   = data.aws_lb.express.dns_name
-    zone_id                = data.aws_lb.express.zone_id
-    evaluate_target_health = true
+    name                   = data.aws_cloudfront_distribution.site.domain_name
+    zone_id                = data.aws_cloudfront_distribution.site.hosted_zone_id
+    evaluate_target_health = false
   }
 }
 
-# A record for www -> ALB (so the redirect rule can fire)
 resource "aws_route53_record" "www" {
   zone_id = data.aws_route53_zone.main.zone_id
   name    = "www.${var.domain_name}"
   type    = "A"
 
   alias {
-    name                   = data.aws_lb.express.dns_name
-    zone_id                = data.aws_lb.express.zone_id
-    evaluate_target_health = true
+    name                   = data.aws_cloudfront_distribution.site.domain_name
+    zone_id                = data.aws_cloudfront_distribution.site.hosted_zone_id
+    evaluate_target_health = false
   }
 }
 
@@ -256,9 +143,9 @@ output "certificate_arn" {
   description = "ACM certificate ARN"
 }
 
-output "alb_dns_name" {
-  value       = data.aws_lb.express.dns_name
-  description = "ALB DNS name (for reference)"
+output "cloudfront_domain" {
+  value       = data.aws_cloudfront_distribution.site.domain_name
+  description = "CloudFront distribution domain the alias records point at"
 }
 
 output "app_url" {

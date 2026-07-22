@@ -73,9 +73,11 @@ export default function PrivacyPage() {
         <section className="mb-8">
           <h2 className="text-xl font-semibold text-zinc-800 dark:text-zinc-200 mb-3">Data Storage and Security</h2>
           <p className="text-zinc-600 dark:text-zinc-400">
-            Data is stored in a DuckDB database on AWS Elastic File System (EFS) in the
-            us-east-1 region. Access is restricted to the application&apos;s compute layer
-            (ECS tasks and Lambda functions). No third parties have access to the raw data.
+            The public site is a static demo with no backend: it stores no run data at all.
+            When the application is self-hosted (the clone-and-run path), opt-in run data is
+            stored in a DuckDB database on the host machine&apos;s local storage, under the
+            control of whoever operates that instance. No third parties have access to the
+            raw data.
           </p>
         </section>
 

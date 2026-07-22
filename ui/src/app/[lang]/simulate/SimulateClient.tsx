@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { simulateCustom, optimizeCustom, optimizeBuilderCompare, getSensitivity, getTimeline, getTimelineCompare, fetchRecentRuns, type SensitivityResult, type DailySnapshot, type CompareResult, type AsyncJobResponse, type PreviousRun } from "@/api";
+import { simulateCustom, optimizeCustom, optimizeBuilderCompare, getSensitivity, getTimeline, getTimelineCompare, fetchRecentRuns, type SensitivityResult, type DailySnapshot, type CompareResult, type PreviousRun } from "@/api";
 import { getDictionary } from "@/i18n/dictionaries";
 import { StaticModeBanner } from "@/components/StaticModeBanner";
 import type { EvaluationResult, CustomScenario } from "@/types";
@@ -12,7 +12,6 @@ import ComparisonTable from "@/components/ComparisonTable";
 import ParetoChart from "@/components/ParetoChart";
 import { RunHistoryPanel } from "./RunHistoryPanel";
 import { WhatIfPanel } from "./WhatIfPanel";
-import ProgressStream from "@/components/ProgressStream";
 
 const DEFAULTS: CustomScenario = {
   name: "My Shelter",
@@ -56,7 +55,6 @@ export default function SimulateClient({ lang }: { lang: string }) {
   const [loading, setLoading] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [asyncJobId, setAsyncJobId] = useState<string | null>(null);
   const [consentStorage, setConsentStorage] = useState(false);
   const [isTestData, setIsTestData] = useState(false);
   const [previousRuns, setPreviousRuns] = useState<PreviousRun[] | null>(null);
@@ -125,19 +123,9 @@ export default function SimulateClient({ lang }: { lang: string }) {
   }
 
   async function runOptimize() {
-    setLoading(true); setError(null); setSimResult(null); setTimelineBaseline(null); setCompareData(null); setAsyncJobId(null);
+    setLoading(true); setError(null); setSimResult(null); setTimelineBaseline(null); setCompareData(null);
     try {
-      const response = await optimizeCustom(form, 15, 16, { consent_storage: consentStorage, is_test_data: isTestData });
-
-      // Check if async dispatch (202 with job_id)
-      if ("job_id" in response) {
-        setAsyncJobId((response as AsyncJobResponse).job_id);
-        setLoading(false);
-        return;
-      }
-
-      // Sync path: results returned directly
-      const results = response as EvaluationResult[];
+      const results = await optimizeCustom(form, 15, 16, { consent_storage: consentStorage, is_test_data: isTestData });
       await handleOptResults(results);
     }
     catch (e) { setError(e instanceof Error ? e.message : "Failed"); }
@@ -146,7 +134,6 @@ export default function SimulateClient({ lang }: { lang: string }) {
 
   async function handleOptResults(results: EvaluationResult[]) {
     setOptResults(results);
-    setAsyncJobId(null);
     // Refresh run history panel to show new run
     if (consentStorage) setHistoryRefreshKey((k) => k + 1);
     // Fetch before/after timeline with winner allocation
@@ -157,15 +144,6 @@ export default function SimulateClient({ lang }: { lang: string }) {
       setTimelineBaseline(compare.before);
       setTimeline(compare.after);
     }
-  }
-
-  function handleStreamComplete(results: EvaluationResult[]) {
-    handleOptResults(results);
-  }
-
-  function handleStreamError(message: string) {
-    setAsyncJobId(null);
-    setError(message);
   }
 
   async function runCompare() {
@@ -320,17 +298,6 @@ export default function SimulateClient({ lang }: { lang: string }) {
                 )}
               </>
             )}
-          </div>
-        )}
-
-        {asyncJobId && (
-          <div className="mt-6 bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-3">Optimizing...</h2>
-            <ProgressStream
-              jobId={asyncJobId}
-              onComplete={handleStreamComplete}
-              onError={handleStreamError}
-            />
           </div>
         )}
 

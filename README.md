@@ -10,7 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v3-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![AWS ECS](https://img.shields.io/badge/AWS_ECS-Express_Mode-FF9900?logo=amazonwebservices&logoColor=white)](https://aws.amazon.com/ecs/)
+[![AWS](https://img.shields.io/badge/AWS-S3_%2B_CloudFront-FF9900?logo=amazonwebservices&logoColor=white)](https://aws.amazon.com/cloudfront/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21173654.svg)](https://doi.org/10.5281/zenodo.21173654)
 [![Portfolio write-up](https://img.shields.io/badge/portfolio-write--up-6366f1)](https://ricardogr07.github.io/projects/shelter-pulse/)
@@ -35,7 +35,9 @@ Requirements: runs in under 5 minutes, compares against honest baselines, quanti
 
 ## How it works
 
-![How it works: Browser (Next.js UI) calls nginx over HTTPS, which proxies /api/* to FastAPI (sync). FastAPI calls shelterpulse/core directly for the request-response path, and separately enqueues BO sweeps to RabbitMQ (local) / SQS (prod), which dispatches to a RabbitMQ worker (local) / Lambda (prod) - the worker reuses the same core simulation code and calls back to FastAPI via a webhook, which streams SSE progress back to the browser.](docs/images/readme-how-it-works.svg)
+![How it works diagram from the hackathon build: Browser (Next.js UI) calls nginx over HTTPS, which proxies /api/* to FastAPI, backed by the shelterpulse/core simulation engine. The async worker path shown (RabbitMQ/SQS, Lambda, webhook, SSE) was retired in July 2026; every endpoint is now synchronous.](docs/images/readme-how-it-works.svg)
+
+*The diagram above is from the hackathon build. The async worker path it shows (queue, Lambda, SSE progress) was retired in July 2026: the public site is now a static recorded demo, and the local backend runs every sweep synchronously in-process.*
 
 ShelterPulse stacks four layers:
 
@@ -55,9 +57,7 @@ GP + Expected Improvement searches the budget-share simplex when JAX/`jaxbo` is 
 
 Next.js + Tailwind frontend calling FastAPI. Sensitivity tornado chart, day-by-day housing timeline, ranked optimizer results. Zero chart library dependencies: bars are Tailwind `width: X%` divs.
 
-**Deployment:** nginx + uvicorn in one ECS Fargate task. One ALB, one HTTPS URL, no CORS. Pushing to `main` triggers an automatic semver release (GitHub Actions) that tags, builds, and deploys via ECR - no manual tagging.
-
-**Async workers:** BO sweeps dispatch to background workers via a queue abstraction. RabbitMQ in docker-compose (horizontal scaling demo), SQS+Lambda in production. Feature flag `QUEUE_BACKEND` selects the backend. In-memory job state self-heals: jobs stuck for 5 minutes are TTL-expired so the UI never hangs forever on a lost worker callback.
+**Deployment:** the public site is a static Next.js export on S3 + CloudFront (~USD 0/month) replaying a recorded Whisker Haven sweep. The FastAPI backend runs locally via `docker compose up` for the clone-and-run path; every endpoint is synchronous. The original ECS/ALB deployment and its async worker fleet were retired in the July 2026 cost cutover (see [docs/static-cutover.md](docs/static-cutover.md)).
 
 ---
 
@@ -105,9 +105,8 @@ docker compose up
 
 - UI: http://localhost:3000
 - API docs: http://localhost:8000/docs
-- RabbitMQ management: http://localhost:15672 (shelter/pulse)
 
-This starts 4 services: API (async mode), UI, RabbitMQ, and a background worker.
+This starts 2 services: API (synchronous) and UI.
 
 ### Dev mode
 

@@ -26,16 +26,6 @@ shelterpulse/optimize/jaxbo_optimizer.py  GP+EI (jax primary, scipy fallback); s
 
 shelterpulse/store/duckdb_store.py   save_run()/load_run(): optional DuckDB persistence for run history, consent log, analytics
 
-shelterpulse/queue/__init__.py       Factory: get_publisher() selects backend via QUEUE_BACKEND env var
-shelterpulse/queue/interface.py      Protocol: QueuePublisher, ProgressListener
-shelterpulse/queue/sync_backend.py   In-process (default): no queue, existing behavior preserved
-shelterpulse/queue/rabbitmq_backend.py  aio-pika: publish to RabbitMQ (docker-compose)
-shelterpulse/queue/sqs_backend.py    boto3: publish to SQS FIFO queue (production Lambda)
-shelterpulse/queue/job_store.py      In-memory job state: queued/running/completed/failed lifecycle
-shelterpulse/queue/rabbitmq_worker.py  Standalone consumer: connects to RabbitMQ, runs sweep, webhooks results
-
-lambda/handler.py                    SQS event handler: processes records, runs BO sweep, webhooks results
-
 shelterpulse/api/app.py              FastAPI: /simulate, /optimize, /simulate/builder, /optimize/builder,
                                      /sensitivity, /simulate/timeline, /export, /baselines
 shelterpulse/cli/main.py             Typer: simulate, optimize, baselines, export commands
@@ -114,16 +104,6 @@ def my_baseline() -> CandidateAllocation:
 # workflow.py imports ALL_BASELINES and evaluates every entry automatically
 ```
 
-**Add a new queue backend:**
-```python
-# In queue/my_backend.py
-class MyPublisher:
-    async def publish_job(self, job_id: str, payload: dict) -> None: ...
-    async def close(self) -> None: ...
-
-# Register in queue/__init__.py get_publisher() factory
-```
-
 **Add a new scenario:**
 ```yaml
 # Create scenarios/my_shelter.yaml
@@ -184,7 +164,7 @@ class MyPublisher:
 
 ## Current state
 
-**Queue backend** ([ADR-008](../../docs/adr/008-queue-abstraction.md)): `QUEUE_BACKEND=sync` (default). Sweep < 30s in-process; set `QUEUE_BACKEND=rabbitmq` for docker-compose horizontal scaling or `QUEUE_BACKEND=sqs` for production Lambda workers.
+**Execution model:** every endpoint is synchronous and in-process; the sweep takes < 30s. The queue abstraction ([ADR-008](../../docs/adr/008-queue-abstraction.md)) and its RabbitMQ/SQS/Lambda backends were retired in the July 2026 static cutover.
 
 **Persistence** ([ADR-009](../../docs/adr/009-duckdb-over-clickhouse.md)): optional DuckDB store for run history, consent log, and analytics via `shelterpulse/store/duckdb_store.py`.
 
@@ -204,7 +184,7 @@ before.
 | [004](../../docs/adr/004-jaxbo-optimizer.md) | jaxbo as BO plugin | Active |
 | [005](../../docs/adr/005-fastapi-rest.md) | FastAPI REST adapter | Active |
 | [006](../../docs/adr/006-scipy-gp-optimizer.md) | Real scipy GP+EI optimizer | Amended |
-| [007](../../docs/adr/007-ecs-express-mode.md) | ECS Express Mode (current deployment) | Active |
-| [008](../../docs/adr/008-queue-abstraction.md) | Queue abstraction (RabbitMQ local, SQS+Lambda prod) | Active |
+| [007](../../docs/adr/007-ecs-express-mode.md) | ECS Express Mode | Retired (static cutover, July 2026) |
+| [008](../../docs/adr/008-queue-abstraction.md) | Queue abstraction (RabbitMQ local, SQS+Lambda prod) | Retired (static cutover, July 2026) |
 | [009](../../docs/adr/009-duckdb-over-clickhouse.md) | DuckDB over ClickHouse for run persistence | Active |
-| [010](../../docs/adr/010-async-worker-production-hardening.md) | Async worker production hardening | Active |
+| [010](../../docs/adr/010-async-worker-production-hardening.md) | Async worker production hardening | Retired (static cutover, July 2026) |

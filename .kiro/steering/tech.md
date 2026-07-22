@@ -32,10 +32,9 @@ inclusion: always
 | Layer | Choice |
 |-------|--------|
 | Container | Docker + docker compose |
-| Cloud | **AWS ECS Express Mode + ECR** -- single consolidated container (nginx + uvicorn), one ALB, one HTTPS URL. See ADR-007. |
-| CI | GitHub Actions (`.github/workflows/ci.yml`, `promote.yml`, `auto-release.yml`, `deploy.yml`; `release.yml` is a manual hotfix escape hatch). See `.github/workflows.md`. |
-| CD | Push to `main` triggers `auto-release.yml` (semver bump from conventional commits) → `deploy.yml`: build + push `app` target to ECR, ECS auto-deploys |
-| Async workers | Queue abstraction (ADR-008). `QUEUE_BACKEND=sync\|rabbitmq\|sqs`. RabbitMQ local, SQS+Lambda prod. |
+| Cloud | **S3 + CloudFront static site** (`shelter-pulse.com`); the ECS Express Mode backend was retired July 2026 (see `docs/static-cutover.md`). ECR kept for rollback. |
+| CI | GitHub Actions (`.github/workflows/ci.yml`, `promote.yml`). See `.github/workflows.md`. |
+| CD | None: the static site deploys via `aws s3 sync` + CloudFront invalidation; the `auto-release`/`deploy` pipeline was retired with the backend |
 
 ## Dependency rules
 

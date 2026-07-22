@@ -1,6 +1,6 @@
 # ADR-008: Queue Abstraction - RabbitMQ Local, SQS+Lambda Production
 
-**Status:** Accepted
+**Status:** Retired (July 2026: the async path was removed in the static cutover; every endpoint is synchronous again)
 **Date:** 2026-06-30
 **Decision makers:** Ricardo (project lead)
 

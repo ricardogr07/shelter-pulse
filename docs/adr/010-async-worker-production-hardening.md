@@ -1,6 +1,6 @@
 # ADR-010: Async Worker Production Hardening
 
-**Status:** Accepted (NAT Gateway is a temporary component, see Decision 5)
+**Status:** Retired (July 2026: the async worker stack, including the NAT Gateway, was destroyed in the static cutover)
 **Date:** 2026-07-02
 **Decision makers:** Ricardo (project lead)
 

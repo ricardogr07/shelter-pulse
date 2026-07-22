@@ -1,5 +1,10 @@
 # Playbook: PR Flows and CI/CD Implications
 
+> **Partially retired (July 2026):** the release/deploy sections below describe the
+> `auto-release.yml`/`deploy.yml`/`release.yml` pipeline that was removed in the static
+> cutover (`docs/static-cutover.md`). Only `ci.yml` and `promote.yml` remain live; the
+> PR-flow and local-gate guidance still applies.
+
 ## Pre-Push Local Gate
 
 Run these before pushing. If you touched workflows, Docker, or nginx, steps 3-6 are mandatory.

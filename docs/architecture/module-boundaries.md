@@ -11,14 +11,12 @@ All adapters (API, CLI, UI) call into it; it never imports from them.
 |------|---------|
 | `shelterpulse/core/` | Pure library: simulation engine, Monte Carlo, schema, interventions. Zero I/O. |
 | `shelterpulse/optimize/` | Sweep orchestrator, Bayesian optimizer, baselines, evaluation interface |
-| `shelterpulse/queue/` | Async job dispatch: queue abstraction, sync/RabbitMQ/SQS backends, worker, in-memory job store |
 | `shelterpulse/store/` | Optional DuckDB persistence (run history, consent log, analytics). No-op stubs when the `store` extra isn't installed. |
-| `shelterpulse/api/` | FastAPI REST adapter (thin I/O wrapper) |
+| `shelterpulse/api/` | FastAPI REST adapter (thin I/O wrapper); every endpoint synchronous |
 | `shelterpulse/cli/` | Typer CLI adapter (thin I/O wrapper) |
 | `ui/` | Next.js + React + TypeScript + Tailwind CSS frontend |
-| `lambda/` | AWS Lambda worker for SQS-triggered BO sweeps. Calls `shelterpulse.store` directly (not through the API) since it already runs the optimization in-process. |
 
-Note: `job_store.py` (SSE/status tracking for in-flight jobs, in-memory) and `store/duckdb_store.py` (durable run history on disk/EFS) are two different things despite the similar name — the former is ephemeral request-scoped state, the latter is persisted history.
+Note: `store/duckdb_store.py` holds durable run history on disk. (The in-memory `queue/job_store.py` it was once contrasted with was retired with the async workers in July 2026.)
 
 ## The key invariant
 

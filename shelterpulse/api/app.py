@@ -1,12 +1,10 @@
 """FastAPI REST adapter for ShelterPulse."""
 from __future__ import annotations
 
-import asyncio
 import dataclasses
 import io
 import json
 import logging
-import os
 import tempfile
 import time
 import zipfile
@@ -26,8 +24,6 @@ from shelterpulse.core.schema import Scenario, load_scenario
 from shelterpulse.optimize.baselines import ALL_BASELINES
 from shelterpulse.optimize.interface import evaluate_candidate
 from shelterpulse.optimize.workflow import CandidateAllocation, run_optimization_sweep
-from shelterpulse.queue import get_publisher
-from shelterpulse.queue.job_store import JobStatus, job_store
 from shelterpulse.store import get_runs_for_shelter, init_schema, log_consent, save_run
 from shelterpulse.api.rate_limit import (
     check_rate_limit,
@@ -331,96 +327,38 @@ def simulate_builder(req: BuilderRequest, request: fastapi.Request) -> Evaluatio
     return _er_to_out(evaluate_candidate(alloc, scenario, seeds))
 
 
-@app.post("/optimize/builder")
-async def optimize_builder(req: BuilderRequest, request: fastapi.Request, response: fastapi.Response):
-    """Run BO optimization on a custom builder scenario.
-
-    When QUEUE_BACKEND=sync (default): blocks and returns list[EvaluationOut] (200).
-    When QUEUE_BACKEND=rabbitmq|sqs: dispatches async, returns job_id (202).
-    """
+@app.post("/optimize/builder", response_model=list[EvaluationOut])
+def optimize_builder(req: BuilderRequest, request: fastapi.Request) -> list[EvaluationOut]:
+    """Run BO optimization on a custom builder scenario, synchronously."""
     check_rate_limit(optimize_limiter, request)
-    queue_backend = os.getenv("QUEUE_BACKEND", "sync")
-
-    if queue_backend == "sync":
-        # Existing synchronous behavior
-        scenario = _builder_to_scenario(req)
-        seeds = make_seed_set(scenario.seed, req.n_replications)
-        results = run_optimization_sweep(
-            scenario, budget=req.intervention_budget,
-            n_candidates=15, seed_set=seeds, use_bo=True,
-        )
-        # Persist if user consented
-        if req.consent_storage:
-            try:
-                import dataclasses as dc
-                sync_job_id = str(uuid4())
-                result_dicts = [
-                    {**dc.asdict(r.allocation), "mean_overflow_cat_days": r.mean_overflow_cat_days,
-                     "std_overflow_cat_days": r.std_overflow_cat_days, "mean_total_cost": r.mean_total_cost,
-                     "is_feasible": r.is_feasible, "ci95_overflow_low": r.ci95_overflow_low,
-                     "ci95_overflow_high": r.ci95_overflow_high, "ci95_cost_low": r.ci95_cost_low,
-                     "ci95_cost_high": r.ci95_cost_high}
-                    for r in results
-                ]
-                save_run(sync_job_id, req.model_dump(), result_dicts, consent=True, is_test=req.is_test_data)
-            except Exception:
-                pass  # Non-fatal: store may not be initialized
-        # Always log the consent decision (even when declined) for audit trail
+    scenario = _builder_to_scenario(req)
+    seeds = make_seed_set(scenario.seed, req.n_replications)
+    results = run_optimization_sweep(
+        scenario, budget=req.intervention_budget,
+        n_candidates=15, seed_set=seeds, use_bo=True,
+    )
+    # Persist if user consented
+    if req.consent_storage:
         try:
-            log_consent(str(uuid4()), get_client_ip(request), req.consent_storage, req.is_test_data)
+            import dataclasses as dc
+            sync_job_id = str(uuid4())
+            result_dicts = [
+                {**dc.asdict(r.allocation), "mean_overflow_cat_days": r.mean_overflow_cat_days,
+                 "std_overflow_cat_days": r.std_overflow_cat_days, "mean_total_cost": r.mean_total_cost,
+                 "is_feasible": r.is_feasible, "ci95_overflow_low": r.ci95_overflow_low,
+                 "ci95_overflow_high": r.ci95_overflow_high, "ci95_cost_low": r.ci95_cost_low,
+                 "ci95_cost_high": r.ci95_cost_high}
+                for r in results
+            ]
+            save_run(sync_job_id, req.model_dump(), result_dicts, consent=True, is_test=req.is_test_data)
         except Exception:
             pass  # Non-fatal: store may not be initialized
-        return [_er_to_out(r) for r in results]
-
-    # Async dispatch: publish to queue and return immediately
-    ip = get_client_ip(request)
-    _MAX_CONCURRENT_JOBS = 3
-    if job_store.count_active_by_ip(ip) >= _MAX_CONCURRENT_JOBS:
-        raise fastapi.HTTPException(
-            status_code=429,
-            detail=f"Too many active jobs ({_MAX_CONCURRENT_JOBS} max). Wait for current jobs to complete.",
-        )
-
-    job_id = str(uuid4())
-    job_store.create(job_id, total=20, client_ip=ip)  # 15 BO candidates + 5 baselines
-    publisher = get_publisher()
-    await publisher.publish_job(job_id, {
-        "type": "optimize_builder",
-        "request": req.model_dump(),
-        "consent_storage": req.consent_storage,
-        "is_test_data": req.is_test_data,
-    })
-    response.status_code = 202
-    return {"job_id": job_id, "status": "queued"}
-
-
-# ── Job status endpoints ──────────────────────────────────────────────────────
-
-@app.get("/optimize/{job_id}/status")
-def get_job_status(job_id: str):
-    """Poll the status of an async optimization job."""
-    job = job_store.get(job_id)
-    if not job:
-        raise fastapi.HTTPException(status_code=404, detail="Job not found")
-    return {
-        "job_id": job.job_id,
-        "status": job.status.value,
-        "progress_done": job.progress_done,
-        "progress_total": job.progress_total,
-    }
-
-
-@app.get("/optimize/{job_id}/results")
-def get_job_results(job_id: str):
-    """Retrieve results of a completed optimization job."""
-    job = job_store.get(job_id)
-    if not job:
-        raise fastapi.HTTPException(status_code=404, detail="Job not found")
-    if job.status == JobStatus.FAILED:
-        raise fastapi.HTTPException(status_code=500, detail=job.error or "Job failed")
-    if job.status != JobStatus.COMPLETED:
-        raise fastapi.HTTPException(status_code=409, detail=f"Job is {job.status.value}, not completed")
-    return job.results
+    # Always log the consent decision (even when declined) for audit trail
+    try:
+        log_consent(str(uuid4()), get_client_ip(request), req.consent_storage, req.is_test_data)
+    except Exception:
+        pass  # Non-fatal: store may not be initialized
+    return [_er_to_out(r) for r in results]
 
 
 # ── Run history ───────────────────────────────────────────────────────────────
@@ -468,132 +406,6 @@ def get_run_analytics():
         return get_analytics()
     except Exception:
         return {}
-
-
-# ── SSE progress streaming ────────────────────────────────────────────────────
-
-_SSE_TIMEOUT_SECONDS = 300  # 5 minutes
-_SSE_HEARTBEAT_SECONDS = 15  # keep the connection alive through intermediary idle-timeouts (e.g. ALB)
-
-
-@app.get("/optimize/{job_id}/stream")
-async def stream_job_progress(job_id: str):
-    """Server-Sent Events stream for real-time job progress.
-
-    Emits events:
-      - event: progress, data: {"done": X, "total": N}
-      - event: complete, data: {"results": [...]}
-      - event: error, data: {"message": "..."}
-
-    Stream closes on completion, error, or 5-min timeout.
-    """
-    job = job_store.get(job_id)
-    if not job:
-        raise fastapi.HTTPException(status_code=404, detail="Job not found")
-
-    async def event_generator():
-        queue = job_store.subscribe(job_id)
-        try:
-            # Emit current state immediately (in case progress already advanced)
-            current_job = job_store.get(job_id)
-            if current_job:
-                if current_job.status == JobStatus.COMPLETED:
-                    yield f"event: complete\ndata: {json.dumps({'results': current_job.results})}\n\n"
-                    return
-                if current_job.status == JobStatus.FAILED:
-                    yield f"event: error\ndata: {json.dumps({'message': current_job.error or 'Job failed'})}\n\n"
-                    return
-                if current_job.progress_total > 0:
-                    yield f"event: progress\ndata: {json.dumps({'done': current_job.progress_done, 'total': current_job.progress_total})}\n\n"
-
-            # Stream events as they arrive. Poll on a short interval and send a
-            # comment (ignored by EventSource) when idle, so a long gap between
-            # progress ticks - e.g. Lambda cold start or first-candidate JIT
-            # compile - doesn't sit long enough for the ALB to drop the
-            # connection as idle; a dropped connection makes EventSource
-            # silently reconnect and only replay current state, losing every
-            # tick that happened while disconnected.
-            idle_seconds = 0.0
-            while True:
-                try:
-                    event = await asyncio.wait_for(queue.get(), timeout=_SSE_HEARTBEAT_SECONDS)
-                except asyncio.TimeoutError:
-                    idle_seconds += _SSE_HEARTBEAT_SECONDS
-                    if idle_seconds >= _SSE_TIMEOUT_SECONDS:
-                        yield f"event: error\ndata: {json.dumps({'message': 'Stream timeout'})}\n\n"
-                        return
-                    yield ": keep-alive\n\n"
-                    continue
-                idle_seconds = 0.0
-
-                event_type = event.get("event", "progress")
-                if event_type == "progress":
-                    yield f"event: progress\ndata: {json.dumps({'done': event['done'], 'total': event['total']})}\n\n"
-                elif event_type == "complete":
-                    yield f"event: complete\ndata: {json.dumps({'results': event['results']})}\n\n"
-                    return
-                elif event_type == "error":
-                    yield f"event: error\ndata: {json.dumps({'message': event['message']})}\n\n"
-                    return
-        finally:
-            job_store.unsubscribe(job_id, queue)
-
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",  # Disable nginx buffering
-        },
-    )
-
-
-# ── Internal webhook endpoints (called by workers) ────────────────────────────
-
-_INTERNAL_KEY = os.getenv("INTERNAL_KEY", "dev-key-123")
-
-
-@app.post("/internal/jobs/{job_id}/progress")
-def receive_job_progress(job_id: str, request: fastapi.Request, payload: dict):
-    """Worker reports progress for a running job."""
-    _validate_internal_key(request)
-    done, total = payload.get("done", 0), payload.get("total", 0)
-    job_store.update_progress(job_id, done, total)
-    logger.info("Received progress for job %s: %d/%d", job_id, done, total)
-    return {"ok": True}
-
-
-@app.post("/internal/jobs/{job_id}/complete")
-def receive_job_complete(job_id: str, request: fastapi.Request, payload: dict):
-    """Worker reports job completion with results."""
-    _validate_internal_key(request)
-    results = payload.get("results", [])
-    job_store.complete(job_id, results)
-    logger.info("Received completion for job %s: %d results", job_id, len(results))
-    return {"ok": True}
-
-
-@app.post("/internal/jobs/{job_id}/fail")
-def receive_job_fail(job_id: str, request: fastapi.Request, payload: dict):
-    """Worker reports job failure."""
-    _validate_internal_key(request)
-    error = payload.get("error", "Unknown error")
-    job_store.fail(job_id, error)
-    logger.warning("Received failure for job %s: %s", job_id, error)
-    return {"ok": True}
-
-
-def _validate_internal_key(request: fastapi.Request) -> None:
-    """Check X-Internal-Key header matches expected value."""
-    key = request.headers.get("X-Internal-Key", "")
-    if key != _INTERNAL_KEY:
-        # Log lengths only - never the key values themselves.
-        logger.warning(
-            "Rejected internal webhook call to %s: key mismatch (got %d chars, expected %d)",
-            request.url.path, len(key), len(_INTERNAL_KEY),
-        )
-        raise fastapi.HTTPException(status_code=403, detail="Invalid internal key")
 
 
 class CompareOut(BaseModel):
