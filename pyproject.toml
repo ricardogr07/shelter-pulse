@@ -22,9 +22,8 @@ dependencies = [
 [project.optional-dependencies]
 optimize = [
     "jax",
-    "jaxbo>=0.1.2",
+    "jaxbo>=0.2.2,<0.3",
     "jaxlib",
-    "pydoe>=1.3.0",
 ]
 temporal = ["temporalio>=1.7"]
 worker = ["aio-pika>=9.4"]
